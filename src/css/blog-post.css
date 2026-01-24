@@ -1,0 +1,263 @@
+/* src/css/blog-post.css */
+
+.blog-post-wrapper {
+  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 60px 0;
+}
+
+.blog-container {
+  display: grid;
+  grid-template-columns: 1fr 340px; /* Main content + 340px sidebar */
+  gap: 60px;
+  padding-bottom: 80px;
+}
+
+/* Blog Main Column */
+.blog-main-column {
+  min-width: 0;
+}
+
+/* 1. Featured Image */
+.blog-featured-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 0px; /* Sharp or minimal radius preferred for top image sometimes, but let's keep it clean */
+  margin-bottom: 25px;
+}
+
+/* 2. Breadcrumb */
+.blog-breadcrumb {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.blog-breadcrumb a {
+  text-decoration: none;
+  color: #333;
+}
+.blog-breadcrumb span {
+  color: #ee5e42; /* Highlight current category */
+}
+
+/* 3. Meta Row */
+.blog-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 0;
+  border-bottom: none; /* Removed border */
+}
+
+.meta-left {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #777;
+  font-weight: 500;
+  gap: 5px;
+}
+
+.meta-left i {
+  margin-right: 5px;
+}
+
+.meta-dot {
+  margin: 0 8px;
+  color: #ccc;
+}
+
+/* 4. Title */
+.blog-title {
+  font-size: 42px; /* Larger title */
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 30px;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+/* 5. Content */
+.blog-content-body {
+  font-size: 19px; /* Slightly larger readable text */
+  line-height: 1.7;
+  color: #2a2a2a;
+  font-family: "Inter", sans-serif; /* Ensure clean font */
+}
+
+.blog-content-body p {
+  margin-bottom: 28px;
+}
+
+.blog-content-body h2 {
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 50px;
+  margin-bottom: 20px;
+  color: #000;
+}
+
+.blog-content-body h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: 40px;
+  margin-bottom: 15px;
+  color: #111;
+}
+
+.blog-content-body ul,
+.blog-content-body ol {
+  margin-bottom: 30px;
+  padding-left: 20px;
+}
+
+.blog-content-body li {
+  margin-bottom: 12px;
+}
+
+/* Divider */
+.post-footer-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 50px 0;
+}
+
+/* Leave a Reply */
+.leave-reply-section {
+  margin-top: 50px;
+}
+
+.leave-reply-section h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.reply-note {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.reply-note a {
+  color: #ee5e42;
+  text-decoration: none;
+}
+
+.required-field {
+  color: red;
+}
+
+.comment-form textarea {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  margin-bottom: 20px;
+  resize: vertical;
+}
+
+.btn-post-comment {
+  background-color: #000;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btn-post-comment:hover {
+  background-color: #333;
+}
+
+/* Navigation */
+.post-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 60px;
+  border-top: 1px solid #eee;
+  padding-top: 30px;
+}
+
+.nav-prev,
+.nav-next {
+  display: flex;
+  flex-direction: column;
+  width: 45%;
+}
+
+.nav-next {
+  text-align: right;
+}
+
+.nav-prev span,
+.nav-next span {
+  font-size: 12px;
+  color: #999;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.nav-prev a,
+.nav-next a {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.nav-prev a:hover,
+.nav-next a:hover {
+  color: #ee5e42;
+}
+
+/* Sidebar Column */
+.blog-sidebar-column {
+  border-left: 1px solid #f0f0f0;
+  padding-left: 40px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .blog-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .blog-sidebar-column {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 40px;
+  }
+}
+
+/* Inline Blog Images */
+.blog-inline-image {
+  margin: 40px 0;
+  text-align: center;
+}
+
+.blog-inline-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.image-caption {
+  font-size: 14px;
+  color: #666;
+  margin-top: 12px;
+  font-style: italic;
+  text-align: center;
+}

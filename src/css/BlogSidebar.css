@@ -1,0 +1,92 @@
+/* src/css/BlogSidebar.css */
+
+.blog-sidebar {
+  width: 100%;
+}
+
+.sidebar-widget {
+  margin-bottom: 40px;
+}
+
+.widget-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 20px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+/* Search Widget */
+.search-form {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  padding: 10px 15px;
+  border-radius: 4px;
+}
+
+.search-form input {
+  border: none;
+  width: 100%;
+  outline: none;
+  font-size: 14px;
+}
+
+.search-form button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Latest Posts Widget */
+.latest-posts-list,
+.categories-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.latest-post-item {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 15px;
+}
+
+.latest-post-item:last-child {
+  border-bottom: none;
+}
+
+.latest-post-item a {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: color 0.2s;
+  display: block;
+}
+
+.latest-post-item a:hover {
+  color: #ee5e42;
+}
+
+/* Categories Widget */
+.categories-list li {
+  margin-bottom: 10px;
+}
+
+.categories-list a {
+  text-decoration: none;
+  color: #555;
+  font-size: 15px;
+  transition: color 0.2s;
+  display: block;
+  padding: 5px 0;
+}
+
+.categories-list a:hover {
+  color: #ee5e42;
+  padding-left: 5px; /* Slight movement effect */
+}

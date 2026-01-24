@@ -1,0 +1,182 @@
+/* src/css/CategoryPage.css */
+
+.category-page-wrapper {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+/* 1. Category Header Section */
+.category-header-section {
+  background-color: #f4f4f4; /* Minimal gray background */
+  padding: 80px 0;
+  margin-bottom: 60px;
+}
+
+.breadcrumbs {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.breadcrumbs a {
+  color: #333;
+  text-decoration: none;
+}
+
+.breadcrumbs span {
+  color: #999;
+}
+
+.category-header-section h1 {
+  font-size: 42px;
+  font-weight: 800;
+  color: #000;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 2. Layout Grid (Main + Sidebar) */
+.category-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px; /* Content + Sidebar */
+  gap: 60px;
+  padding-bottom: 80px;
+}
+
+.category-main-column {
+  min-width: 0;
+}
+
+/* 3. Blog Grid (2 Columns of Cards) */
+.blog-grid-2-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Force 2 columns */
+  gap: 40px;
+}
+
+.blog-grid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.blog-grid-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.05);
+  border-color: #eee;
+}
+
+.blog-card-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.blog-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.blog-grid-card:hover .blog-card-image img {
+  transform: scale(1.05);
+}
+
+.blog-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.blog-title-link {
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 10px;
+}
+
+.blog-grid-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000;
+  line-height: 1.4;
+  margin: 0;
+  transition: color 0.2s;
+}
+
+.blog-title-link:hover h3 {
+  color: #ee5e42;
+}
+
+.read-more-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+  margin-top: 5px;
+}
+
+.read-more-link:hover {
+  text-decoration: underline;
+}
+
+/* Global .container is now in index.css */
+
+/* No Posts */
+.no-posts {
+  text-align: center;
+  padding: 40px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  grid-column: 1 / -1;
+}
+
+.btn-primary {
+  display: inline-block;
+  background-color: #000;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .category-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .category-sidebar-column {
+    /* Sidebar styles handled by BlogSidebar component mostly */
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-grid-2-col {
+    grid-template-columns: 1fr; /* Stack cards on mobile */
+  }
+}

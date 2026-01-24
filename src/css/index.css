@@ -1,0 +1,307 @@
+/* src/css/index.css */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500&display=swap");
+
+:root {
+  --primary-color: #ffffff;
+  --secondary-color: #000000;
+  --accent-color: #ee5e42; /* Vibrant accent color */
+  --Yellow-color: #ffdd00;
+  --blue: #0033bf;
+  --grey: #f8fafc;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --progress-bg: #e2e8f0;
+  --progress-active-bg: var(--accent-color);
+
+  --font-primary: "Inter", sans-serif;
+  --font-secondary: "Inter", sans-serif;
+
+  --transition-slow: 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+  --transition-medium: 0.5s ease-in-out;
+  --transition-fast: 0.3s ease;
+}
+
+/* Visibility Utilities */
+@media (min-width: 769px) {
+  .only-mobile {
+    display: none !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-primary);
+}
+
+.container {
+  width: 100%;
+  /* max-width: 1400px; */
+  margin: 0 auto;
+  padding: 0 100px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 20px;
+  }
+}
+
+/* Design Polish Utilities */
+.soft-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.soft-shadow:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.hover-lift {
+  transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Global Typography */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  padding: 0;
+  line-height: 1.2em;
+  letter-spacing: 0px;
+  font-family: "Inter", sans-serif;
+  font-weight: 700; /* Bold headings by default per design */
+}
+
+.big-text-head {
+  font-size: 60px !important;
+  font-weight: 600;
+  color: var(--secondary-color);
+  line-height: 1.4em;
+  font-family: "Inter", sans-serif;
+}
+.big-text-head-white {
+  font-size: 60px !important;
+  font-weight: 600;
+  color: var(--primary-color);
+  line-height: 1.4em;
+  font-family: "Inter", sans-serif;
+}
+
+/* Headings: 46px */
+.head-text {
+  font-size: 46px !important;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  color: var(--secondary-color);
+  line-height: 1.2;
+}
+
+.head-text-white {
+  font-size: 46px !important;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  color: var(--primary-color);
+  line-height: 1.2;
+}
+
+/* Sub-headings */
+.sub-head-text {
+  font-size: 26px !important;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  line-height: 1.4em;
+  color: var(--secondary-color);
+}
+
+.sub-head-text-white {
+  font-size: 26px !important;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  line-height: 1.4em;
+  color: var(--primary-color);
+}
+
+/* Paragraphs: 16px */
+.para-text {
+  font-size: 16px;
+  font-family: var(--font-primary);
+  font-weight: 400;
+  line-height: 1.8;
+  color: var(--text-main);
+}
+
+.para-text-white {
+  font-size: 16px;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  line-height: 1.6em;
+  color: var(--primary-color);
+}
+
+.sub-para-text {
+  font-size: 16px;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  line-height: 1.6em;
+  color: #666;
+  padding-bottom: 20px;
+}
+
+.sub-para-text-white {
+  font-size: 16px;
+  font-family: var(--font-secondary);
+  font-weight: 300;
+  line-height: 1.4em;
+  color: var(--primary-color);
+  font-weight: 300 !important;
+}
+
+/* fonts End  */
+
+/* buttons start  */
+
+.black-bg-btn {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  padding: 14px 20px;
+  text-decoration: none;
+  border: 1px solid var(--primary-color);
+  cursor: pointer;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease-in-out;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-family: var(--font-secondary);
+  width: fit-content;
+  /* Remove or animate in later */
+  z-index: 10;
+}
+.arrow-icon {
+  transition: all 0.3s ease-in-out;
+}
+.black-bg-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.black-bg-btn:hover .arrow-icon {
+  transform: translateX(6px);
+}
+
+.white-bg-btn {
+  background-color: var(--primary-color);
+  /* usually white or light */
+  color: var(--secondary-color);
+  /* usually black or dark */
+  padding: 14px 20px;
+  text-decoration: none;
+  border: 1px solid var(--secondary-color);
+  cursor: pointer;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  margin: 20px 0;
+  font-size: 16px;
+  font-family: var(--font-secondary);
+  width: fit-content;
+
+  /* Change to 1 or animate in */
+  z-index: 1;
+}
+
+.white-bg-btn:hover {
+  background-color: var(--secondary-color);
+  /* dark on hover */
+  color: var(--primary-color);
+  /* white text */
+  border-color: var(--secondary-color);
+}
+
+.white-bg-btn:hover .arrow-icon {
+  transform: translateX(6px);
+}
+
+.transparent-bg-btn {
+  background-color: transparent;
+  /* usually white or light */
+  color: var(--blue);
+  /* usually black or dark */
+  padding: 0px;
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  margin: 20px 0;
+  font-size: 16px;
+  font-family: var(--font-secondary);
+  width: fit-content;
+  border: none;
+
+  /* Change to 1 or animate in */
+  z-index: 1;
+}
+
+.transparent-bg-btn:hover .arrow-icon {
+  transform: translateX(6px);
+}
+
+/* buttons End */
+
+body {
+  margin: 0;
+  padding: 0;
+  /* padding-top: 100px; */
+  background-color: var(--primary-color) !important;
+}
+
+@media (max-width: 768px) {
+  .only-windows {
+    display: none !important;
+  }
+
+  body {
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  /* Mobile Typography Overrides */
+  .big-text-head,
+  .big-text-head-white {
+    font-size: 36px !important;
+  }
+
+  .head-text,
+  .head-text-white {
+    font-size: 26px !important;
+  }
+
+  .sub-head-text,
+  .sub-head-text-white {
+    font-size: 20px;
+  }
+}

@@ -1,0 +1,227 @@
+/* Blogs container */
+.blogs-container {
+  width: 100%;
+}
+
+/* Flexbox layout for blog cards */
+.blogs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  justify-content: start ;
+}
+
+/* Individual blog card */
+.inner-news-blogs-container {
+  min-width: 300px; /* Minimum width for each card */
+  width: 31%;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column; /* Ensure content stretches vertically */
+  justify-content: space-between; /* Distribute content */
+  align-items: stretch; /* Ensure full width usage */
+  border-left: rgba(0, 0, 0, 0.2) 1px solid;
+  border-right: rgba(0, 0, 0, 0.2) 1px solid;
+  margin-bottom: 50px;
+}
+
+/* Text section above the image */
+.blog-text {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  justify-content: flex-start; /* Align text at the top */
+  align-items: start;
+  flex-shrink: 0; /* Prevent text section from shrinking */
+  max-height: 250px; /* Limit text section height to prevent overflow */
+  overflow: hidden; /* Hide overflow text */
+}
+
+/* Image section with hover effect */
+.image-hover-text-come {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 300px;
+  background-color: #003377; /* Fallback color */
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Inner text that slides in on hover */
+.inner-text-come {
+  position: absolute; 
+  top: 0;
+  left: 0;
+  /* width: 100%; */
+  height: 260px ;
+  background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent for better readability */
+  padding: 20px; /* Reduced padding to fit content */
+  display: flex;
+  align-items: flex-start; /* Align content at the top */
+  justify-content: space-between;
+  flex-direction: column;
+  transform: translateX(100%); /* Slide-in effect */
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0;
+  overflow-y: auto; /* Allow scrolling for long text */
+}
+
+/* Hover effect to slide in text */
+.inner-news-blogs-container:hover .inner-text-come {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Inner text content */
+.inner-text-come div:nth-child(1) {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  flex-direction: column;
+  gap: 15px; /* Reduced gap for better fit */
+  max-height: 80%; /* Limit content height to prevent overflow */
+  overflow: hidden; /* Hide overflow text */
+}
+
+/* Truncate long excerpts */
+.small-text-black {
+  font-size: 16px;
+  font-weight: 400;
+  color: #000;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* Limit to 4 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis for truncated text */
+}
+
+/* Typography styles */
+.sub-big-heading-text-black {
+  font-size: 20px;
+  font-weight: 500;
+  color: #000;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sub-heading-text-black {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+}
+
+.read-more-btn-blue {
+  font-size: 14px;
+  color: #003377;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.read-more-btn-blue:hover {
+  color: #0055b3;
+}
+
+
+
+/* Skeleton loader styles */
+.inner-news-blogs-container.blog-card-skeleton {
+  opacity: 0.7;
+}
+
+.skeleton-title {
+  width: 60%;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 10px;
+}
+
+.skeleton-excerpt {
+  width: 80%;
+  height: 60px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-link {
+  width: 100px;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive adjustments */
+@media only screen and (max-width: 800px) {
+  .blogs-grid {
+    margin-top: 40px;
+    flex-direction: column;
+    align-items: center;
+
+  }
+
+  .inner-news-blogs-container {
+        min-width: 330px;
+  }
+
+  .image-hover-text-come {
+    height: 200px; /* Fixed height for mobile */
+  }
+  .inner-text-come {
+    height: 160px;
+  }
+
+
+  .blog-text {
+    max-height: 200px; /* Adjusted for mobile */
+  }
+  .blog-page-container {
+  padding: 60px 20px 60px 20px;
+}
+}
+
+/* Blog page container */
+.blog-page-container {
+  padding: 100px 50px;
+}
+
+.blog-page-container h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.blog-page-container p {
+  font-size: 1.1rem;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.blog-not-found {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #666;
+  padding: 40px;
+}
+
+
