@@ -5,11 +5,12 @@ import featuredImage from "../assets/blogs/integrating-okta.jpg";
 const IntegratingOkta = () => {
   return (
     <BlogLayout
-      category="SAP Security" // Primary Category
+      category="SAP Security"
       title="Integrating Okta with SAP IAS/IPS by Raghu Boddu — Step-by-Step IAM Best Practices"
-      date="January 17, 2026"
+      date="January 23, 2026"
       author="Raghu Boddu"
       image={featuredImage}
+      description="Step-by-step guide to integrating Okta with SAP Identity Authentication Service (IAS) for seamless Single Sign-On (SSO) and improved security."
       content={
         <>
           <p>
@@ -27,22 +28,26 @@ const IntegratingOkta = () => {
             Okta and SAP cloud identity services.
           </p>
 
-          <h2>
-            Video: Integrating Okta with IAS/IPS and other applications by Raghu
-            Boddu
-          </h2>
-          <div style={{ margin: "30px 0" }}>
+          <p>Watch this video to:</p>
+
+          <div className="blog-video-container">
             <iframe
-              width="100%"
-              height="400"
+              style={{
+                width: "100%",
+                height: "400px",
+              }}
               src="https://www.youtube.com/embed/EUikjPArefI"
-              title="Integrating Okta with SAP IAS/IPS"
+              title="Integrating Okta with SAP IAS/IPS and other applications by Raghu Boddu"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
+            <p className="image-caption">
+              Video: Integrating Okta with IAS/IPS and other applications by
+              Raghu Boddu
+            </p>
           </div>
-          <p>Watch this video to:</p>
+
           <ul>
             <li>
               Understand how to establish trust relationships between Okta and
@@ -64,7 +69,7 @@ const IntegratingOkta = () => {
 
           <h2>Core Concepts Covered</h2>
 
-          <h3>1. Why Integrate Okta with SAP IAS/IPS?</h3>
+          <h2>Why Integrate Okta with SAP IAS/IPS?</h2>
           <p>
             Enterprises increasingly run heterogeneous IAM architectures where
             corporate identity platforms like Okta serve authentication and
@@ -76,7 +81,7 @@ const IntegratingOkta = () => {
             and enhance security governance across SAP and non-SAP applications.
           </p>
 
-          <h3>2. Single Sign-On (SSO) with Okta and SAP IAS</h3>
+          <h2>Single Sign-On (SSO) with Okta and SAP IAS</h2>
           <p>
             The integration typically involves federating Okta as an external
             identity provider (IdP) to SAP IAS, using SAML 2.0 or OpenID Connect
@@ -87,7 +92,7 @@ const IntegratingOkta = () => {
             on conditional rules.
           </p>
 
-          <h3>3. Identity Provisioning with SAP IPS</h3>
+          <h2>Identity Provisioning with SAP IPS</h2>
           <p>
             SAP IPS plays a pivotal role in automating user account creation and
             updates in cloud systems based on authoritative identity sources
@@ -111,6 +116,11 @@ const IntegratingOkta = () => {
               user experience
             </li>
           </ul>
+          <p>
+            By watching the video, you’ll walk away with a clearer picture of
+            identity federation patterns and how to avoid common pitfalls when
+            configuring Okta and SAP identity services side-by-side.
+          </p>
 
           <h2>Final Thoughts</h2>
           <p>

@@ -1,3 +1,4 @@
+// src/components/CommentSection.jsx
 import React, { useState, useEffect } from "react";
 import "../css/CommentSection.css";
 
@@ -5,58 +6,125 @@ const CommentSection = ({ blogId }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // Spam trap
+  const [mathAnswer, setMathAnswer] = useState(""); // Simple math challenge
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [totalComments, setTotalComments] = useState(0);
 
-  // Load comments from local storage on mount or blogId change
+  // Load comments from API
   useEffect(() => {
     if (!blogId) return;
-    const storedComments = localStorage.getItem(`comments_${blogId}`);
-    const parsed = storedComments ? JSON.parse(storedComments) : [];
-    requestAnimationFrame(() => setComments(parsed));
+
+    // Fetch all comments initially (or implement pagination logic if list is huge)
+    // For now we fetch all and handle display limiting on frontend or fetch limited
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`/api/comments.php?post_id=${blogId}`);
+        if (response.ok) {
+          const data = await response.json();
+          const loadedComments = Array.isArray(data.comments)
+            ? data.comments
+            : [];
+          setComments(loadedComments);
+          setTotalComments(data.total || loadedComments.length);
+        }
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      }
+    };
+
+    fetchComments();
   }, [blogId]);
 
-  // Save comments to local storage whenever they change
-  useEffect(() => {
-    if (!blogId) return;
-    localStorage.setItem(`comments_${blogId}`, JSON.stringify(comments));
-  }, [comments, blogId]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || !authorName.trim()) return;
 
-    const comment = {
-      id: Date.now(), // Unique ID
+    // Spam Check 1: Honeypot
+    if (honeypot) {
+      console.warn("Spam detected (honeypot).");
+      return;
+    }
+
+    // Spam Check 2: Math
+    if (mathAnswer !== "4") {
+      alert(
+        "Please answer the math question correctly to prove you are human.",
+      );
+      return;
+    }
+
+    const payload = {
+      post_id: blogId,
       author: authorName,
-      date: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
       text: newComment,
+      website_url: honeypot,
     };
 
-    setComments([...comments, comment]);
-    setNewComment("");
-    setAuthorName("");
+    try {
+      const response = await fetch("/api/comments.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        // Optimistically update UI
+        const newEntry = {
+          id: result.id || Date.now(),
+          author: authorName,
+          text: newComment,
+          date: new Date().toISOString(),
+        };
+        setComments([newEntry, ...comments]);
+        setTotalComments((prev) => prev + 1);
+
+        setNewComment("");
+        setAuthorName("");
+        setMathAnswer("");
+      } else {
+        alert(result.message || "Failed to post comment.");
+      }
+    } catch (error) {
+      console.error("Failed to save comment:", error);
+    }
   };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 3);
+  };
+
+  const visibleComments = comments.slice(0, visibleCount);
 
   return (
     <div className="comments-section" id="comments">
-      <h3>Comments ({comments.length})</h3>
+      <h3>Comments ({totalComments})</h3>
 
       <div className="comments-list">
         {comments.length === 0 && (
           <p className="no-comments">No comments yet. Be the first!</p>
         )}
-        {comments.map((comment) => (
+        {visibleComments.map((comment) => (
           <div key={comment.id} className="comment-item">
             <div className="comment-header">
               <span className="comment-author">{comment.author}</span>
-              <span className="comment-date">{comment.date}</span>
+              <span className="comment-date">
+                {new Date(comment.date).toLocaleDateString()}
+              </span>
             </div>
             <p className="comment-text">{comment.text}</p>
           </div>
         ))}
+
+        {visibleCount < comments.length && (
+          <button className="btn-load-more" onClick={handleLoadMore}>
+            Load More comments
+          </button>
+        )}
       </div>
 
       <form className="comment-form" onSubmit={handleSubmit}>
@@ -64,6 +132,20 @@ const CommentSection = ({ blogId }) => {
         <p className="reply-note">
           <span className="required-field">*</span> Required fields are marked
         </p>
+
+        {/* Anti-Spam Fields */}
+        <div style={{ display: "none" }}>
+          <label>Website</label>
+          <input
+            type="text"
+            name="website_url"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex="-1"
+            autoComplete="off"
+          />
+        </div>
+
         <div className="form-group">
           <input
             type="text"
@@ -82,6 +164,27 @@ const CommentSection = ({ blogId }) => {
             required
           ></textarea>
         </div>
+
+        <div className="form-group" style={{ maxWidth: "200px" }}>
+          <label
+            style={{
+              fontSize: "0.9rem",
+              marginBottom: "5px",
+              display: "block",
+            }}
+          >
+            Security Question: What is 2 + 2? *
+          </label>
+          <input
+            type="text"
+            pattern="4"
+            placeholder="Answer"
+            value={mathAnswer}
+            onChange={(e) => setMathAnswer(e.target.value)}
+            required
+          />
+        </div>
+
         <button type="submit" className="btn-submit-comment">
           Post Comment
         </button>

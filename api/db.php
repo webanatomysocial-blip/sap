@@ -35,6 +35,39 @@ try {
     )");
     $pdo->exec("CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id)");
 
+    // Views table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS views (
+        post_id TEXT PRIMARY KEY,
+        count INTEGER DEFAULT 0
+    )");
+
+    // View Logs table for unique views
+    $pdo->exec("CREATE TABLE IF NOT EXISTS view_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id TEXT NOT NULL,
+        ip_address TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(post_id, ip_address)
+    )");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_view_logs_post ON view_logs(post_id)");
+
+    // Announcements table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        views INTEGER DEFAULT 0,
+        comments INTEGER DEFAULT 0,
+        link TEXT
+    )");
+
+    // Trending Topics table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS trending_topics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        topic_name TEXT NOT NULL,
+        count INTEGER DEFAULT 0
+    )");
+
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }

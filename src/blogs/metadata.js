@@ -23,9 +23,9 @@ export const blogMetadata = [
     excerpt: "GRC Compliance Management has become a strategic requirement for enterprises operating complex SAP landscapes.",
     image: grcComplianceMgmt,
     date: "2026-01-21",
-    category: "sap-grc",
-    author: "Raghu Boddu",
-    views: "34",
+    category: "sap-access-control",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["grc for sap", "grc management", "GRC SAP module", "SAP critical access", "SAP governance", "SAP governance risk and compliance", "SAP GRC", "sap grc module", "sox compliance in sap"]
   },
   {
@@ -37,9 +37,9 @@ export const blogMetadata = [
     image: masteringGrcRuleset,
     videoID: "l3MEn1n4rww",
     date: "2026-01-17",
-    category: "sap-grc",
-    author: "Raghu Boddu",
-    views: "70",
+    category: "sap-access-control",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["Access Risk Analysis", "Audit and Compliance", "Ruleset Manager", "SAP GRC", "SAP Authorization", "SoD Analysis"]
   },
   {
@@ -50,9 +50,9 @@ export const blogMetadata = [
     excerpt: "After a long and unexpected hiatus, SAP Security Expert is finally back home.",
     image: regainedSapSecurity,
     date: "2026-01-05",
-    category: "sap-grc",
-    author: "Raghu Boddu",
-    views: "161",
+    category: "sap-access-control",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["SAP GRC", "SAP Security"]
   },
   {
@@ -66,8 +66,8 @@ export const blogMetadata = [
     date: "2026-01-17",
     category: "sap-btp-security",
     subCategory: "sap-iag",
-    author: "Raghu Boddu",
-    views: "116",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["IAM Solutions", "SAP BTP", "SAP CIS", "SAP IAG", "SAP IAM", "SAP IPS"]
   },
   {
@@ -79,8 +79,8 @@ export const blogMetadata = [
     image: publicCloudAuthUpgrade,
     date: "2026-01-17",
     category: "sap-public-cloud",
-    author: "Inderdeep Singh",
-    views: "86",
+    author: "inderdeep_singh",
+    views: "0",
     tags: ["Authorization upgrade in public cloud", "Best Practices", "SAP Public Cloud", "Upgrading SAP Public Cloud"]
   },
   {
@@ -92,8 +92,8 @@ export const blogMetadata = [
     image: auditControlsFail,
     date: "2026-01-17",
     category: "sap-public-cloud",
-    author: "Raghu Boddu",
-    views: "60",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["SAP Public Cloud", "Security Audit", "Cloud Controls"]
   },
   {
@@ -105,8 +105,8 @@ export const blogMetadata = [
     image: configurationWithoutSpro,
     date: "2026-01-17",
     category: "sap-public-cloud",
-    author: "Raghu Boddu",
-    views: "48",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["Auditing SAP Public Cloud", "CPC", "FAQs on Public Cloud", "SAP Security in SAP Public Cloud", "SPRO"]
   },
   {
@@ -118,8 +118,8 @@ export const blogMetadata = [
     image: cpcVsSpro,
     date: "2026-01-17",
     category: "sap-public-cloud",
-    author: "Raghu Boddu",
-    views: "30",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["Centralized Parameter Configuration", "CPC", "CPC in SAP S/4HANA Public Cloud", "SAP Public Cloud", "SPRO", "SPRO_ADMIN"]
   },
   {
@@ -131,8 +131,8 @@ export const blogMetadata = [
     image: publicVsPrivateCloud,
     date: "2026-01-05",
     category: "sap-public-cloud",
-    author: "Raghu Boddu",
-    views: "256",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["S/4HANA Public Cloud", "Private Cloud", "SAP Security", "Cloud Strategy"]
   },
   {
@@ -145,8 +145,8 @@ export const blogMetadata = [
     videoID: "q_YclMMJogA",
     date: "2026-01-17",
     category: "podcasts",
-    author: "Raghu Boddu",
-    views: "24",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["CyberKriya", "CyberKriyaPodcast", "CybersecurityForSAP", "InfoSec", "S4HANA", "SAPAudit", "SAPGRC", "SAPSecurity"]
   },
   {
@@ -160,8 +160,8 @@ export const blogMetadata = [
     date: "2026-01-06",
     category: "podcasts",
     subCategory: "sap-cybersecurity",
-    author: "Raghu Boddu",
-    views: "282",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["Agentic AI", "AI Security", "Cyber Risk Management", "CyberKriya Podcast", "Digital Trust", "Enterprise Security", "Raghu Boddu", "Repudiation Risk", "SAP AI", "SAP Community", "SAP Cybersecurity", "SAP GRC", "SAP Security", "SAPSecurityExpert", "Security Leadership", "Threat Modeling"]
   },
   {
@@ -174,8 +174,8 @@ export const blogMetadata = [
     date: "2026-01-17",
     category: "sap-licensing",
     subCategory: "other-tools",
-    author: "Raghu Boddu",
-    views: "140",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["License Saver", "Licensing Audit", "Licensing Audit Bots", "Licensing Reports", "SAM4U", "SAP License Optimization", "SAP License Optimizer", "SAP License Saver", "SLAW", "STAR", "USMM"]
   },
   {
@@ -187,8 +187,8 @@ export const blogMetadata = [
     image: starUsmmLawSlaw,
     date: "2026-01-07",
     category: "sap-licensing",
-    author: "Raghu Boddu",
-    views: "138",
+    author: "raghu_boddu",
+    views: "0",
     tags: ["LAW", "S/4HANA Licensing", "SAP Audit Preparation", "SAP Audit Readiness", "SAP Authorization Analysis", "SAP Compliance Automation", "SAP License Administration Workbench", "SAP License Compliance", "SAP License Cost Optimization", "SAP License Governance", "SAP License Intelligence", "SAP License Measurement", "SAP License Optimization", "SAP License Optimization Tools", "SAP License Risk Management", "SAP License Savings", "SAP License Strategy", "SAP Licensing Best Practices", "SAP role design", "SAP Self Assessment", "SAP STAR Analysis", "SAP Tool Rationalization", "SLAW", "USMM"]
   }
 ];

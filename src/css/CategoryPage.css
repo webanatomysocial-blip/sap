@@ -77,7 +77,7 @@
 
 .blog-card-image {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* aspect-ratio: 16 / 9; */
   border-radius: 12px;
   overflow: hidden;
 }
@@ -168,6 +168,7 @@
   .category-layout-grid {
     grid-template-columns: 1fr;
     gap: 40px;
+    padding-bottom: 60px;
   }
   .category-sidebar-column {
     /* Sidebar styles handled by BlogSidebar component mostly */

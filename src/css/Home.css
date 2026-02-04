@@ -268,7 +268,7 @@
 .card-img-top {
   height: 160px;
   background-size: cover;
-  background-position: center;
+  background-position: center top;
 }
 
 .card-body-small {
@@ -360,7 +360,6 @@
   gap: 20px;
 }
 
-
 .expertise-row h3 {
   font-size: 18px;
   font-weight: 700;
@@ -382,7 +381,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-top:40px;
+  margin-top: 40px;
 }
 
 /* Why Trust Us Section */
@@ -413,11 +412,11 @@
   font-size: 32px;
   color: #ee5e42;
   margin-bottom: 24px;
-  padding:12px;
+  padding: 12px;
   border-radius: 100px;
   background-color: #f3513f73;
-  width:55px;
-  height:55px;
+  width: 55px;
+  height: 55px;
 }
 
 .trust-card-new h3 {
@@ -505,30 +504,43 @@
   .expertise-section,
   .trust-section-new {
     padding: 60px 0;
+    margin: 0px;
+  }
+  .section-header-centered {
+    margin-bottom: 40px;
   }
   .section-header-centered h2 {
-    font-size: 32px;
+    font-size: 28px;
+  }
+  .section-header-centered p {
+    font-size: 15px;
   }
   .expertise-grid,
   .trust-grid-new {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .newsletter-section-new {
+    padding: 60px 0;
   }
 }
 
 @media (max-width: 640px) {
   .hero-search-box {
     flex-direction: column;
+    padding: 5px;
   }
   .search-divider {
     display: none;
   }
   .search-input-group {
-    border-bottom: 1px solid #eee;
-    padding: 10px;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 12px;
+    width: 100%;
   }
   .btn-hero-search {
     width: 100%;
-    border-radius: 0 0 8px 8px;
+    margin-top: 5px;
   }
 
   .insights-grid-4 {
@@ -536,5 +548,9 @@
   }
   .newsletter-form-row {
     flex-direction: column;
+    gap: 10px;
+  }
+  .newsletter-btn {
+    width: 100%;
   }
 }

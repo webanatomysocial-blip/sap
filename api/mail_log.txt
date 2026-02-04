@@ -1,0 +1,7 @@
+2026-01-27 12:50:47 - Attempting to send to reddydheeraj2109@gmail.com from noreply@localhost (Reply-To: test@example.com)
+2026-01-27 12:50:47 - Mail accepted by server.
+2026-01-27 14:02:15 - Attempting to send to reddydheeraj2109@gmail.com from noreply@localhost (Reply-To: admin@wa.ctsi.in)
+2026-01-27 14:02:15 - Mail accepted by PHP mail() function.
+2026-01-27 14:54:34 - Attempting to send to reddydheeraj2109@gmail.com from noreply@localhost (Reply-To: admin@wa.ctsi.in)
+2026-01-27 14:54:34 - Mail accepted by PHP mail() function.
+2026-01-27 14:58:38 - Error: Invalid JSON input.

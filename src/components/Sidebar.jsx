@@ -70,8 +70,8 @@ const Sidebar = () => {
           </button>
         </div>
         <div className="members-list">
-          {members[activeTab].map((member, idx) => (
-            <div key={idx} className="member-item">
+          {members[activeTab].map((member) => (
+            <div key={member.name} className="member-item">
               <img
                 src={member.avatar}
                 alt={member.name}

@@ -36,7 +36,6 @@ const sortedBlogKeys = blogKeys.sort((a, b) => {
 
 const Blogs = ({ backgroundColor, limit = 3 }) => {
   // Log props for debugging
-  console.log("Blogs component props:", { backgroundColor, limit });
 
   const totalBlogs = sortedBlogKeys.length;
   // Determine initial number of blogs to show: all for 'all', otherwise use limit
@@ -45,7 +44,6 @@ const Blogs = ({ backgroundColor, limit = 3 }) => {
   const [visibleCount, setVisibleCount] = useState(initialVisible);
 
   // Log sortedBlogKeys for debugging
-  console.log("Sorted blog keys:", sortedBlogKeys);
 
   // Preload blog components and images
   useEffect(() => {
@@ -94,11 +92,7 @@ const Blogs = ({ backgroundColor, limit = 3 }) => {
               image: "/images/placeholder.jpg",
               date: "No date",
             };
-            // Log each blog's metadata for debugging
-            console.log(
-              `Blog: ${blogName}, URL: /blogs/${blogName}, Metadata:`,
-              metadata,
-            );
+            // Render blog card
             return (
               <div key={index} className="inner-news-blogs-container">
                 <Suspense fallback={<BlogCardSkeleton />}>

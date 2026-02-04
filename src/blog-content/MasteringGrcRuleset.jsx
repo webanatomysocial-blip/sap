@@ -7,9 +7,10 @@ const MasteringGrcRuleset = () => {
     <BlogLayout
       category="SAP GRC"
       title="Mastering SAP GRC Ruleset Manager: A Complete Overview"
-      date="January 17, 2026"
+      date="January 22, 2026"
       author="Raghu Boddu"
       image={featuredImage}
+      description="Master the SAP GRC Access Control ruleset. Learn how to customize, validate, and maintain your risk analysis rules for effective Segregation of Duties (SoD) monitoring."
       content={
         <>
           <p>
@@ -27,17 +28,21 @@ const MasteringGrcRuleset = () => {
             comprehensive video overview of the Ruleset Manager.
           </p>
 
-          <div style={{ margin: "30px 0" }}>
+          <p>Watch the video here:</p>
+
+          <div className="blog-video-container">
             <iframe
-              width="100%"
-              height="400"
+              style={{
+                width: "100%",
+                height: "400px",
+              }}
               src="https://www.youtube.com/embed/l3MEn1n4rww"
-              title="Mastering SAP GRC Ruleset Manager"
+              title="Mastering SAP GRC Ruleset Manager: A Complete Overview"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
-            <p className="caption">Watch the video here</p>
+            <p className="image-caption">Watch the video here</p>
           </div>
 
           <p>
@@ -59,29 +64,25 @@ const MasteringGrcRuleset = () => {
             With the Ruleset Manager introduced in SAP GRC Access Control 12.0
             SP25:
           </p>
-          <ol>
+          <ul>
             <li>
-              <strong>Centralized Rule Management</strong>
-              <br />
-              You can view, modify, import, and export rulesets in a unified
-              interface, removing the need to piece together multiple files or
-              reports.
+              <strong>Centralized Rule Management:</strong> You can view,
+              modify, import, and export rulesets in a unified interface,
+              removing the need to piece together multiple files or reports.
             </li>
             <li>
-              <strong>Enhanced Control Over Risk Definitions</strong>
-              <br />
-              Rulesets can be customized to align with your organization’s
-              unique risk taxonomy—whether standard SoD conflicts or
-              company-specific controls.
+              <strong>Enhanced Control Over Risk Definitions:</strong> Rulesets
+              can be customized to align with your organization’s unique risk
+              taxonomy—whether standard SoD conflicts or company-specific
+              controls.
             </li>
             <li>
-              <strong>Simplified Transport Across Systems</strong>
-              <br />
-              Managed rulesets can be packaged and transported more easily,
-              improving consistency across development, testing, and production
+              <strong>Simplified Transport Across Systems:</strong> Managed
+              rulesets can be packaged and transported more easily, improving
+              consistency across development, testing, and production
               landscapes.
             </li>
-          </ol>
+          </ul>
           <p>
             These improvements significantly reduce operational friction and
             enhance audit readiness.

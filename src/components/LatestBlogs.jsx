@@ -1,10 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { blogMetadata } from "../blogs/metadata";
+import { authors } from "../data/authors";
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import "../css/LatestBlogs.css";
 
 export default function LatestBlogs() {
+  const [stats, setStats] = useState({ views: {}, comments: {} });
+
+  useEffect(() => {
+    fetch("/api/stats.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch((err) => console.error("Error fetching stats:", err));
+  }, []);
+
   // Sort blogs by date (newest first) and get the latest 6
   const latestBlogs = [...blogMetadata]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -13,7 +25,7 @@ export default function LatestBlogs() {
   // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const options = { month: "short", day: "numeric" };
+    const options = { month: "long", day: "numeric", year: "numeric" };
     return date.toLocaleDateString("en-US", options);
   };
 
@@ -28,20 +40,12 @@ export default function LatestBlogs() {
       "sap-cybersecurity": "Cybersecurity",
       podcasts: "Podcast",
       "other-tools": "Tools",
+      "sap-access-control": "SAP Access Control",
     };
 
     return (
       categoryLabels[subCategory] || categoryLabels[category] || "SAP Security"
     );
-  };
-
-  // Check if blog is from the last 7 days
-  const isLatest = (dateString) => {
-    const blogDate = new Date(dateString);
-    const today = new Date();
-    const diffTime = Math.abs(today - blogDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7;
   };
 
   return (
@@ -73,14 +77,19 @@ export default function LatestBlogs() {
                 <p className="latest-blog-excerpt">{blog.excerpt}</p>
                 <div className="latest-blog-meta">
                   <span className="latest-blog-author">
-                    <i className="bi bi-person-circle"></i> {blog.author}
+                    <i className="bi bi-person-circle"></i>{" "}
+                    {authors[blog.author]?.name || blog.author}
                   </span>
-                  <span className="latest-blog-stats">
-                    <LuEye /> {blog.views}
-                  </span>
-                  <span className="latest-blog-stats">
-                    <LuMessageSquare /> 0
-                  </span>
+                  <div className="latest-blog-stats">
+                    <span>
+                      <i className="bi bi-eye"></i>{" "}
+                      {stats.views[blog.id] || blog.views || 0}
+                    </span>
+                    <span>
+                      <i className="bi bi-chat"></i>{" "}
+                      {stats.comments[blog.id] || 0}
+                    </span>
+                  </div>
                 </div>
                 <div className="latest-blog-footer">
                   <span className="latest-blog-date">

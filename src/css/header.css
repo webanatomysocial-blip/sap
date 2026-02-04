@@ -146,6 +146,13 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .header-container-premium {
+    height: 60px;
+    padding: 0 15px;
+  }
+  .logo-img {
+    width: 150px;
+  }
   .header-nav-desktop {
     display: none;
   }
@@ -156,8 +163,115 @@
     display: block;
   }
 }
+
 @media (min-width: 769px) {
   .only-mobile {
     display: none;
   }
+}
+
+.nav-link-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile Slide Menu */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 100%;
+  height: 100vh;
+  background: white;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu.open {
+  right: 0;
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  height: 70px;
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-menu-header img {
+  width: 140px;
+}
+
+.mobile-menu-header button {
+  background: none;
+  border: none;
+  color: #333;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.mobile-nav {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.mobile-nav a,
+.mobile-dropdown-header {
+  padding: 16px 5px;
+  text-decoration: none;
+  color: #111;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid #f2f2f2;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobile-dropdown-header {
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.mobile-submenu {
+  padding-left: 20px;
+  background: #fafafa;
+}
+
+.mobile-submenu a {
+  font-size: 15px;
+  color: #555;
+  font-weight: 500;
+  padding: 12px 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-submenu a:last-child {
+  border-bottom: none;
+}
+
+.mobile-cta {
+  margin-top: 30px;
+  background: #ee5e42;
+  color: white !important;
+  text-align: center;
+  padding: 15px !important;
+  border-radius: 8px;
+  justify-content: center !important;
+  border-bottom: none !important;
+  box-shadow: 0 4px 6px rgba(238, 94, 66, 0.2);
 }

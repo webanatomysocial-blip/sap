@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { blogMetadata } from "../blogs/metadata";
+import { authors } from "../data/authors";
 import BlogSidebar from "./BlogSidebar";
 import "../css/CategoryPage.css";
 
@@ -60,9 +61,17 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
                     <div className="blog-card-content">
                       <div className="blog-meta-top">
                         <span className="blog-author">
-                          {blog.author || "Raghu Boddu"}
+                          <i className="bi bi-person-circle"></i>{" "}
+                          {authors[blog.author]?.name || blog.author}
                         </span>
-                        <span className="blog-date">{blog.date}</span>
+                        <span className="blog-date">
+                          <i className="bi bi-calendar3"></i>{" "}
+                          {new Date(blog.date).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
                       </div>
 
                       <Link

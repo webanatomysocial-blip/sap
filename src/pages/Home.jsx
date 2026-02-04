@@ -75,9 +75,16 @@ const featuredInsights = [
   },
 ];
 
+import SEO from "../components/SEO";
+
 export default function Home() {
   return (
     <div className="home-wrapper">
+      <SEO
+        title="Home"
+        description="The leading community for SAP Security, GRC, and BTP professionals. Get the latest insights, tutorials, and best practices."
+        url={window.location.href}
+      />
       {/* Community Section - Three Column Layout */}
       <CommunitySection />
 
@@ -85,7 +92,7 @@ export default function Home() {
         {/* Featured Insights with Tabs - Dynamic from metadata */}
         <FeaturedInsights id="featured-insights" />
 
-        {/* Latest Blogs & Activity - Dynamic from metadata */}₹
+        {/* Latest Blogs & Activity - Dynamic from metadata */}
         <LatestBlogs />
 
         <div className="container main-layout">
@@ -109,7 +116,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>Access Control, Process Control, Risk Management.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>
@@ -123,7 +130,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>Identity Access Governance in the cloud.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>
@@ -140,7 +147,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>Threat detection, vulnerability management.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>
@@ -157,7 +164,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>SAP licensing optimization strategies.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>
@@ -174,7 +181,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>S/4HANA Cloud, BTP security.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>
@@ -192,7 +199,7 @@ export default function Home() {
                 <div className="expertise-info">
                   <p>Identity & Access Management best practices.</p>
                   <span className="article-count">
-                    articles <HiArrowRight />
+                    Articles <HiArrowRight />
                   </span>
                 </div>
               </Link>

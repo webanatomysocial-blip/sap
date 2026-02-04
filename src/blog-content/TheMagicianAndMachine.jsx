@@ -5,11 +5,12 @@ import featuredImage from "../assets/blogs/magician-and-machine.jpg";
 const TheMagicianAndMachine = () => {
   return (
     <BlogLayout
-      category="SAP Cybersecurity" // Folder sap-cybersecurity
+      category="SAP Cybersecurity"
       title="The Magician, the Machine, and SAP Cybersecurity"
-      date="January 6, 2026"
+      date="January 30, 2026"
       author="Raghu Boddu"
       image={featuredImage}
+      description="Reflecting on the role of the SAP Security Expert in the age of automation and AI. Is the human element becoming obsolete, or more critical than ever?"
       content={
         <>
           <p>
@@ -25,31 +26,9 @@ const TheMagicianAndMachine = () => {
             cybersecurity and AI-driven risk themes.
           </p>
 
-          <div style={{ margin: "30px 0" }}>
-            <iframe
-              width="100%"
-              height="400"
-              src="https://www.youtube.com/embed/jUgw-s7f6IQ"
-              title="The Magician, the Machine, and SAP Cybersecurity"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-            <p className="caption">
-              Direct link –{" "}
-              <a
-                href="https://www.youtube.com/watch?v=jUgw-s7f6IQ"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                https://www.youtube.com/watch?v=jUgw-s7f6IQ
-              </a>
-            </p>
-          </div>
-
           <h2>Featured Guest: Jay Thoden van Velz</h2>
           <p>
-            Known across the community as “The Magician with the Hat”, Jay is a
+            Known across the community as "The Magician with the Hat", Jay is a
             Strategic Advisor to the CSO at SAP and part of the SAP Global
             Security Leadership Team. He brings a rare blend of deep technical
             security expertise and philosophical insight—shaped by his formative
@@ -82,13 +61,16 @@ const TheMagicianAndMachine = () => {
             </li>
           </ul>
           <p>
-            The discussion also draws from the SAP Community article “That’s Not
-            What We Agreed: Repudiation and Agentic AI Threat Modeling”,
-            co-authored by Ron F. Del Rosario, Head of AI Security for SAP ISBN,
-            and Jay Thoden van Velzen.
+            The discussion also draws from the SAP Community article{" "}
+            <em>
+              "That's Not What We Agreed: Repudiation and Agentic AI Threat
+              Modeling"
+            </em>
+            , co-authored by Ron F. Del Rosario, Head of AI Security for SAP
+            ISBN, and Jay Thoden van Velzen.
           </p>
 
-          <h2>Why We’re Featuring This on SAPSecurityExpert.com?</h2>
+          <h2>Why We're Featuring This on SAPSecurityExpert.com?</h2>
           <p>
             As SAP landscapes become increasingly intelligent and autonomous,
             security conversations must evolve beyond traditional controls. This
@@ -101,12 +83,44 @@ const TheMagicianAndMachine = () => {
             content for our readers—while full credit and ownership remain with
             CyberKriya.
           </p>
+
+          <h2>Listen to the Podcast</h2>
           <p>
+            Visit{" "}
+            <a
+              href="https://cyberkriya.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Cyber Kriya
+            </a>{" "}
+            to access the full episode and explore more podcasts from the
+            CyberKriya platform.
+          </p>
+
+          <div className="blog-video-container">
+            <iframe
+              style={{
+                width: "100%",
+                height: "400px",
+              }}
+              src="https://www.youtube.com/embed/jUgw-s7f6IQ"
+              title="The Magician, the Machine, and SAP Cybersecurity"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+            <p className="image-caption">
+              CyberKriya Podcast Episode featuring Jay Thoden van Velz
+            </p>
+          </div>
+
+          <b>
             If you are part of the SAP Security or GRC community, this episode
             is well worth your time. Stay tuned to SAPSecurityExpert as we
             continue to feature impactful content from across the SAP
             cybersecurity ecosystem.
-          </p>
+          </b>
 
           <h2>Disclaimer</h2>
           <p>
@@ -116,6 +130,13 @@ const TheMagicianAndMachine = () => {
             rights, views, opinions, and intellectual property associated with
             the podcast remain solely with CyberKriya and the respective
             speakers.
+          </p>
+          <p>
+            The views expressed by the podcast participants are their personal
+            and professional opinions and do not necessarily represent the views
+            of SAP, SAPSecurityExpert, or any affiliated organizations.
+            Listeners are encouraged to exercise independent judgment when
+            applying any insights discussed.
           </p>
         </>
       }

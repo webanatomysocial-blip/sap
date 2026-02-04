@@ -5,6 +5,7 @@ import "../css/blog-post.css";
 
 import { FiFacebook, FiLinkedin } from "react-icons/fi";
 import ShareButton from "./ShareButton";
+import SEO from "./SEO";
 
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
@@ -37,6 +38,13 @@ const PodLayout = ({
 
   return (
     <div className="pod-post-page">
+      <SEO
+        title={title}
+        description={`${category} - ${title}`} // Simple description fallback
+        image={image}
+        url={currentUrl}
+        type="article"
+      />
       {/* Sticky Scroll Header */}
       <div
         className="pod-sticky-header visible"
@@ -53,7 +61,7 @@ const PodLayout = ({
             <div className="social-icons-header">
               <a
                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                  currentUrl
+                  currentUrl,
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -64,7 +72,7 @@ const PodLayout = ({
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                  currentUrl
+                  currentUrl,
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -102,8 +110,12 @@ const PodLayout = ({
           <div className="recent-posts">
             <h3>Recent posts</h3>
             {recentPosts &&
-              recentPosts.map((post, index) => (
-                <a key={index} href={post.link} className="recent-post-item">
+              recentPosts.map((post) => (
+                <a
+                  key={post.link}
+                  href={post.link}
+                  className="recent-post-item"
+                >
                   {post.title}
                   <hr />
                 </a>

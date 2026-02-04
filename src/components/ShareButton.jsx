@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FiShare2, FiLink, FiMail } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import "../css/ShareButton.css";
+import { shareUrls } from "../data/socialLinks";
 
 const ShareButton = ({ title, url }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,7 +63,7 @@ const ShareButton = ({ title, url }) => {
             className="share-option"
             onClick={() =>
               window.open(
-                `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+                `${shareUrls.facebook}${encodeURIComponent(url)}`,
                 "_blank",
               )
             }
@@ -77,7 +78,7 @@ const ShareButton = ({ title, url }) => {
             className="share-option"
             onClick={() =>
               window.open(
-                `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+                `${shareUrls.linkedin}${encodeURIComponent(url)}`,
                 "_blank",
               )
             }
