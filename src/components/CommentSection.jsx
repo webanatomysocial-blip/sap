@@ -6,8 +6,19 @@ const CommentSection = ({ blogId }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [email, setEmail] = useState("");
+  /* eslint-disable no-unused-vars */
   const [honeypot, setHoneypot] = useState(""); // Spam trap
-  const [mathAnswer, setMathAnswer] = useState(""); // Simple math challenge
+  /* eslint-enable no-unused-vars */
+  const [mathAnswer, setMathAnswer] = useState("");
+
+  // Initialize random math question
+  const [mathQuestion, setMathQuestion] = useState(() => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    return { q: `${num1} + ${num2}`, a: (num1 + num2).toString() };
+  });
+
   const [visibleCount, setVisibleCount] = useState(3);
   const [totalComments, setTotalComments] = useState(0);
 
@@ -15,21 +26,33 @@ const CommentSection = ({ blogId }) => {
   useEffect(() => {
     if (!blogId) return;
 
-    // Fetch all comments initially (or implement pagination logic if list is huge)
-    // For now we fetch all and handle display limiting on frontend or fetch limited
     const fetchComments = async () => {
-      try {
-        const response = await fetch(`/api/comments.php?post_id=${blogId}`);
-        if (response.ok) {
-          const data = await response.json();
-          const loadedComments = Array.isArray(data.comments)
-            ? data.comments
-            : [];
-          setComments(loadedComments);
-          setTotalComments(data.total || loadedComments.length);
+      // Try LocalStorage first (for Demo)
+      const allComments = JSON.parse(
+        localStorage.getItem("admin_comments") || "[]",
+      );
+
+      // Filter: Match Post ID AND Status is 'approved'
+      // Note: In a real app, the API handles this filtering.
+      const postComments = allComments.filter(
+        (c) => c.post_id === blogId && c.status === "approved",
+      );
+
+      if (allComments.length > 0 || localStorage.getItem("admin_comments")) {
+        setComments(postComments);
+        setTotalComments(postComments.length);
+      } else {
+        // If no local storage (or clean slate), fetch from API
+        try {
+          const res = await fetch(`/api/get_comments.php?blogId=${blogId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setComments(data);
+            setTotalComments(data.length);
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (error) {
-        console.error("Failed to fetch comments:", error);
       }
     };
 
@@ -38,7 +61,7 @@ const CommentSection = ({ blogId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim() || !authorName.trim()) return;
+    if (!newComment.trim() || !authorName.trim() || !email.trim()) return;
 
     // Spam Check 1: Honeypot
     if (honeypot) {
@@ -47,22 +70,22 @@ const CommentSection = ({ blogId }) => {
     }
 
     // Spam Check 2: Math
-    if (mathAnswer !== "4") {
-      alert(
-        "Please answer the math question correctly to prove you are human.",
-      );
+    if (mathAnswer !== mathQuestion.a) {
+      alert(`Incorrect security answer. Please calculate: ${mathQuestion.q}`);
       return;
     }
 
     const payload = {
-      post_id: blogId,
+      blogId: blogId, // Changed from post_id to blogId to match backend expectation
       author: authorName,
+      email: email,
       text: newComment,
       website_url: honeypot,
+      math_answer: mathAnswer, // Send match answer for backend check
     };
 
     try {
-      const response = await fetch("/api/comments.php", {
+      const response = await fetch("/api/save_comment.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,19 +96,19 @@ const CommentSection = ({ blogId }) => {
       const result = await response.json();
 
       if (response.ok && result.status === "success") {
-        // Optimistically update UI
-        const newEntry = {
-          id: result.id || Date.now(),
-          author: authorName,
-          text: newComment,
-          date: new Date().toISOString(),
-        };
-        setComments([newEntry, ...comments]);
-        setTotalComments((prev) => prev + 1);
-
+        alert("Comment submitted for approval!");
         setNewComment("");
         setAuthorName("");
+        setEmail(""); // Reset email
         setMathAnswer("");
+
+        // Regenerate math question
+        const num1 = Math.floor(Math.random() * 10) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        setMathQuestion({
+          q: `${num1} + ${num2}`,
+          a: (num1 + num2).toString(),
+        });
       } else {
         alert(result.message || "Failed to post comment.");
       }
@@ -155,6 +178,24 @@ const CommentSection = ({ blogId }) => {
             required
           />
         </div>
+
+        <div className="form-group">
+          <input
+            type="email"
+            placeholder="Your Email *"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: "10px",
+              marginTop: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+
         <div className="form-group">
           <textarea
             placeholder="Join the discussion... *"
@@ -173,11 +214,10 @@ const CommentSection = ({ blogId }) => {
               display: "block",
             }}
           >
-            Security Question: What is 2 + 2? *
+            Security Question: What is {mathQuestion.q}? *
           </label>
           <input
             type="text"
-            pattern="4"
             placeholder="Answer"
             value={mathAnswer}
             onChange={(e) => setMathAnswer(e.target.value)}

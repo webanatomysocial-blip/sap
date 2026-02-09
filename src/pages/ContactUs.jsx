@@ -40,7 +40,7 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="contact-form-container" style={{ paddingTop: "80px" }}>
+    <div className="contact-form-container" style={{ paddingTop: "40px" }}>
       <Helmet>
         <title>Contact Us | SAP Security Expert</title>
         <meta

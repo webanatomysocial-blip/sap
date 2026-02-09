@@ -4,14 +4,15 @@ import { blogMetadata } from "../blogs/metadata";
 import { authors } from "../data/authors";
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import "../css/FeaturedInsights.css";
+import "../css/LatestBlogs.css"; // Import LatestBlogs styling
 
 // Category mapping for tabs
 const categoryMapping = {
   All: "all",
   "SAP Security": "sap-security",
-  "SAP GRC": "sap-grc",
-  Cybersecurity: "sap-cybersecurity",
-  Licensing: "sap-licensing",
+  "SAP GRC & IAG": "sap-grc", // Updated label
+  "SAP Cybersecurity": "sap-cybersecurity", // Updated label
+  "SAP Licensing": "sap-licensing", // Updated label
 };
 
 export default function FeaturedInsights({ id }) {
@@ -35,19 +36,33 @@ export default function FeaturedInsights({ id }) {
 
     const categoryKey = categoryMapping[activeTab];
     return blogMetadata
-      .filter(
-        (blog) =>
-          blog.category === categoryKey ||
-          blog.subCategory === categoryKey ||
-          // Handle parent mapping if needed
-          (categoryKey === "sap-grc" &&
-            (blog.category === "sap-iag" ||
-              blog.category === "sap-access-control")) ||
-          (categoryKey === "sap-security" &&
-            (blog.category === "sap-btp-security" ||
-              blog.category === "sap-public-cloud")),
-      )
-      .slice(0, 4);
+      .filter((blog) => {
+        // Direct match
+        if (blog.category === categoryKey || blog.subCategory === categoryKey)
+          return true;
+
+        // Parent aggregation logic
+        if (categoryKey === "sap-grc") {
+          return (
+            blog.category === "sap-access-control" ||
+            blog.subCategory === "sap-access-control" ||
+            blog.category === "sap-process-control" ||
+            blog.subCategory === "sap-process-control" ||
+            blog.category === "sap-iag" ||
+            blog.subCategory === "sap-iag"
+          );
+        }
+        if (categoryKey === "sap-security") {
+          return (
+            blog.category === "sap-btp-security" ||
+            blog.category === "sap-public-cloud" ||
+            blog.category === "sap-s4hana-security" || // Added other security subcats
+            blog.category === "sap-fiori-security"
+          );
+        }
+        return false;
+      })
+      .slice(0, 4); // Keep limit of 4
   };
 
   const filteredBlogs = getFilteredBlogs();
@@ -59,14 +74,15 @@ export default function FeaturedInsights({ id }) {
     return date.toLocaleDateString("en-US", options);
   };
 
-  // Get category badge label
+  // Get category badge label - Reused from LatestBlogs
   const getCategoryLabel = (category, subCategory) => {
     const categoryLabels = {
       "sap-grc": "SAP GRC",
-      "sap-iag": "IAM",
+      "sap-iag": "IAG",
       "sap-licensing": "Licensing",
-      "sap-public-cloud": "Public Cloud",
+      "sap-public-cloud": "Cloud",
       "sap-btp-security": "Cybersecurity",
+      "sap-cybersecurity": "Cybersecurity",
       podcasts: "Podcast",
       "other-tools": "Tools",
       "sap-access-control": "SAP Access Control",
@@ -103,41 +119,44 @@ export default function FeaturedInsights({ id }) {
           ))}
         </div>
 
-        {/* Blog Cards Grid */}
-        <div className="insights-grid">
+        {/* Blog Cards Grid - Using LatestBlogs Design */}
+        {/* We reuse the class names from LatestBlogs.css which should be imported or shared */}
+        <div className="latest-blogs-grid">
           {filteredBlogs.map((blog) => (
             <Link
               to={`/blogs/${blog.slug}`}
               key={blog.id}
-              className="insight-card"
+              className="latest-blog-card"
             >
-              <div className="insight-image">
+              <div className="latest-blog-image">
                 <img src={blog.image} alt={blog.title} />
-                <span className="insight-badge">
+                <span className="latest-blog-badge">
                   {getCategoryLabel(blog.category, blog.subCategory)}
                 </span>
               </div>
-              <div className="insight-content">
+              <div className="latest-blog-content">
                 <h3>{blog.title}</h3>
-                <p className="insight-excerpt">{blog.excerpt}</p>
-                <div className="insight-meta">
-                  <span className="insight-author">
-                    <i className="bi bi-person"></i>{" "}
+                <p className="latest-blog-excerpt">{blog.excerpt}</p>
+                <div className="latest-blog-meta">
+                  <span className="latest-blog-author">
+                    <i className="bi bi-person-circle"></i>{" "}
                     {authors[blog.author]?.name || blog.author}
                   </span>
-                  <span className="insight-date">
-                    <i className="bi bi-calendar"></i> {formatDate(blog.date)}
-                  </span>
-                  <span className="insight-views">
-                    <i className="bi bi-eye"></i>{" "}
-                    {stats.views[blog.id] || blog.views || 0}
-                  </span>
-                  <span className="insight-comments">
-                    <i className="bi bi-chat"></i>{" "}
-                    {stats.comments[blog.id] || 0}
-                  </span>
+                  <div className="latest-blog-stats">
+                    <span>
+                      <i className="bi bi-eye"></i>{" "}
+                      {stats.views[blog.slug] || blog.views || 0}
+                    </span>
+                    <span>
+                      <i className="bi bi-chat"></i>{" "}
+                      {stats.comments[blog.slug] || 0}
+                    </span>
+                  </div>
                 </div>
-                <div className="insight-footer">
+                <div className="latest-blog-footer">
+                  <span className="latest-blog-date">
+                    <i className="bi bi-calendar3"></i> {formatDate(blog.date)}
+                  </span>
                   <span className="read-more">Read More →</span>
                 </div>
               </div>

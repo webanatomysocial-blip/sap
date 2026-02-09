@@ -134,7 +134,8 @@
 
 /* Promotion Widget */
 .promo-widget {
-  height: 200px;
+  height: 300px;
+  width:100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,8 +143,8 @@
   border: none;
 }
 .promo-widget img {
-  width: auto;
-  height: 200px;
+  width: 280px;
+  height: 300px;
   object-fit: cover;
 }
 
@@ -564,6 +565,16 @@
 @media (max-width: 768px) {
   .community-section {
     padding: 30px 0;
+  }
+
+  .promo-widget{
+    width:auto;
+    height:auto;
+  }
+
+  .promo-widget img{
+    width:auto;
+    height:auto;
   }
 
   .community-header h1 {

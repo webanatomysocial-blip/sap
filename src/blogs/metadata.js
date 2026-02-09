@@ -11,6 +11,7 @@ import cybersecurityPodcast from "../assets/blogs/cybersecurity-insights.jpg";
 import magicianMachine from "../assets/blogs/magician-and-machine.jpg";
 import licenseOptimization from "../assets/blogs/licensing-optimization.jpg";
 import starUsmmLawSlaw from "../assets/blogs/what-actually-optimizes.jpg";
+import threatSenseReview from "../assets/blogs/threatsense-review.jpg";
 
 const _placeholder = "https://placehold.co/600x400?text=SAP+Expert";
 
@@ -190,6 +191,19 @@ export const blogMetadata = [
     author: "raghu_boddu",
     views: "0",
     tags: ["LAW", "S/4HANA Licensing", "SAP Audit Preparation", "SAP Audit Readiness", "SAP Authorization Analysis", "SAP Compliance Automation", "SAP License Administration Workbench", "SAP License Compliance", "SAP License Cost Optimization", "SAP License Governance", "SAP License Intelligence", "SAP License Measurement", "SAP License Optimization", "SAP License Optimization Tools", "SAP License Risk Management", "SAP License Savings", "SAP License Strategy", "SAP Licensing Best Practices", "SAP role design", "SAP Self Assessment", "SAP STAR Analysis", "SAP Tool Rationalization", "SLAW", "USMM"]
+  },
+  {
+    id: "ThreatSenseReview",
+    title: "ThreatSense AI Data Security (TADS) Review - Redefining XDR for SAP and Beyond",
+    slug: "threatsense-ai-data-security-tads-review-redefining-xdr-for-sap-and-beyond",
+    metaDescription: "Independent review of ThreatSense AI Data Security (TADS) for SAP data leak prevention and endpoint XDR. Learn how it stops insider threats, downloads, and screen sharing.",
+    excerpt: "In today’s world of sophisticated cyber threats, securing SAP systems is no longer an add‑on, it’s the frontline of enterprise defense. ThreatSense AI Data Security (TADS) breaks new ground.",
+    image: threatSenseReview,
+    date: "2026-02-05",
+    category: "product-reviews",
+    author: "raghu_boddu",
+    views: "0",
+    tags: ["SAP data leak prevention", "SAP data security", "SAP endpoint security", "SAP XDR solution", "AI-powered SAP security", "SAP insider threat protection", "SAP data loss prevention", "SAP DLP", "SAP cybersecurity solution", "SAP data exfiltration control", "SAP sensitive data protection", "SAP screen sharing security", "SAP print and spool restrictions", "SAP screenshot protection", "SAP data download control", "SAP Zero Trust security", "AI-driven SAP data leak prevention on endpoints"]
   }
 ];
 

@@ -7,21 +7,110 @@ import ads1 from "../assets/promotions/promo-1.png";
 import ads2 from "../assets/promotions/promo-2.png";
 
 export default function CommunitySection() {
-  const [activeMembersTab, setActiveMembersTab] = useState("Active");
-  const [groupsTab, setGroupsTab] = useState("Popular");
+  /* eslint-disable no-unused-vars */
+  // Tabs and state placeholders - removing unused ones
+  // const [activeMembersTab, setActiveMembersTab] = useState("Newest");
+  // const [groupsTab, setGroupsTab] = useState("Popular");
+  /* eslint-enable no-unused-vars */
+
   const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [contributorCount, setContributorCount] = useState(128); // Default fallback
+  const [contributorCount, setContributorCount] = useState(0);
+  const [contributors, setContributors] = useState([]);
+  const [stats, setStats] = useState({ views: {}, comments: {} });
+
+  // State for announcements
+  const [announcements, setAnnouncements] = useState([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+
+  // State for Ads
+  const [adsConfig, setAdsConfig] = useState({
+    home_left: { active: false, image: "", link: "" },
+    home_right: { active: false, image: "", link: "" },
+  });
 
   useEffect(() => {
+    // Fetch View/Comment Stats
+    // Fetch View/Comment Stats (Safe Fallback)
+    fetch("/api/stats.php")
+      .then((res) => {
+        if (!res.ok) throw new Error("API not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch((err) => {
+        console.warn("Stats API failed, using defaults:", err);
+        setStats({ views: {}, comments: {} });
+      });
+
     fetch("/api/get_community_stats.php")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("API not found");
+        return res.json();
+      })
       .then((data) => {
         if (data && data.active_contributors) {
-          // You might want to add a base number if the DB is empty initially, e.g., +128
-          setContributorCount(parseInt(data.active_contributors) + 128);
+          setContributorCount(parseInt(data.active_contributors) + 0);
         }
       })
-      .catch((err) => console.error("Error fetching stats:", err));
+      .catch((err) => console.warn("Community stats API failed:", err));
+
+    // Fetch approved contributors
+    fetch("/api/get_approved_contributors.php")
+      .then((res) => {
+        if (!res.ok) throw new Error("API not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.status === "success") {
+          setContributors(data.contributors || []);
+        }
+      })
+      .catch((err) => console.warn("Contributors API failed:", err));
+
+    // 1. Fetch Announcements
+    fetch("/api/get_announcements.php")
+      .then((res) => {
+        if (!res.ok) throw new Error("API Limit");
+        return res.json();
+      })
+      .then((data) => {
+        // Filter active only
+        const active = data.filter((a) => !a.status || a.status === "active");
+        setAnnouncements(active);
+        setLoadingAnnouncements(false);
+      })
+      .catch((err) => {
+        console.warn("Announcement Fetch Failed", err);
+        setLoadingAnnouncements(false);
+      });
+
+    // 2. Fetch Ads
+    fetch("/api/manage_ads.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.home_left)
+          setAdsConfig((prev) => ({ ...prev, home_left: data.home_left }));
+        if (data.home_right)
+          setAdsConfig((prev) => ({ ...prev, home_right: data.home_right }));
+      })
+      .catch((err) => console.error("Ads Fetch Failed", err));
+
+    // Fetch Trending Topics
+    fetch("/api/get_trending_topics.php")
+      .then((res) => {
+        if (!res.ok) throw new Error("API not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          // Extract just the topic names if the API returns objects
+          const tags = data.map((item) => item.topic_name);
+          setTrendingTopics(tags);
+        }
+      })
+      .catch((err) => console.warn("Trending topics API failed:", err));
   }, []);
 
   const handleNewsletterSubmit = async (e) => {
@@ -73,21 +162,41 @@ export default function CommunitySection() {
   };
 
   // Dynamic Data State
-  const [announcements, setAnnouncements] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
 
   useEffect(() => {
-    // Fetch Announcements
-    fetch("/api/get_announcements.php")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setAnnouncements(data);
-      })
-      .catch((err) => console.error("Error fetching announcements:", err));
+    // Fetch Dynamic Ads
+    const storedAds = JSON.parse(localStorage.getItem("admin_ads") || "{}");
+    if (storedAds.home_left || storedAds.home_right) {
+      setAdsConfig({
+        home_left: storedAds.home_left || { active: false },
+        home_right: storedAds.home_right || { active: false },
+      });
+    }
+
+    // Fetch Announcements (Try LocalStorage first for Demo)
+    const storeAnnouncements = JSON.parse(
+      localStorage.getItem("admin_announcements") || "[]",
+    );
+    if (storeAnnouncements.length > 0) {
+      // Filter for active only
+      const active = storeAnnouncements.filter((a) => a.status === "active");
+      setAnnouncements(active);
+    } else {
+      fetch("/api/get_announcements.php")
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setAnnouncements(data);
+        })
+        .catch((err) => console.error("Error fetching announcements:", err));
+    }
 
     // Fetch Trending Topics
     fetch("/api/get_trending_topics.php")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("API not found");
+        return res.json();
+      })
       .then((data) => {
         if (Array.isArray(data)) {
           // Extract just the topic names if the API returns objects
@@ -95,7 +204,7 @@ export default function CommunitySection() {
           setTrendingTopics(tags);
         }
       })
-      .catch((err) => console.error("Error fetching trending topics:", err));
+      .catch((err) => console.warn("Trending topics API failed:", err));
   }, []);
 
   const scrollToSection = (e, id) => {
@@ -151,41 +260,21 @@ export default function CommunitySection() {
 
             {/* Promotion */}
             <div className="widget promo-widget">
-              <img src={ads1} alt="Promotion 1" />
-            </div>
-
-            {/* Community Stats / Participants - Unhidden & Dynamic */}
-            <div className="widget">
-              <div className="widget-header">
-                <h3>Community</h3>
-              </div>
-              <div className="community-stats" style={{ padding: "0 10px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginBottom: "10px",
-                  }}
+              {adsConfig.home_left.active ? (
+                <a
+                  href={adsConfig.home_left.link || "#"}
+                  target={adsConfig.home_left.link ? "_blank" : "_self"}
+                  rel="noopener noreferrer"
                 >
-                  <div
-                    style={{
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                      color: "#2563eb",
-                    }}
-                  >
-                    {contributorCount}
-                  </div>
-                  <div style={{ fontSize: "0.9rem", color: "#64748b" }}>
-                    Active Contributors &<br />
-                    Industry Experts
-                  </div>
-                </div>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                  Join the network of SAP Security professionals.
-                </p>
-              </div>
+                  <img
+                    src={adsConfig.home_left.image}
+                    alt="Promotion 1"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                </a>
+              ) : (
+                <img src={ads1} alt="Promotion 1" />
+              )}
             </div>
 
             {/* Trending Topics */}
@@ -215,10 +304,14 @@ export default function CommunitySection() {
                   <i className="bi bi-clock"></i> 6 min read
                 </span>
                 <span>
-                  <i className="bi bi-eye"></i> {featuredArticle.views || 0}
+                  <i className="bi bi-eye"></i>{" "}
+                  {stats.views[featuredArticle.slug] ||
+                    featuredArticle.views ||
+                    0}
                 </span>
                 <span>
-                  <i className="bi bi-chat"></i> 0
+                  <i className="bi bi-chat"></i>{" "}
+                  {stats.comments[featuredArticle.slug] || 0}
                 </span>
               </div>
               <Link
@@ -286,12 +379,22 @@ export default function CommunitySection() {
                       <h4>{announcement.title}</h4>
                       <div className="announcement-meta">
                         <span>{announcement.date}</span>
-                        <span>
-                          <i className="bi bi-eye"></i> {announcement.views}
+                        {/* <span>
+                          <i className="bi bi-eye"></i> {announcement.views || 0}
                         </span>
                         <span>
-                          <i className="bi bi-chat"></i> {announcement.comments}
-                        </span>
+                          <i className="bi bi-chat"></i> {announcement.comments || 0}
+                        </span> */}
+                        {announcement.link && (
+                          <a
+                            href={announcement.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ marginLeft: "10px" }}
+                          >
+                            <i className="bi bi-box-arrow-up-right"></i>
+                          </a>
+                        )}
                       </div>
                     </div>
                   ))
@@ -304,8 +407,114 @@ export default function CommunitySection() {
 
             {/* Promotion */}
             <div className="widget promo-widget">
-              <img src={ads2} alt="Promotion 2" />
+              {adsConfig.home_right.active ? (
+                <a
+                  href={adsConfig.home_right.link || "#"}
+                  target={adsConfig.home_right.link ? "_blank" : "_self"}
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={adsConfig.home_right.image}
+                    alt="Promotion 2"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                </a>
+              ) : (
+                <img src={ads2} alt="Promotion 2" />
+              )}
             </div>
+
+            {/* Community Stats / Participants - Unhidden & Dynamic */}
+            <div className="widget">
+              <div className="widget-header">
+                <h3>Community</h3>
+              </div>
+              <div className="community-stats" style={{ padding: "0 10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      color: "#2563eb",
+                    }}
+                  >
+                    {contributorCount}
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#64748b" }}>
+                    Active Contributors &<br />
+                    Industry Experts
+                  </div>
+                </div>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
+                  Join the network of SAP Security professionals.
+                </p>
+              </div>
+            </div>
+
+            {/* Approved Contributors List */}
+            {contributors.length > 0 && (
+              <div className="widget" style={{ marginTop: "20px" }}>
+                <div className="widget-header">
+                  <h3>Our Contributors</h3>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  {contributors.slice(0, 5).map((contributor, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "10px",
+                        background: "#f8fafc",
+                        borderRadius: "6px",
+                        borderLeft: "3px solid #2563eb",
+                      }}
+                    >
+                      <strong style={{ color: "#1e293b", fontSize: "0.95rem" }}>
+                        {contributor.full_name}
+                      </strong>
+                      {contributor.role && (
+                        <div
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "#64748b",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {contributor.role}
+                        </div>
+                      )}
+                      {contributor.linkedin && (
+                        <a
+                          href={contributor.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "#2563eb",
+                            marginTop: "4px",
+                            display: "inline-block",
+                          }}
+                        >
+                          LinkedIn →
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Newsletter */}
             <div className="widget newsletter-widget">

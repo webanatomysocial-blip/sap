@@ -24,6 +24,7 @@ const BlogLayout = ({
   date,
   author = "Raghu Boddu", // Default or passed prop
   authorImage, // New prop
+  sidebarAd = {}, // Sidebar ad data
 }) => {
   const progressBarRef = useRef(null);
   const currentUrl = window.location.href;
@@ -67,9 +68,20 @@ const BlogLayout = ({
 
     // Increment and Fetch View/Comment Count
     if (blogId) {
+      // Get or Create Viewer ID (UUID)
+      let viewerId = localStorage.getItem("viewer_id");
+      if (!viewerId) {
+        viewerId = crypto.randomUUID();
+        localStorage.setItem("viewer_id", viewerId);
+      }
+
       // POST to increment view
       fetch(`/api/views.php?post_id=${blogId}`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ viewer_id: viewerId }),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -161,11 +173,7 @@ const BlogLayout = ({
           )}
 
           {/* Dynamic Comment Section */}
-          <CommentSection
-            blogId={
-              title ? title.replace(/\s+/g, "-").toLowerCase() : "default"
-            }
-          />
+          <CommentSection blogId={blogId} />
 
           {/* Navigation (Previous/Next) */}
           <div className="post-navigation">
@@ -194,7 +202,7 @@ const BlogLayout = ({
 
         {/* Right Sidebar */}
         <div className="blog-sidebar-column">
-          <BlogSidebar />
+          <BlogSidebar sidebarAd={sidebarAd} />
         </div>
       </div>
     </div>

@@ -83,11 +83,11 @@ export default function LatestBlogs() {
                   <div className="latest-blog-stats">
                     <span>
                       <i className="bi bi-eye"></i>{" "}
-                      {stats.views[blog.id] || blog.views || 0}
+                      {stats.views[blog.slug] || blog.views || 0}
                     </span>
                     <span>
                       <i className="bi bi-chat"></i>{" "}
-                      {stats.comments[blog.id] || 0}
+                      {stats.comments[blog.slug] || 0}
                     </span>
                   </div>
                 </div>

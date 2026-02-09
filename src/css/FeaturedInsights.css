@@ -245,7 +245,7 @@
   }
 
   .insight-image img {
-    height: 100%;
+    height: auto;
   }
 
   .insights-tabs {

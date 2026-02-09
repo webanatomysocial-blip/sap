@@ -147,6 +147,14 @@ $blogMetadata = [
         "metaDescription" => "STAR, USMM, LAW/SLAW Explained for SAP Licensing Optimization. Understanding the layers of SAP measurement.",
         "image" => "/assets/what-actually-optimizes-Bo2uI2pZ.jpg",
         "keywords" => "LAW, SAP Audit Readiness, SAP License Compliance, SAP License Optimization, SAP STAR Analysis, SLAW, USMM"
+    ],
+    [
+        "id" => "ThreatSenseReview",
+        "title" => "ThreatSense AI Data Security (TADS) Review - Redefining XDR for SAP and Beyond",
+        "slug" => "threatsense-ai-data-security-tads-review-redefining-xdr-for-sap-and-beyond",
+        "metaDescription" => "Independent review of ThreatSense AI Data Security (TADS) for SAP data leak prevention and endpoint XDR. Learn how it stops insider threats, downloads, and screen sharing.",
+        "image" => "/assets/threatsense-review.jpg",
+        "keywords" => "SAP data leak prevention, SAP data security, SAP endpoint security, SAP XDR solution, AI-powered SAP security, SAP insider threat protection, SAP data loss prevention, SAP DLP"
     ]
 ];
 

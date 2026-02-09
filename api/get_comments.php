@@ -14,13 +14,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     }
 
     try {
-        $stmt = $pdo->prepare("SELECT id, user_name as author, content as text, timestamp as date FROM comments WHERE post_id = :post_id ORDER BY timestamp DESC");
+        // Only fetch APPROVED comments for public display
+        $stmt = $pdo->prepare("SELECT id, user_name as author, content as text, timestamp as date FROM comments WHERE post_id = :post_id AND status = 'approved' ORDER BY timestamp DESC");
         $stmt->execute([':post_id' => $blogId]);
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Format date better if needed, or handle in frontend
-        // Currently returning raw SQLite timestamp
-        
         echo json_encode($comments);
     } catch (PDOException $e) {
         http_response_code(500);

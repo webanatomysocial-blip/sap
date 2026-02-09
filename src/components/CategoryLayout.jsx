@@ -18,6 +18,18 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
             blog.category === "sap-public-cloud"
           );
         }
+        if (categorySlug === "sap-grc") {
+          return (
+            blog.category === "sap-grc" ||
+            blog.subCategory === "sap-grc" ||
+            blog.category === "sap-access-control" ||
+            blog.subCategory === "sap-access-control" ||
+            blog.category === "sap-process-control" ||
+            blog.subCategory === "sap-process-control" ||
+            blog.category === "sap-iag" ||
+            blog.subCategory === "sap-iag"
+          );
+        }
         // Direct category or sub-category match
         return (
           blog.category === categorySlug || blog.subCategory === categorySlug

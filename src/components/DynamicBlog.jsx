@@ -1,7 +1,8 @@
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense, useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { blogMetadata } from "../blogs/metadata.js";
 import { Helmet } from "react-helmet-async";
+import BlogLayout from "./BlogLayout"; // Import BlogLayout directly
 
 // Import all blog modules from ../blogs/*.jsx
 // Import all blog modules from ../*/*.jsx
@@ -15,17 +16,49 @@ const lazyBlogComponents = Object.keys(blogModules).reduce((acc, key) => {
 
 export default function DynamicBlog() {
   const { blogId } = useParams(); // Expecting slug or id
+  const [virtualBlog, setVirtualBlog] = useState(null);
+  const [sidebarAd, setSidebarAd] = useState({
+    active: false,
+    image: "",
+    link: "",
+  });
+
+  // Check for Virtual Blog (API)
+  useEffect(() => {
+    if (!blogId) return;
+
+    fetch("/api/manage_blogs.php")
+      .then((res) => res.json())
+      .then((all) => {
+        const found = all.find((b) => b.slug === blogId || b.id === blogId);
+        if (found) setVirtualBlog(found);
+        else setVirtualBlog(null);
+      })
+      .catch((err) => console.error("Error loading blog details", err));
+
+    // Fetch sidebar ad
+    fetch("/api/manage_ads.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.sidebar) {
+          setSidebarAd(data.sidebar);
+        }
+      })
+      .catch((err) => console.error("Error loading ads", err));
+  }, [blogId]);
 
   // 1. Find metadata based on the URL param (slug or id)
   const metadata = useMemo(() => {
+    if (virtualBlog) return virtualBlog; // Use virtual data if found
     if (!blogId) return null;
     return (
       blogMetadata.find((b) => b.slug === blogId || b.id === blogId) || null
     );
-  }, [blogId]);
+  }, [blogId, virtualBlog]);
 
   // 2. Determine the file path key for import.meta.glob
   const moduleKey = useMemo(() => {
+    if (virtualBlog) return null; // No module for virtual blogs
     // If metadata found, look for its ID in filenames
     if (metadata) {
       // E.g. ../blogs/AmbitionPost.jsx or ../sap-licensing/SapLicensing1.jsx
@@ -41,7 +74,7 @@ export default function DynamicBlog() {
       return fname === blogId;
     });
     return directKey;
-  }, [metadata, blogId]);
+  }, [metadata, blogId, virtualBlog]);
 
   // 3. Select the pre-created lazy component
   const BlogComponent = moduleKey ? lazyBlogComponents[moduleKey] : null;
@@ -58,6 +91,25 @@ export default function DynamicBlog() {
       }));
   }, [blogId]);
 
+  // RENDER VIRTUAL BLOG
+  if (virtualBlog) {
+    // Render content as HTML if possible, or plain text
+    // Note: content is likely HTML from the editor
+    return (
+      <BlogLayout
+        title={virtualBlog.title}
+        content={
+          <div dangerouslySetInnerHTML={{ __html: virtualBlog.content }} />
+        }
+        image={virtualBlog.image}
+        date={virtualBlog.date}
+        author={virtualBlog.author}
+        sidebarAd={sidebarAd}
+      />
+    );
+  }
+
+  // RENDER STATIC BLOG
   if (!BlogComponent) {
     return (
       <div style={{ padding: "100px", textAlign: "center" }}>

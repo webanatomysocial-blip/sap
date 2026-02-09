@@ -37,23 +37,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $blogId = isset($data['blogId']) ? trim($data['blogId']) : '';
     $author = isset($data['author']) ? trim($data['author']) : '';
+    $email = isset($data['email']) ? trim($data['email']) : '';
     $text = isset($data['text']) ? trim($data['text']) : '';
 
-    if (empty($blogId) || empty($author) || empty($text)) {
+    if (empty($blogId) || empty($author) || empty($text) || empty($email)) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "All fields (author, text) are required."]);
+        echo json_encode(["status" => "error", "message" => "All fields (author, email, text) are required."]);
         exit;
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO comments (post_id, user_name, content) VALUES (:post_id, :user_name, :content)");
+        $stmt = $pdo->prepare("INSERT INTO comments (post_id, user_name, email, content, status) VALUES (:post_id, :user_name, :email, :content, 'pending')");
         $stmt->execute([
             ':post_id' => $blogId,
             ':user_name' => htmlspecialchars($author),
+            ':email' => htmlspecialchars($email),
             ':content' => htmlspecialchars($text)
         ]);
 
-        echo json_encode(["status" => "success", "message" => "Comment saved successfully."]);
+        echo json_encode(["status" => "success", "message" => "Comment saved successfully. It will be visible after approval."]);
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);

@@ -5,10 +5,31 @@ import { blogMetadata } from "../blogs/metadata";
 import { categories } from "../data/categories";
 import "../css/BlogSidebar.css";
 
-const BlogSidebar = () => {
+const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [sidebarAd, setSidebarAd] = useState({
+    active: false,
+    image: "",
+    link: "",
+  });
 
-  // Filter posts based on search term
+  React.useEffect(() => {
+    // If ad was passed as prop, use it; otherwise fetch
+    if (propSidebarAd && propSidebarAd.active) {
+      setSidebarAd(propSidebarAd);
+    } else {
+      fetch("/api/manage_ads.php?zone=sidebar")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.active) {
+            setSidebarAd(data);
+          } else {
+            setSidebarAd({ active: false });
+          }
+        })
+        .catch((err) => console.error(err));
+    }
+  }, [propSidebarAd]);
   const filteredPosts = blogMetadata
     .filter((post) =>
       post.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -63,6 +84,27 @@ const BlogSidebar = () => {
           ))}
         </ul>
       </div>
+
+      {/* Dynamic Sidebar Ad */}
+      {sidebarAd.active && (
+        <div
+          className="sidebar-widget promo-widget"
+          style={{ textAlign: "center", marginTop: "20px" }}
+        >
+          <a
+            href={sidebarAd.link || "#"}
+            target={sidebarAd.link ? "_blank" : "_self"}
+            rel="noopener noreferrer"
+          >
+            <img
+              src={sidebarAd.image}
+              alt="Sidebar Ad"
+              style={{ maxWidth: "100%", borderRadius: "8px" }}
+              onError={(e) => (e.target.style.display = "none")}
+            />
+          </a>
+        </div>
+      )}
     </aside>
   );
 };

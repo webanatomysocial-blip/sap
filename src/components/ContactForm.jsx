@@ -28,7 +28,9 @@ const ContactForm = () => {
     twitterHandle: "",
   });
 
+  /* eslint-disable no-unused-vars */
   const [honeyPot, setHoneyPot] = useState("");
+  /* eslint-enable no-unused-vars */
 
   const expertiseOptions = [
     "SAP Security",

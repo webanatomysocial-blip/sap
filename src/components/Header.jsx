@@ -58,8 +58,8 @@ const Header = () => {
 
           {/* SAP Access Control & IAG Dropdown */}
           <div className="nav-item">
-            <Link to="/sap-access-control" className="nav-link">
-              <span>SAP Access Control & IAG</span>
+            <Link to="/sap-grc" className="nav-link">
+              <span>SAP GRC & IAG</span>
               <FaChevronDown size={10} style={{ marginLeft: "4px" }} />
             </Link>
             <div className="dropdown-menu">

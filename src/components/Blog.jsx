@@ -35,102 +35,90 @@ const sortedBlogKeys = blogKeys.sort((a, b) => {
 });
 
 const Blogs = ({ backgroundColor, limit = 3 }) => {
-  // Log props for debugging
+  const [visibleCount, setVisibleCount] = useState(
+    limit === "all" ? 10 : limit,
+  );
+  const [allBlogs, setAllBlogs] = useState([]);
 
-  const totalBlogs = sortedBlogKeys.length;
-  // Determine initial number of blogs to show: all for 'all', otherwise use limit
-  const initialVisible =
-    limit === "all" ? totalBlogs : Math.min(limit, totalBlogs);
-  const [visibleCount, setVisibleCount] = useState(initialVisible);
-
-  // Log sortedBlogKeys for debugging
-
-  // Preload blog components and images
   useEffect(() => {
-    sortedBlogKeys.slice(0, visibleCount).forEach((key) => {
-      // Preload blog module
-      blogModules[key]().catch((error) => {
-        console.error(`Error preloading blog ${key}:`, error);
+    // 1. Get Static Metadata
+    const staticBlogs = blogMetadata.map((b) => ({ ...b, type: "static" }));
+
+    // 2. Get Virtual Blogs from API
+    fetch("/api/manage_blogs.php")
+      .then((res) => res.json())
+      .then((virtualData) => {
+        const virtualBlogs = virtualData.map((b) => ({
+          ...b,
+          type: "virtual",
+          image: b.image || "https://placehold.co/600x400?text=No+Image",
+        }));
+
+        // 3. Merge and Sort
+        const combined = [...virtualBlogs, ...staticBlogs].sort((a, b) => {
+          return new Date(b.date) - new Date(a.date);
+        });
+
+        setAllBlogs(combined);
+        if (limit === "all") setVisibleCount(combined.length);
+        else setVisibleCount(limit);
+      })
+      .catch((err) => {
+        console.error("Failed to load virtual blogs", err);
+        // Fallback to static only
+        setAllBlogs(staticBlogs);
+        if (limit === "all") setVisibleCount(staticBlogs.length);
+        else setVisibleCount(limit);
       });
-      // Preload image
-      const blogName = key.split("/").pop().replace(".jsx", "");
-      const metadata = blogMetadata.find((blog) => blog.id === blogName);
-      if (metadata?.image) {
-        const img = new Image();
-        img.src = metadata.image;
-        img.onerror = () => {
-          console.error(`Failed to preload image: ${metadata.image}`);
-        };
-      }
-    });
-  }, [visibleCount]);
+  }, [limit]); // Re-run if limit changes, though usually static
 
   const loadMore = () => {
-    const newCount = totalBlogs;
-    setVisibleCount(newCount);
-    setTimeout(() => {
-      window.lenis?.scrollTo(window.scrollY, { immediate: true });
-    }, 0);
+    setVisibleCount(allBlogs.length);
   };
 
-  // Only show "Load More" if limit='all' and there are more blogs to load
-  const showLoadMore = limit === "all" && visibleCount < totalBlogs;
+  const showLoadMore = limit === "all" && visibleCount < allBlogs.length;
 
   return (
     <div className="whole-blog-section" style={{ backgroundColor }}>
       <div className="blogs-container">
         <div className="blogs-grid">
-          {sortedBlogKeys.length === 0 && <p>No blogs found.</p>}
-          {sortedBlogKeys.slice(0, visibleCount).map((key, index) => {
-            const blogName = key.split("/").pop().replace(".jsx", "");
-            const metadata = blogMetadata.find(
-              (blog) => blog.id === blogName,
-            ) || {
-              title: blogName,
-              slug: blogName.toLowerCase(),
-              excerpt: "No excerpt available.",
-              image: "/images/placeholder.jpg",
-              date: "No date",
-            };
-            // Render blog card
+          {allBlogs.length === 0 && <p>No blogs found.</p>}
+          {allBlogs.slice(0, visibleCount).map((blog, index) => {
+            // Helper to determine link URL
+            // If category exists, use it. Otherwise default to 'blogs'
+            const categorySlug = blog.category || "blogs";
+            const blogUrl = `/${categorySlug}/${blog.slug || blog.id}`;
+
             return (
-              <div key={index} className="inner-news-blogs-container">
-                <Suspense fallback={<BlogCardSkeleton />}>
-                  <div className="blog-text">
-                    <p className="text-black">BLOG</p>
-                    <Link
-                      to={`/blogs/${blogName}`}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <p className="sub-big-heading-text-black">
-                        {metadata.title}
-                      </p>
-                    </Link>
-                  </div>
-                  <div
-                    className="image-hover-text-come"
-                    style={{ backgroundImage: `url(${metadata.image})` }}
-                  >
-                    <div className="inner-text-come">
-                      <div>
-                        <Link
-                          to={`/blogs/${blogName}`}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <p className="small-text-black">{metadata.excerpt}</p>
-                        </Link>
-                      </div>
-                      <Link
-                        to={`/blogs/${blogName}`}
-                        className="read-more-btn-blue"
-                        aria-label={`Read more about ${metadata.title}`}
-                      >
-                        Read More{" "}
-                        <i className="bi bi-arrow-right arrow-icon"></i>
+              <div
+                key={blog.id || index}
+                className="inner-news-blogs-container"
+              >
+                <div className="blog-text">
+                  <p className="text-black">BLOG</p>
+                  <Link to={blogUrl} style={{ textDecoration: "none" }}>
+                    <p className="sub-big-heading-text-black">{blog.title}</p>
+                  </Link>
+                </div>
+                <div
+                  className="image-hover-text-come"
+                  style={{ backgroundImage: `url(${blog.image})` }}
+                >
+                  <div className="inner-text-come">
+                    <div>
+                      <Link to={blogUrl} style={{ textDecoration: "none" }}>
+                        <p className="small-text-black">{blog.excerpt}</p>
                       </Link>
                     </div>
+                    <Link
+                      to={blogUrl}
+                      className="read-more-btn-blue"
+                      aria-label={`Read more about ${blog.title}`}
+                    >
+                      Read More <i className="bi bi-arrow-right arrow-icon"></i>
+                    </Link>
                   </div>
-                </Suspense>
+                </div>
               </div>
             );
           })}
