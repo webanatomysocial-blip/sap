@@ -54,11 +54,12 @@ try {
         echo json_encode(['status' => 'success', 'message' => 'Blog created']);
     }
     elseif ($method === 'DELETE') {
-        $id = $_GET['id'] ?? null;
+        // Support both query param and URL path ID
+        $id = $_GET['id'] ?? $_GET['slug'] ?? null;
         if (!$id) throw new Exception("ID required");
         
-        $stmt = $pdo->prepare("DELETE FROM blogs WHERE id = ?");
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare("DELETE FROM blogs WHERE id = ? OR slug = ?");
+        $stmt->execute([$id, $id]);
         echo json_encode(['status' => 'success', 'message' => 'Blog deleted']);
     }
 

@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BsSearch } from "react-icons/bs";
-import { blogMetadata } from "../blogs/metadata";
 import { categories } from "../data/categories";
 import "../css/BlogSidebar.css";
 
@@ -12,27 +11,64 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
     image: "",
     link: "",
   });
+  const [allPosts, setAllPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
+
+  // Fetch Posts for Search & Latest
+  useEffect(() => {
+    fetch(`${API_URL}/posts`)
+      .then((res) => res.json())
+      .then((data) => {
+        const posts = Array.isArray(data) ? data : data.data || [];
+        const mapped = posts.map((b) => ({
+          ...b,
+          slug: b.slug || b.id,
+          date: b.date || b.published_at || b.created_at,
+        }));
+        setAllPosts(mapped);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching posts for sidebar:", err);
+        setLoading(false);
+      });
+  }, [API_URL]);
+
+  // Fetch Ads (or use prop)
+  useEffect(() => {
     // If ad was passed as prop, use it; otherwise fetch
     if (propSidebarAd && propSidebarAd.active) {
       setSidebarAd(propSidebarAd);
     } else {
-      fetch("/api/manage_ads.php?zone=sidebar")
+      fetch(`${API_URL}/ads?zone=sidebar`)
         .then((res) => res.json())
         .then((data) => {
-          if (data && data.active) {
+          // Laravel returns an array of ads or single object depending on endpoint implementation
+          // Assuming array from previous code
+          if (Array.isArray(data) && data.length > 0) {
+            const ad = data[0];
+            setSidebarAd({
+              active: true,
+              image: ad.image_url,
+              link: ad.target_url,
+            });
+          } else if (data && data.active) {
             setSidebarAd(data);
           } else {
             setSidebarAd({ active: false });
           }
         })
-        .catch((err) => console.error(err));
+        .catch((err) => console.error("Error fetching ads:", err));
     }
-  }, [propSidebarAd]);
-  const filteredPosts = blogMetadata
+  }, [propSidebarAd, API_URL]);
+
+  const filteredPosts = allPosts
     .filter((post) =>
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()),
+      post.title
+        ? post.title.toLowerCase().includes(searchTerm.toLowerCase())
+        : false,
     )
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
@@ -59,17 +95,23 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         <h3 className="widget-title">
           {searchTerm ? "Search Results" : "Latest Posts"}
         </h3>
-        <ul className="latest-posts-list">
-          {filteredPosts.length > 0 ? (
-            filteredPosts.map((post) => (
-              <li key={post.id} className="latest-post-item">
-                <Link to={`/${post.category}/${post.slug}`}>{post.title}</Link>
-              </li>
-            ))
-          ) : (
-            <li className="latest-post-item">No posts found.</li>
-          )}
-        </ul>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <ul className="latest-posts-list">
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => (
+                <li key={post.id} className="latest-post-item">
+                  <Link to={`/${post.category || "blogs"}/${post.slug}`}>
+                    {post.title}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li className="latest-post-item">No posts found.</li>
+            )}
+          </ul>
+        )}
       </div>
 
       {/* Categories Widget */}

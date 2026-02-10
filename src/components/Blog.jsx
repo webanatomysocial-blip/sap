@@ -1,76 +1,62 @@
 import React, { useState, useEffect, Suspense } from "react";
+// Removed static metadata import
 import { Link } from "react-router-dom";
-import { blogMetadata } from "../blogs/metadata.js";
 import "../css/Blog.css";
 
-// Dynamically import all JSX files from blogs folder
-// Dynamically import all JSX files from various folders
-const blogModules = import.meta.glob(
-  [
-    "../blogs/*.jsx",
-    "../sap-security/*.jsx",
-    "../sap-licensing/*.jsx",
-    "../sap-iag/*.jsx",
-    "../sap-grc/*.jsx",
-    "../sap-cybersecurity/*.jsx",
-    "../product-reviews/*.jsx",
-    "../podcasts/*.jsx",
-    "../other-tools/*.jsx",
-  ],
-  { eager: false },
-);
-const blogKeys = Object.keys(blogModules);
-
-// Sort blogKeys by date in descending order (most recent first)
-const sortedBlogKeys = blogKeys.sort((a, b) => {
-  const blogNameA = a.split("/").pop().replace(".jsx", "");
-  const blogNameB = b.split("/").pop().replace(".jsx", "");
-  const metadataA = blogMetadata.find((blog) => blog.id === blogNameA) || {
-    date: "1970-01-01",
-  };
-  const metadataB = blogMetadata.find((blog) => blog.id === blogNameB) || {
-    date: "1970-01-01",
-  };
-  return new Date(metadataB.date) - new Date(metadataA.date);
-});
-
-const Blogs = ({ backgroundColor, limit = 3 }) => {
+const Blogs = ({ backgroundColor, limit = 3, category }) => {
   const [visibleCount, setVisibleCount] = useState(
     limit === "all" ? 10 : limit,
   );
   const [allBlogs, setAllBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Get Static Metadata
-    const staticBlogs = blogMetadata.map((b) => ({ ...b, type: "static" }));
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-    // 2. Get Virtual Blogs from API
-    fetch("/api/manage_blogs.php")
+    // 2. Get Dynamic Blogs from API - PRIORITY & ONLY SOURCE
+    fetch(`${API_URL}/posts`)
       .then((res) => res.json())
-      .then((virtualData) => {
-        const virtualBlogs = virtualData.map((b) => ({
+      .then((response) => {
+        // Laravel Paginated response has 'data' array, or direct array
+        const virtualData = Array.isArray(response)
+          ? response
+          : response.data || [];
+
+        let virtualBlogs = virtualData.map((b) => ({
           ...b,
           type: "virtual",
-          image: b.image || "https://placehold.co/600x400?text=No+Image",
+          image:
+            b.image ||
+            b.featured_image ||
+            "https://placehold.co/600x400?text=No+Image",
+          date: b.date || b.published_at || b.created_at,
+          // Ensure slug is present
+          slug: b.slug || b.id,
         }));
 
-        // 3. Merge and Sort
-        const combined = [...virtualBlogs, ...staticBlogs].sort((a, b) => {
+        // Filter by category if provided
+        if (category) {
+          virtualBlogs = virtualBlogs.filter(
+            (b) => b.category === category || b.subCategory === category,
+          );
+        }
+
+        // Sort by date descending
+        const finalBlogs = virtualBlogs.sort((a, b) => {
           return new Date(b.date) - new Date(a.date);
         });
 
-        setAllBlogs(combined);
-        if (limit === "all") setVisibleCount(combined.length);
+        setAllBlogs(finalBlogs);
+        if (limit === "all") setVisibleCount(finalBlogs.length);
         else setVisibleCount(limit);
+        setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to load virtual blogs", err);
-        // Fallback to static only
-        setAllBlogs(staticBlogs);
-        if (limit === "all") setVisibleCount(staticBlogs.length);
-        else setVisibleCount(limit);
+        console.error("Failed to load blogs from API", err);
+        setAllBlogs([]); // Empty state on error
+        setLoading(false);
       });
-  }, [limit]); // Re-run if limit changes, though usually static
+  }, [limit, category]); // Re-run if limit or category changes
 
   const loadMore = () => {
     setVisibleCount(allBlogs.length);

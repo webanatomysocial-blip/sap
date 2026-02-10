@@ -9,7 +9,7 @@ const AdminComments = () => {
 
   const fetchComments = async () => {
     try {
-      const res = await fetch("/api/manage_comments.php");
+      const res = await fetch("/api/admin/comments");
       if (res.ok) {
         const data = await res.json();
         setComments(data);
@@ -25,7 +25,7 @@ const AdminComments = () => {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const res = await fetch("/api/manage_comments.php", {
+      const res = await fetch("/api/admin/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: newStatus }),
@@ -45,7 +45,7 @@ const AdminComments = () => {
 
   const handleSaveEdit = async () => {
     try {
-      const res = await fetch("/api/manage_comments.php", {
+      const res = await fetch("/api/admin/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,7 +67,7 @@ const AdminComments = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
       try {
-        const res = await fetch(`/api/manage_comments.php?id=${id}`, {
+        const res = await fetch(`/api/admin/comments?id=${id}`, {
           method: "DELETE",
         });
         if (res.ok) {

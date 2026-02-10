@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { blogMetadata } from "../blogs/metadata";
+// blogMetadata import removed
 import { authors } from "../data/authors";
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import "../css/FeaturedInsights.css";
@@ -18,24 +18,51 @@ const categoryMapping = {
 export default function FeaturedInsights({ id }) {
   const [activeTab, setActiveTab] = useState("sap-access-control");
   const [stats, setStats] = useState({ views: {}, comments: {} });
+  const [allBlogs, setAllBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   useEffect(() => {
-    fetch("/api/stats.php")
+    // Fetch latest blogs from API
+    fetch(`${API_URL}/posts`)
       .then((res) => res.json())
       .then((data) => {
-        if (data) setStats(data);
+        const blogData = Array.isArray(data) ? data : data.data || [];
+
+        const mappedBlogs = blogData.map((b) => ({
+          ...b,
+          image:
+            b.image ||
+            b.featured_image ||
+            "https://placehold.co/600x400?text=No+Image",
+          date:
+            b.date ||
+            b.published_at ||
+            b.created_at ||
+            new Date().toISOString(),
+          slug: b.slug || b.id,
+        }));
+
+        setAllBlogs(mappedBlogs);
+        setLoading(false);
       })
-      .catch((err) => console.error("Error fetching stats:", err));
-  }, []);
+      .catch((err) => {
+        console.error("Error fetching blogs:", err);
+        setLoading(false);
+      });
+  }, [API_URL]);
 
   // Filter blogs based on active tab
   const getFilteredBlogs = () => {
+    if (loading) return [];
+
     if (activeTab === "All") {
-      return blogMetadata.slice(0, 4); // Show first 4 for "All"
+      return allBlogs.slice(0, 4);
     }
 
     const categoryKey = categoryMapping[activeTab];
-    return blogMetadata
+    return allBlogs
       .filter((blog) => {
         // Direct match
         if (blog.category === categoryKey || blog.subCategory === categoryKey)
@@ -56,7 +83,7 @@ export default function FeaturedInsights({ id }) {
           return (
             blog.category === "sap-btp-security" ||
             blog.category === "sap-public-cloud" ||
-            blog.category === "sap-s4hana-security" || // Added other security subcats
+            blog.category === "sap-s4hana-security" ||
             blog.category === "sap-fiori-security"
           );
         }

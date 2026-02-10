@@ -1,31 +1,32 @@
 <?php
 // api/stats.php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once 'db.php';
+
 header('Content-Type: application/json');
 
-$db_file = __DIR__ . '/database.sqlite';
-
 try {
-    $pdo = new PDO("sqlite:" . $db_file);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // 1. Total Blogs
+    $blogsCount = $pdo->query("SELECT COUNT(*) FROM blogs")->fetchColumn();
 
-    // Fetch views for all posts
-    $stmtViews = $pdo->query("SELECT post_id, count FROM views");
-    $views = $stmtViews->fetchAll(PDO::FETCH_KEY_PAIR);
+    // 2. Total Contributors (Applications)
+    $contributorsCount = $pdo->query("SELECT COUNT(*) FROM contributors")->fetchColumn();
 
-    // Fetch comment counts for all posts
-    $stmtComments = $pdo->query("SELECT post_id, COUNT(*) as count FROM comments GROUP BY post_id");
-    $comments = $stmtComments->fetchAll(PDO::FETCH_KEY_PAIR);
+    // 3. Pending Items (Comments or Applications)
+    $pendingComments = $pdo->query("SELECT COUNT(*) FROM comments WHERE status = 'pending'")->fetchColumn();
+    $pendingApps = $pdo->query("SELECT COUNT(*) FROM contributors WHERE status = 'pending'")->fetchColumn();
+
+    // 4. Total Views (Aggregated from blogs table view_count)
+    $totalViews = $pdo->query("SELECT SUM(view_count) FROM blogs")->fetchColumn() ?: 0;
 
     echo json_encode([
-        'views' => $views,
-        'comments' => $comments
+        'blogs' => (int)$blogsCount,
+        'contributors' => (int)$contributorsCount,
+        'pending_reviews' => (int)($pendingComments + $pendingApps),
+        'total_views' => (int)$totalViews
     ]);
 
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
 }
 ?>

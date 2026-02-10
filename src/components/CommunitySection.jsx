@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { blogMetadata } from "../blogs/metadata";
+// Removed static metadata import
 import { authors } from "../data/authors";
 import "../css/CommunitySection.css";
 import ads1 from "../assets/promotions/promo-1.png";
@@ -28,57 +28,47 @@ export default function CommunitySection() {
     home_right: { active: false, image: "", link: "" },
   });
 
-  useEffect(() => {
-    // Fetch View/Comment Stats
-    // Fetch View/Comment Stats (Safe Fallback)
-    fetch("/api/stats.php")
-      .then((res) => {
-        if (!res.ok) throw new Error("API not found");
-        return res.json();
-      })
-      .then((data) => {
-        if (data) setStats(data);
-      })
-      .catch((err) => {
-        console.warn("Stats API failed, using defaults:", err);
-        setStats({ views: {}, comments: {} });
-      });
+  // Corrected API base URL
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-    fetch("/api/get_community_stats.php")
+  useEffect(() => {
+    // 1. Fetch Community Stats
+    fetch(`${API_URL}/stats/community`)
       .then((res) => {
         if (!res.ok) throw new Error("API not found");
         return res.json();
       })
       .then((data) => {
         if (data && data.active_contributors) {
-          setContributorCount(parseInt(data.active_contributors) + 0);
+          setContributorCount(parseInt(data.active_contributors));
+        }
+        if (data && data.trending_topics) {
+          setTrendingTopics(data.trending_topics);
         }
       })
       .catch((err) => console.warn("Community stats API failed:", err));
 
-    // Fetch approved contributors
-    fetch("/api/get_approved_contributors.php")
+    // 2. Fetch approved contributors
+    fetch(`${API_URL}/contributors/approved`)
       .then((res) => {
         if (!res.ok) throw new Error("API not found");
         return res.json();
       })
       .then((data) => {
-        if (data.status === "success") {
+        if (data.status === "success" || data.contributors) {
           setContributors(data.contributors || []);
         }
       })
       .catch((err) => console.warn("Contributors API failed:", err));
 
-    // 1. Fetch Announcements
-    fetch("/api/get_announcements.php")
+    // 3. Fetch Announcements
+    fetch(`${API_URL}/announcements`)
       .then((res) => {
-        if (!res.ok) throw new Error("API Limit");
+        if (!res.ok) throw new Error("API Error");
         return res.json();
       })
       .then((data) => {
-        // Filter active only
-        const active = data.filter((a) => !a.status || a.status === "active");
-        setAnnouncements(active);
+        setAnnouncements(data);
         setLoadingAnnouncements(false);
       })
       .catch((err) => {
@@ -86,32 +76,29 @@ export default function CommunitySection() {
         setLoadingAnnouncements(false);
       });
 
-    // 2. Fetch Ads
-    fetch("/api/manage_ads.php")
+    // 4. Fetch Ads
+    fetch(`${API_URL}/ads`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.home_left)
-          setAdsConfig((prev) => ({ ...prev, home_left: data.home_left }));
-        if (data.home_right)
-          setAdsConfig((prev) => ({ ...prev, home_right: data.home_right }));
+        // Laravel returns array of ads
+        const leftAd = data.find((ad) => ad.zone === "home_left");
+        const rightAd = data.find((ad) => ad.zone === "home_right");
+
+        setAdsConfig({
+          home_left: leftAd
+            ? { active: true, image: leftAd.image_url, link: leftAd.target_url }
+            : { active: false },
+          home_right: rightAd
+            ? {
+                active: true,
+                image: rightAd.image_url,
+                link: rightAd.target_url,
+              }
+            : { active: false },
+        });
       })
       .catch((err) => console.error("Ads Fetch Failed", err));
-
-    // Fetch Trending Topics
-    fetch("/api/get_trending_topics.php")
-      .then((res) => {
-        if (!res.ok) throw new Error("API not found");
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Extract just the topic names if the API returns objects
-          const tags = data.map((item) => item.topic_name);
-          setTrendingTopics(tags);
-        }
-      })
-      .catch((err) => console.warn("Trending topics API failed:", err));
-  }, []);
+  }, [API_URL]);
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
@@ -144,15 +131,25 @@ export default function CommunitySection() {
     }
   };
 
-  // Get recent posts (latest 5)
-  const recentPosts = [...blogMetadata]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+  // Dynamic Recent Posts State
+  const [recentPosts, setRecentPosts] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/posts`)
+      .then((res) => res.json())
+      .then((data) => {
+        const sorted = data
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 5);
+        setRecentPosts(sorted);
+      })
+      .catch((err) => console.error("Recent posts fetch failed", err));
+  }, [API_URL]);
 
   const recentActivity = recentPosts.slice(0, 3);
 
   // Get featured article (most recent)
-  const featuredArticle = blogMetadata[0];
+  const featuredArticle = recentPosts.length > 0 ? recentPosts[0] : {};
 
   // Format date
   const formatDate = (dateString) => {
@@ -164,48 +161,8 @@ export default function CommunitySection() {
   // Dynamic Data State
   const [trendingTopics, setTrendingTopics] = useState([]);
 
-  useEffect(() => {
-    // Fetch Dynamic Ads
-    const storedAds = JSON.parse(localStorage.getItem("admin_ads") || "{}");
-    if (storedAds.home_left || storedAds.home_right) {
-      setAdsConfig({
-        home_left: storedAds.home_left || { active: false },
-        home_right: storedAds.home_right || { active: false },
-      });
-    }
-
-    // Fetch Announcements (Try LocalStorage first for Demo)
-    const storeAnnouncements = JSON.parse(
-      localStorage.getItem("admin_announcements") || "[]",
-    );
-    if (storeAnnouncements.length > 0) {
-      // Filter for active only
-      const active = storeAnnouncements.filter((a) => a.status === "active");
-      setAnnouncements(active);
-    } else {
-      fetch("/api/get_announcements.php")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setAnnouncements(data);
-        })
-        .catch((err) => console.error("Error fetching announcements:", err));
-    }
-
-    // Fetch Trending Topics
-    fetch("/api/get_trending_topics.php")
-      .then((res) => {
-        if (!res.ok) throw new Error("API not found");
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Extract just the topic names if the API returns objects
-          const tags = data.map((item) => item.topic_name);
-          setTrendingTopics(tags);
-        }
-      })
-      .catch((err) => console.warn("Trending topics API failed:", err));
-  }, []);
+  // Newsletter and other interactions will be migrated to use the api.js service in Phase 6
+  // For now, disabling the secondary duplicate useEffect
 
   const scrollToSection = (e, id) => {
     e.preventDefault();

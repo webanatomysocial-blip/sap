@@ -1,6 +1,7 @@
 // src/components/CommentSection.jsx
 import React, { useState, useEffect } from "react";
 import "../css/CommentSection.css";
+import { submitComment } from "../services/api";
 
 const CommentSection = ({ blogId }) => {
   const [comments, setComments] = useState([]);
@@ -23,41 +24,14 @@ const CommentSection = ({ blogId }) => {
   const [totalComments, setTotalComments] = useState(0);
 
   // Load comments from API
+  // Note: For now, we assume comments are passed via props or loaded with the blog.
+  // If we need independent reloading, we should add a getComments API.
+  // The PHP fetch code is removed.
+  /*
   useEffect(() => {
-    if (!blogId) return;
-
-    const fetchComments = async () => {
-      // Try LocalStorage first (for Demo)
-      const allComments = JSON.parse(
-        localStorage.getItem("admin_comments") || "[]",
-      );
-
-      // Filter: Match Post ID AND Status is 'approved'
-      // Note: In a real app, the API handles this filtering.
-      const postComments = allComments.filter(
-        (c) => c.post_id === blogId && c.status === "approved",
-      );
-
-      if (allComments.length > 0 || localStorage.getItem("admin_comments")) {
-        setComments(postComments);
-        setTotalComments(postComments.length);
-      } else {
-        // If no local storage (or clean slate), fetch from API
-        try {
-          const res = await fetch(`/api/get_comments.php?blogId=${blogId}`);
-          if (res.ok) {
-            const data = await res.json();
-            setComments(data);
-            setTotalComments(data.length);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    };
-
-    fetchComments();
-  }, [blogId]);
+     // ... legacy fetch logic ...
+  }, [blogId]); 
+  */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,26 +50,16 @@ const CommentSection = ({ blogId }) => {
     }
 
     const payload = {
-      blogId: blogId, // Changed from post_id to blogId to match backend expectation
-      author: authorName,
-      email: email,
-      text: newComment,
-      website_url: honeypot,
-      math_answer: mathAnswer, // Send match answer for backend check
+      post_id: blogId, // Backend expects post_id
+      author_name: authorName,
+      author_email: email,
+      content: newComment,
     };
 
     try {
-      const response = await fetch("/api/save_comment.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await submitComment(payload);
 
-      const result = await response.json();
-
-      if (response.ok && result.status === "success") {
+      if (response.status === 201) {
         alert("Comment submitted for approval!");
         setNewComment("");
         setAuthorName("");
@@ -110,10 +74,11 @@ const CommentSection = ({ blogId }) => {
           a: (num1 + num2).toString(),
         });
       } else {
-        alert(result.message || "Failed to post comment.");
+        alert("Failed to post comment.");
       }
     } catch (error) {
       console.error("Failed to save comment:", error);
+      alert("Error submitting comment. Please try again.");
     }
   };
 

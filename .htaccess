@@ -1,6 +1,15 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # 1. API Requests -> api/index.php
+  RewriteRule ^api/(.*)$ api/index.php [L,QSA]
+
+  # 2. Redirect /blog to /blogs (Frontend Rewrite)
+  RewriteRule ^blog/(.*)$ /blogs/$1 [R=301,L]
+  RewriteRule ^blog$ /blogs [R=301,L]
+
+  # 3. SPA Frontend -> index.php (SEO Wrapper)
   RewriteRule ^index\.php$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

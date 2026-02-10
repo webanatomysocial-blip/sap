@@ -12,7 +12,7 @@ const AdminContributors = () => {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin_applications.php");
+      const response = await fetch("/api/admin/contributors");
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
       setApplications(data);
@@ -29,7 +29,7 @@ const AdminContributors = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const response = await fetch("/api/update_contributor_status.php", {
+      const response = await fetch("/api/admin/contributors", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

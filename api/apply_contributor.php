@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 :role, :expertise, :other_expertise, :years_experience, :short_bio,
                 :contribution_types, :proposed_topics, :contributed_elsewhere, :previous_work_links,
                 :preferred_frequency, :primary_motivation, :weekly_time, :volunteer_events,
-                :product_evaluation, :personal_website, :twitter_handle, 'pending', datetime('now')
+                :product_evaluation, :personal_website, :twitter_handle, 'pending', NOW()
             )
         ");
         

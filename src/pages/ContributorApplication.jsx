@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../css/BecomeContributor.css";
 import { Helmet } from "react-helmet-async";
+import { applyContributor } from "../services/api";
 
 const ContributorApplication = () => {
   const location = useLocation();
@@ -95,23 +96,15 @@ const ContributorApplication = () => {
     setSubmitStatus(null);
 
     try {
-      // Send to backend API instead of localStorage
-      const response = await fetch("/api/apply_contributor.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      // Send to backend API
+      const response = await applyContributor(formData);
 
-      const result = await response.json();
-
-      if (response.ok && result.status === "success") {
-        console.log("Application successfully submitted to database!");
+      if (response.status === 201 || response.status === 200) {
+        console.log("Application successfully submitted!");
         setSubmitStatus("success");
         window.scrollTo(0, 0);
       } else {
-        console.error("Server error:", result.message);
+        console.error("Server error:", response.data?.message);
         setSubmitStatus("error");
       }
     } catch (error) {

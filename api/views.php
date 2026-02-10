@@ -65,32 +65,31 @@ try {
         }
 
         // Check if this Identifier has already viewed this post
-        $checkStmt = $pdo->prepare("SELECT id FROM view_logs WHERE post_id = ? AND ip_address = ?");
+        $checkStmt = $pdo->prepare("SELECT id FROM analytics WHERE post_id = ? AND ip_hash = ? AND event_type = 'view'");
         $checkStmt->execute([$post_id, $identifier]);
         $hasViewed = $checkStmt->fetch();
 
         if (!$hasViewed) {
-            // First time view: Log it and increment count
+            // First time view: Log it and increment count in blogs table
             $pdo->beginTransaction();
             
             // Log the view with the identifier
-            $logStmt = $pdo->prepare("INSERT INTO view_logs (post_id, ip_address) VALUES (?, ?)");
+            $logStmt = $pdo->prepare("INSERT INTO analytics (post_id, ip_hash, event_type) VALUES (?, ?, 'view')");
             $logStmt->execute([$post_id, $identifier]);
 
-            // Increment count
-            $upsertStmt = $pdo->prepare("INSERT INTO views (post_id, count) VALUES (?, 1) 
-                                       ON CONFLICT(post_id) DO UPDATE SET count = count + 1");
-            $upsertStmt->execute([$post_id]);
+            // Increment count in the blogs table
+            $updateStmt = $pdo->prepare("UPDATE blogs SET view_count = view_count + 1 WHERE id = ? OR slug = ?");
+            $updateStmt->execute([$post_id, $post_id]);
             
             $pdo->commit();
         }
 
         // Return current count
-        $countStmt = $pdo->prepare("SELECT count FROM views WHERE post_id = ?");
-        $countStmt->execute([$post_id]);
+        $countStmt = $pdo->prepare("SELECT view_count FROM blogs WHERE id = ? OR slug = ?");
+        $countStmt->execute([$post_id, $post_id]);
         $result = $countStmt->fetch(PDO::FETCH_ASSOC);
         
-        echo json_encode(['views' => $result ? (int)$result['count'] : 1]);
+        echo json_encode(['views' => $result ? (int)$result['view_count'] : 0]);
     }
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {

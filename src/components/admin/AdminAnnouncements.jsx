@@ -15,7 +15,7 @@ const AdminAnnouncements = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch("/api/manage_announcements.php");
+      const res = await fetch("/api/admin/announcements");
       if (res.ok) {
         const data = await res.json();
         setAnnouncements(data);
@@ -63,7 +63,7 @@ const AdminAnnouncements = () => {
       const payload = { ...formData };
       if (editingId) payload.id = editingId;
 
-      const res = await fetch("/api/manage_announcements.php", {
+      const res = await fetch("/api/admin/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -83,7 +83,7 @@ const AdminAnnouncements = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this announcement?")) {
       try {
-        const res = await fetch(`/api/manage_announcements.php?id=${id}`, {
+        const res = await fetch(`/api/admin/announcements?id=${id}`, {
           method: "DELETE",
         });
         if (res.ok) {

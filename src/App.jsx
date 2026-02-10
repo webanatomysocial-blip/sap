@@ -48,6 +48,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="blogs" element={<Blogs />} />
+        <Route path="blog" element={<Navigate to="/blogs" replace />} />
         <Route path="blogs/:blogId" element={<DynamicBlog />} />
 
         {/* SAP Security Routes */}
@@ -121,24 +122,20 @@ function App() {
         <Route path="contact-us" element={<ContactUs />} />
       </Route>
 
-      {/* Admin Dashboard */}
-      <Route
-        path="/admin"
-        element={<Navigate to="/admin-dashboard" replace />}
-      />
-      <Route path="/admin-dashboard" element={<AdminLayout />}>
+      {/* React Admin Dashboard */}
+      <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
+        <Route path="blogs" element={<AdminBlogs />} />
         <Route path="contributors" element={<AdminContributors />} />
         <Route path="announcements" element={<AdminAnnouncements />} />
         <Route path="comments" element={<AdminComments />} />
         <Route path="ads" element={<AdminAds />} />
-        <Route path="blogs" element={<AdminBlogs />} />
-
-        {/* Support legacy route format if needed, OR redirect. 
-            For now, we can keep the dynamic one as a fallback for unknown categories if desired, 
-            but the user asked for separate pages. We will assume explicit routes covers everything in the nav.
-        */}
       </Route>
+
+      <Route
+        path="/admin-dashboard"
+        element={<Navigate to="/admin" replace />}
+      />
     </Routes>
   );
 }

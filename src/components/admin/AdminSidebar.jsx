@@ -6,30 +6,30 @@ const AdminSidebar = ({ onLogout }) => {
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
-    { label: "Dashboard", path: "/admin-dashboard", icon: "bi-grid-fill" },
+    { label: "Dashboard", path: "/admin", icon: "bi-grid-fill" },
     {
       label: "Manage Contributors",
-      path: "/admin-dashboard/contributors",
+      path: "/admin/contributors",
       icon: "bi-people-fill",
     },
     {
       label: "Manage Comments",
-      path: "/admin-dashboard/comments",
+      path: "/admin/comments",
       icon: "bi-chat-left-text-fill",
     },
     {
       label: "Manage Announcements",
-      path: "/admin-dashboard/announcements",
+      path: "/admin/announcements",
       icon: "bi-megaphone-fill",
     },
     {
       label: "Manage Blogs",
-      path: "/admin-dashboard/blogs",
+      path: "/admin/blogs",
       icon: "bi-layout-text-window-reverse",
     },
     {
       label: "Manage Ads & Promos",
-      path: "/admin-dashboard/ads",
+      path: "/admin/ads",
       icon: "bi-images",
     },
   ];

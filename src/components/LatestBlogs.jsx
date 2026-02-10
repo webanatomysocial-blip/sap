@@ -1,26 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { blogMetadata } from "../blogs/metadata";
+// Removed static metadata import
 import { authors } from "../data/authors";
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import "../css/LatestBlogs.css";
 
 export default function LatestBlogs() {
+  const [blogs, setBlogs] = useState([]);
   const [stats, setStats] = useState({ views: {}, comments: {} });
+  // Corrected API base URL
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   useEffect(() => {
-    fetch("/api/stats.php")
-      .then((res) => res.json())
+    // Fetch latest blogs from API
+    fetch(`${API_URL}/posts`)
       .then((data) => {
-        if (data) setStats(data);
+        // Ensure data is an array
+        const blogData = Array.isArray(data) ? data : data.data || [];
+
+        // Map and validate data to prevent crashes
+        const mappedData = blogData.map((b) => ({
+          ...b,
+          // Ensure valid date or fallback to now
+          date:
+            b.date ||
+            b.published_at ||
+            b.created_at ||
+            new Date().toISOString(),
+          image:
+            b.image ||
+            b.featured_image ||
+            "https://placehold.co/600x400?text=No+Image",
+          slug: b.slug || b.id,
+        }));
+
+        // Sort by date descending and take latest 6
+        const sorted = mappedData
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 6);
+        setBlogs(sorted);
       })
-      .catch((err) => console.error("Error fetching stats:", err));
+      .catch((err) => console.error("Error fetching blogs:", err));
   }, []);
 
-  // Sort blogs by date (newest first) and get the latest 6
-  const latestBlogs = [...blogMetadata]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 6);
+  // No fallback to static metadata - API Source of Truth
+  const latestBlogs = blogs;
 
   // Format date
   const formatDate = (dateString) => {
@@ -83,11 +107,10 @@ export default function LatestBlogs() {
                   <div className="latest-blog-stats">
                     <span>
                       <i className="bi bi-eye"></i>{" "}
-                      {stats.views[blog.slug] || blog.views || 0}
+                      {blog.view_count || blog.views || 0}
                     </span>
                     <span>
-                      <i className="bi bi-chat"></i>{" "}
-                      {stats.comments[blog.slug] || 0}
+                      <i className="bi bi-chat"></i> {blog.comment_count || 0}
                     </span>
                   </div>
                 </div>

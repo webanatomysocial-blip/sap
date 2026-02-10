@@ -24,7 +24,7 @@ const AdminBlogs = () => {
 
   const fetchBlogs = async () => {
     try {
-      const res = await fetch("/api/manage_blogs.php");
+      const res = await fetch("/api/posts");
       if (res.ok) setBlogs(await res.json());
     } catch (err) {
       console.error(err);
@@ -84,7 +84,7 @@ const AdminBlogs = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this blog?")) {
       try {
-        const res = await fetch(`/api/manage_blogs.php?id=${id}`, {
+        const res = await fetch(`/api/posts/${id}`, {
           method: "DELETE",
         });
         if (res.ok) fetchBlogs();
@@ -96,7 +96,7 @@ const AdminBlogs = () => {
 
   const handleSave = async () => {
     try {
-      const res = await fetch("/api/manage_blogs.php", {
+      const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

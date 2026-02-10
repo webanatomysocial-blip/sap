@@ -14,7 +14,7 @@ const AdminAds = () => {
   useEffect(() => {
     const fetchAds = async () => {
       try {
-        const res = await fetch("/api/manage_ads.php");
+        const res = await fetch("/api/admin/ads");
         if (res.ok) {
           const data = await res.json();
           setAds((prev) => ({ ...prev, ...data }));
@@ -75,7 +75,7 @@ const AdminAds = () => {
     try {
       const promises = Object.keys(ads).map((zone) => {
         const adData = { ...ads[zone], zone };
-        return fetch("/api/manage_ads.php", {
+        return fetch("/api/admin/ads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(adData),

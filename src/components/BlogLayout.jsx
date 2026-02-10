@@ -3,7 +3,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link, useParams } from "react-router-dom";
 import "../css/blog-post.css";
-import { blogMetadata } from "../blogs/metadata.js";
 
 // Icons and Components
 import ShareButton from "./ShareButton";
@@ -25,6 +24,7 @@ const BlogLayout = ({
   author = "Raghu Boddu", // Default or passed prop
   authorImage, // New prop
   sidebarAd = {}, // Sidebar ad data
+  dynamicRecentPosts = [], // New prop for passing recent posts if available
 }) => {
   const progressBarRef = useRef(null);
   const currentUrl = window.location.href;
@@ -42,14 +42,11 @@ const BlogLayout = ({
     return null;
   }, [author]);
 
-  // Compute Previous and Next Posts
-  const { prevPost, nextPost } = useMemo(() => {
-    const idx = blogMetadata.findIndex((b) => b.title === title);
-    return {
-      prevPost: idx > 0 ? blogMetadata[idx - 1] : null,
-      nextPost: idx < blogMetadata.length - 1 ? blogMetadata[idx + 1] : null,
-    };
-  }, [title]);
+  // Compute Previous and Next Posts - Disabled for now as we are 100% DB driven
+  const prevPost = null;
+  const nextPost = null;
+
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   useEffect(() => {
     // Animate Progress Bar
@@ -66,38 +63,12 @@ const BlogLayout = ({
       });
     }
 
-    // Increment and Fetch View/Comment Count
-    if (blogId) {
-      // Get or Create Viewer ID (UUID)
-      let viewerId = localStorage.getItem("viewer_id");
-      if (!viewerId) {
-        viewerId = crypto.randomUUID();
-        localStorage.setItem("viewer_id", viewerId);
-      }
-
-      // POST to increment view
-      fetch(`/api/views.php?post_id=${blogId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ viewer_id: viewerId }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.views) setViewCount(data.views);
-        })
-        .catch((err) => console.error("Error updating views:", err));
-
-      // Fetch comment count
-      fetch(`/api/comments.php?post_id=${blogId}&limit=1`) // Limit 1 just to get total count
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.total !== undefined) setCommentCount(data.total);
-        })
-        .catch((err) => console.error("Error fetching comments:", err));
+    // Views and Comments are now handled via the Post object returned by the API
+    // If this component is used with hardcoded metadata (legacy), we fetch stats
+    if (blogId && !title) {
+      // Future: Migrate this component to fetch POST data by slug from API
     }
-  }, [blogId]);
+  }, [blogId, title]);
 
   return (
     <div className="blog-post-wrapper">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import "../../css/AdminDashboard.css";
@@ -10,9 +11,6 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const ADMIN_USER = "admin";
-  const ADMIN_PASS = "admin123";
-
   useEffect(() => {
     const auth = localStorage.getItem("adminAuth");
     if (auth === "true") {
@@ -20,18 +18,27 @@ const AdminLayout = () => {
     }
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      localStorage.setItem("adminAuth", "true");
-      setIsAuthenticated(true);
-    } else {
-      alert("Invalid credentials");
+    try {
+      const response = await axios.post("/api/login", {
+        username,
+        password,
+      });
+
+      if (response.data.status === "success") {
+        localStorage.setItem("adminAuth", "true");
+        localStorage.setItem("adminUser", JSON.stringify(response.data.user));
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || "Login failed. Please try again.");
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("adminAuth");
+    localStorage.removeItem("adminUser"); // Also remove the user data on logout
     setIsAuthenticated(false);
     navigate("/admin-dashboard");
   };

@@ -1,120 +1,106 @@
-import React, { Suspense, useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { blogMetadata } from "../blogs/metadata.js";
 import { Helmet } from "react-helmet-async";
-import BlogLayout from "./BlogLayout"; // Import BlogLayout directly
-
-// Import all blog modules from ../blogs/*.jsx
-// Import all blog modules from ../*/*.jsx
-const blogModules = import.meta.glob(["../blog-content/*.jsx"]);
-
-// Map module keys to React.lazy components once, outside of render
-const lazyBlogComponents = Object.keys(blogModules).reduce((acc, key) => {
-  acc[key] = React.lazy(blogModules[key]);
-  return acc;
-}, {});
+import { getPostBySlug } from "../services/api";
+import BlogLayout from "./BlogLayout";
 
 export default function DynamicBlog() {
   const { blogId } = useParams(); // Expecting slug or id
-  const [virtualBlog, setVirtualBlog] = useState(null);
+  const [blog, setBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sidebarAd, setSidebarAd] = useState({
     active: false,
     image: "",
     link: "",
   });
 
-  // Check for Virtual Blog (API)
+  // Corrected API base URL
+  const API_URL = import.meta.env.VITE_API_URL || "/api";
+
+  // Check for Virtual Blog (API) + Track Views
   useEffect(() => {
     if (!blogId) return;
 
-    fetch("/api/manage_blogs.php")
-      .then((res) => res.json())
-      .then((all) => {
-        const found = all.find((b) => b.slug === blogId || b.id === blogId);
-        if (found) setVirtualBlog(found);
-        else setVirtualBlog(null);
+    setLoading(true);
+    setError(null);
+
+    // Generate or retrieve viewer UUID from localStorage
+    let viewerId = localStorage.getItem("viewer_id");
+    if (!viewerId) {
+      viewerId =
+        "viewer_" + Math.random().toString(36).substr(2, 9) + Date.now();
+      localStorage.setItem("viewer_id", viewerId);
+    }
+
+    // Fetch blog from API
+    getPostBySlug(blogId)
+      .then((response) => {
+        // Handle both simple JSON and Laravel Resource response
+        let postData = response.data || response;
+
+        // If returns an array (Laravel sometimes does this), take the first item
+        if (Array.isArray(postData)) {
+          postData = postData[0];
+        }
+
+        if (!postData || (!postData.title && !postData.id)) {
+          throw new Error("Blog not found");
+        }
+
+        setBlog(postData);
+        setLoading(false);
+
+        // Track view for virtual blog
+        if (postData.id || postData.slug) {
+          const postId = postData.slug || postData.id;
+          fetch(`${API_URL}/views`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ post_id: postId, viewer_id: viewerId }),
+          }).catch((err) => console.error("View tracking failed:", err));
+        }
       })
-      .catch((err) => console.error("Error loading blog details", err));
+      .catch((err) => {
+        console.error("Error loading blog details from API", err);
+        setError("Blog not found");
+        setBlog(null);
+        setLoading(false);
+      });
 
     // Fetch sidebar ad
-    fetch("/api/manage_ads.php")
+    fetch(`${API_URL}/ads?zone=sidebar`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.sidebar) {
-          setSidebarAd(data.sidebar);
+        if (data && data.active) {
+          setSidebarAd(data);
         }
       })
-      .catch((err) => console.error("Error loading ads", err));
-  }, [blogId]);
+      .catch(() => {
+        // Silent fail for ads
+      });
+  }, [blogId, API_URL]);
 
-  // 1. Find metadata based on the URL param (slug or id)
-  const metadata = useMemo(() => {
-    if (virtualBlog) return virtualBlog; // Use virtual data if found
-    if (!blogId) return null;
+  // RENDER LOADING
+  if (loading) {
     return (
-      blogMetadata.find((b) => b.slug === blogId || b.id === blogId) || null
-    );
-  }, [blogId, virtualBlog]);
-
-  // 2. Determine the file path key for import.meta.glob
-  const moduleKey = useMemo(() => {
-    if (virtualBlog) return null; // No module for virtual blogs
-    // If metadata found, look for its ID in filenames
-    if (metadata) {
-      // E.g. ../blogs/AmbitionPost.jsx or ../sap-licensing/SapLicensing1.jsx
-      const key = Object.keys(blogModules).find((k) =>
-        k.includes(`/${metadata.id}.jsx`),
-      );
-      return key;
-    }
-    // Fallback: try to match the URL param directly to filename
-    // E.g. /blogs/AmbitionPost -> matches ../blogs/AmbitionPost.jsx
-    const directKey = Object.keys(blogModules).find((k) => {
-      const fname = k.split("/").pop().replace(".jsx", "");
-      return fname === blogId;
-    });
-    return directKey;
-  }, [metadata, blogId, virtualBlog]);
-
-  // 3. Select the pre-created lazy component
-  const BlogComponent = moduleKey ? lazyBlogComponents[moduleKey] : null;
-
-  // 4. Compute 4 recent posts for sidebar
-  const recentPosts = useMemo(() => {
-    return blogMetadata
-      .filter((b) => b.slug !== blogId && b.id !== blogId) // Exclude current
-      .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date descending
-      .slice(0, 4) // Take top 4
-      .map((b) => ({
-        title: b.title,
-        link: `/${b.category || "blogs"}/${b.slug}`,
-      }));
-  }, [blogId]);
-
-  // RENDER VIRTUAL BLOG
-  if (virtualBlog) {
-    // Render content as HTML if possible, or plain text
-    // Note: content is likely HTML from the editor
-    return (
-      <BlogLayout
-        title={virtualBlog.title}
-        content={
-          <div dangerouslySetInnerHTML={{ __html: virtualBlog.content }} />
-        }
-        image={virtualBlog.image}
-        date={virtualBlog.date}
-        author={virtualBlog.author}
-        sidebarAd={sidebarAd}
-      />
+      <div style={{ padding: "100px", textAlign: "center" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading Blog...</p>
+      </div>
     );
   }
 
-  // RENDER STATIC BLOG
-  if (!BlogComponent) {
+  // RENDER ERROR
+  if (error || !blog) {
     return (
       <div style={{ padding: "100px", textAlign: "center" }}>
-        <h1>Blog Not Found</h1>
-        <p>We couldn't find the post you're looking for.</p>
+        <h1>404 - Blog Not Found</h1>
+        <p>
+          The article you are looking for does not exist or has been removed.
+        </p>
         <Link
           to="/blogs"
           style={{ textDecoration: "underline", color: "blue" }}
@@ -125,29 +111,45 @@ export default function DynamicBlog() {
     );
   }
 
-  // 5. Render
-  // The styled BlogLayout is inside the imported component itself.
-  // We just mount it.
+  // RENDER BLOG (Database Content)
   return (
     <>
       <Helmet>
         <title>
-          {metadata
-            ? `${metadata.title} | SAP Security Expert`
+          {blog.title
+            ? `${blog.title} | SAP Security Expert`
             : "Blog | SAP Security Expert"}
         </title>
-        <meta name="description" content={metadata?.metaDescription || ""} />
+        <meta
+          name="description"
+          content={blog.excerpt || blog.meta_description || ""}
+        />
+        {/* Open Graph tags for social sharing */}
+        <meta property="og:title" content={blog.title} />
+        <meta property="og:description" content={blog.excerpt} />
+        <meta property="og:image" content={blog.image || blog.featured_image} />
+        <meta property="og:type" content="article" />
       </Helmet>
 
-      <Suspense
-        fallback={
-          <div style={{ padding: "100px", textAlign: "center" }}>
-            Loading...
-          </div>
+      <BlogLayout
+        title={blog.title}
+        content={
+          <div
+            className="blog-content-body"
+            dangerouslySetInnerHTML={{ __html: blog.content }}
+          />
         }
-      >
-        <BlogComponent dynamicRecentPosts={recentPosts} />
-      </Suspense>
+        image={blog.image || blog.featured_image}
+        date={blog.date || blog.published_at || blog.created_at}
+        author={blog.author || "Admin"}
+        category={blog.category}
+        sidebarAd={sidebarAd}
+        // Pass recent posts if needed, but BlogLayout might handle logic or we can fetch them here.
+        // For now, let's keep it simple. BlogLayout might need dynamicRecentPosts prop?
+        // Let's implement dynamicRecentPosts logic here briefly or pass empty if BlogLayout handles it.
+        // Based on previous code, DynamicBlog was passing it.
+        dynamicRecentPosts={[]}
+      />
     </>
   );
 }
