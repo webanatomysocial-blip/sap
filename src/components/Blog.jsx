@@ -1,141 +1,155 @@
-import React, { useState, useEffect, Suspense } from "react";
-// Removed static metadata import
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import "../css/Blog.css";
+import { authors } from "../data/authors";
+import BlogSidebar from "./BlogSidebar";
+import "../css/CategoryPage.css";
 
-const Blogs = ({ backgroundColor, limit = 3, category }) => {
-  const [visibleCount, setVisibleCount] = useState(
-    limit === "all" ? 10 : limit,
-  );
-  const [allBlogs, setAllBlogs] = useState([]);
+const Blogs = () => {
+  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch blogs from API
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || "/api";
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/manage_blogs.php");
 
-    // 2. Get Dynamic Blogs from API - PRIORITY & ONLY SOURCE
-    fetch(`${API_URL}/posts`)
-      .then((res) => res.json())
-      .then((response) => {
-        // Laravel Paginated response has 'data' array, or direct array
-        const virtualData = Array.isArray(response)
-          ? response
-          : response.data || [];
-
-        let virtualBlogs = virtualData.map((b) => ({
-          ...b,
-          type: "virtual",
-          image:
-            b.image ||
-            b.featured_image ||
-            "https://placehold.co/600x400?text=No+Image",
-          date: b.date || b.published_at || b.created_at,
-          // Ensure slug is present
-          slug: b.slug || b.id,
-        }));
-
-        // Filter by category if provided
-        if (category) {
-          virtualBlogs = virtualBlogs.filter(
-            (b) => b.category === category || b.subCategory === category,
-          );
+        if (!response.ok) {
+          throw new Error("Failed to fetch blogs");
         }
 
-        // Sort by date descending
-        const finalBlogs = virtualBlogs.sort((a, b) => {
-          return new Date(b.date) - new Date(a.date);
-        });
-
-        setAllBlogs(finalBlogs);
-        if (limit === "all") setVisibleCount(finalBlogs.length);
-        else setVisibleCount(limit);
+        const data = await response.json();
+        // Sort by date desc
+        const sorted = (Array.isArray(data) ? data : []).sort(
+          (a, b) => new Date(b.date) - new Date(a.date),
+        );
+        setBlogs(sorted);
+      } catch (err) {
+        console.error("Error fetching blogs:", err);
+        setError(err.message);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load blogs from API", err);
-        setAllBlogs([]); // Empty state on error
-        setLoading(false);
-      });
-  }, [limit, category]); // Re-run if limit or category changes
+      }
+    };
 
-  const loadMore = () => {
-    setVisibleCount(allBlogs.length);
-  };
-
-  const showLoadMore = limit === "all" && visibleCount < allBlogs.length;
+    fetchBlogs();
+  }, []);
 
   return (
-    <div className="whole-blog-section" style={{ backgroundColor }}>
-      <div className="blogs-container">
-        <div className="blogs-grid">
-          {allBlogs.length === 0 && <p>No blogs found.</p>}
-          {allBlogs.slice(0, visibleCount).map((blog, index) => {
-            // Helper to determine link URL
-            // If category exists, use it. Otherwise default to 'blogs'
-            const categorySlug = blog.category || "blogs";
-            const blogUrl = `/${categorySlug}/${blog.slug || blog.id}`;
+    <div className="category-page-wrapper">
+      {/* Header */}
+      <div className="category-header-section">
+        <div className="container">
+          <div className="breadcrumbs">
+            <Link to="/">Home</Link> &gt; <span>All Blogs</span>
+          </div>
+          <h1>All Blogs</h1>
+        </div>
+      </div>
 
-            return (
-              <div
-                key={blog.id || index}
-                className="inner-news-blogs-container"
-              >
-                <div className="blog-text">
-                  <p className="text-black">BLOG</p>
-                  <Link to={blogUrl} style={{ textDecoration: "none" }}>
-                    <p className="sub-big-heading-text-black">{blog.title}</p>
-                  </Link>
-                </div>
-                <div
-                  className="image-hover-text-come"
-                  style={{ backgroundImage: `url(${blog.image})` }}
-                >
-                  <div className="inner-text-come">
-                    <div>
-                      <Link to={blogUrl} style={{ textDecoration: "none" }}>
-                        <p className="small-text-black">{blog.excerpt}</p>
+      <div className="category-content container">
+        <div className="category-layout-grid">
+          {/* Main Content: Blog Grid */}
+          <div className="category-main-column">
+            {loading ? (
+              <div className="loading-state">
+                <p>Loading blogs...</p>
+              </div>
+            ) : error ? (
+              <div className="error-state">
+                <p>Error loading blogs: {error}</p>
+                <Link to="/" className="btn-primary">
+                  Go Home
+                </Link>
+              </div>
+            ) : blogs.length === 0 ? (
+              <div className="no-posts">
+                <p>No posts found.</p>
+                <Link to="/" className="btn-primary">
+                  Go Home
+                </Link>
+              </div>
+            ) : (
+              <div className="blog-grid-2-col">
+                {blogs.map((blog) => (
+                  <div key={blog.id} className="blog-grid-card">
+                    <div className="blog-card-image">
+                      <Link to={`/${blog.category}/${blog.slug}`}>
+                        <img
+                          src={blog.image || "/placeholder-image.jpg"}
+                          alt={blog.title}
+                          loading="lazy"
+                        />
                       </Link>
                     </div>
-                    <Link
-                      to={blogUrl}
-                      className="read-more-btn-blue"
-                      aria-label={`Read more about ${blog.title}`}
-                    >
-                      Read More <i className="bi bi-arrow-right arrow-icon"></i>
-                    </Link>
+                    <div className="blog-card-content">
+                      <div className="blog-meta-top">
+                        <span className="blog-author">
+                          <i className="bi bi-person-circle"></i>{" "}
+                          {authors[blog.author]?.name || blog.author || "Admin"}
+                        </span>
+                        <span className="blog-date">
+                          <i className="bi bi-calendar3"></i>{" "}
+                          {new Date(blog.date).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+
+                      <Link
+                        to={`/${blog.category}/${blog.slug}`}
+                        className="blog-title-link"
+                      >
+                        <h3>{blog.title}</h3>
+                      </Link>
+
+                      {blog.excerpt && (
+                        <p className="blog-excerpt">{blog.excerpt}</p>
+                      )}
+
+                      <div
+                        className="latest-blog-stats"
+                        style={{
+                          marginTop: "10px",
+                          fontSize: "0.85rem",
+                          color: "#666",
+                        }}
+                      >
+                        <span style={{ marginRight: "15px" }}>
+                          <i className="bi bi-eye"></i> {blog.view_count || 0}
+                        </span>
+                        <span>
+                          <i className="bi bi-chat"></i>{" "}
+                          {blog.comment_count || 0}
+                        </span>
+                      </div>
+
+                      <Link
+                        to={`/${blog.category}/${blog.slug}`}
+                        className="read-more-link"
+                        style={{ marginTop: "15px" }}
+                      >
+                        Read More &rarr;
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            );
-          })}
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="category-sidebar-column">
+            <BlogSidebar />
+          </div>
         </div>
-        {showLoadMore && (
-          <button className="load-more" onClick={loadMore}>
-            Load More
-          </button>
-        )}
       </div>
     </div>
   );
 };
-
-// Skeleton loader for blog cards
-const BlogCardSkeleton = () => (
-  <div className="inner-news-blogs-container">
-    <div className="blog-text">
-      <div className="skeleton-title"></div>
-      <div className="skeleton-title"></div>
-    </div>
-    <div className="image-hover-text-come">
-      <div className="inner-text-come">
-        <div>
-          <div className="skeleton-title"></div>
-          <div className="skeleton-excerpt"></div>
-        </div>
-        <div className="skeleton-link"></div>
-      </div>
-    </div>
-  </div>
-);
 
 export default Blogs;

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import "../../css/AdminDashboard.css";
+import useScrollLock from "../../hooks/useScrollLock";
 
 const AdminContributors = () => {
   // Mock Data for Demo
@@ -8,6 +9,8 @@ const AdminContributors = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null); // For modal details
+
+  useScrollLock(!!selectedApp);
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -53,6 +56,37 @@ const AdminContributors = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (
+      window.confirm(
+        "Are you sure you want to PERMANENTLY delete this contributor?",
+      )
+    ) {
+      try {
+        const response = await fetch("/api/delete_contributor.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id }),
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+          setApplications((prev) => prev.filter((app) => app.id !== id));
+          if (selectedApp && selectedApp.id === id) {
+            setSelectedApp(null);
+          }
+          alert("Contributor deleted.");
+        } else {
+          alert("Failed to delete: " + result.message);
+        }
+      } catch (error) {
+        console.error("Error deleting contributor:", error);
+        alert("Network error.");
+      }
+    }
+  };
+
   const handleApprove = (id) => {
     if (window.confirm("Are you sure you want to approve this applicant?")) {
       updateStatus(id, "approved");
@@ -66,19 +100,13 @@ const AdminContributors = () => {
   };
 
   return (
-    <div className="admin-contributors-view">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-        }}
-      >
-        <h3>Pending Requests</h3>
+    <div className="admin-page-wrapper">
+      <div className="page-header">
+        <h3>Contributor Management</h3>
         <button
           onClick={fetchApplications}
-          className="btn-refresh"
-          style={{ padding: "8px 16px", cursor: "pointer" }}
+          className="btn-primary" // Changed from btn-refresh to standard btn-primary or similar
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
         >
           <i className="bi bi-arrow-clockwise"></i> Refresh
         </button>
@@ -87,133 +115,96 @@ const AdminContributors = () => {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <div className="table-responsive">
-          <table
-            className="admin-table"
-            style={{ width: "100%", borderCollapse: "collapse" }}
-          >
-            <thead>
-              <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                <th style={{ padding: "12px" }}>ID</th>
-                <th style={{ padding: "12px" }}>Name</th>
-                <th style={{ padding: "12px" }}>Role</th>
-                <th style={{ padding: "12px" }}>Status</th>
-                <th style={{ padding: "12px" }}>Date</th>
-                <th style={{ padding: "12px" }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applications.length === 0 ? (
+        <div className="admin-card">
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="6"
-                    style={{ padding: "20px", textAlign: "center" }}
-                  >
-                    No applications found.
-                  </td>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Action</th>
                 </tr>
-              ) : (
-                applications.map((app) => (
-                  <tr
-                    key={app.id}
-                    style={{ borderBottom: "1px solid #e2e8f0" }}
-                  >
-                    <td style={{ padding: "12px" }}>{app.id}</td>
-                    <td style={{ padding: "12px" }}>
-                      <strong>{app.name}</strong>
-                      <br />
-                      <small>{app.email}</small>
-                    </td>
-                    <td style={{ padding: "12px" }}>{app.role}</td>
-                    <td style={{ padding: "12px" }}>
-                      <span
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          background:
-                            app.status === "approved"
-                              ? "#dcfce7"
-                              : app.status === "rejected"
-                                ? "#fee2e2"
-                                : "#fef9c3",
-                          color:
-                            app.status === "approved"
-                              ? "#166534"
-                              : app.status === "rejected"
-                                ? "#991b1b"
-                                : "#854d0e",
-                        }}
-                      >
-                        {app.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      {new Date(app.created_at).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <button
-                        onClick={() => setSelectedApp(app)}
-                        style={{
-                          marginRight: "8px",
-                          padding: "6px 12px",
-                          background: "#64748b",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        View
-                      </button>
-                      {app.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(app.id)}
-                            style={{
-                              marginRight: "8px",
-                              background: "#2563eb",
-                              color: "white",
-                              border: "none",
-                              padding: "6px 12px",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(app.id)}
-                            style={{
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              padding: "6px 12px",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
+              </thead>
+              <tbody>
+                {applications.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: "center" }}>
+                      No applications found.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app.id}>
+                      <td>{app.id}</td>
+                      <td>
+                        <strong>{app.name}</strong>
+                        <br />
+                        <small>{app.email}</small>
+                      </td>
+                      <td>{app.role}</td>
+                      <td>
+                        <span className={`status-badge status-${app.status}`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td>{new Date(app.created_at).toLocaleDateString()}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => setSelectedApp(app)}
+                            className="btn-edit"
+                            style={{ marginRight: "0" }} // Reset margin if class adds it
+                          >
+                            View
+                          </button>
+
+                          {app.status === "pending" && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(app.id)}
+                                className="btn-approve"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(app.id)}
+                                className="btn-reject"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+
+                          <button
+                            onClick={() => handleDelete(app.id)}
+                            className="btn-delete"
+                            title="Delete Permanently"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Details Modal */}
       {selectedApp && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={() => setSelectedApp(null)}>
           <div
             className="modal-content"
-            style={{ maxWidth: "800px", width: "95%" }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "800px" }} // Override width if needed
           >
             <div className="modal-header">
-              <h2>Application Details: {selectedApp.name}</h2>
+              <h2 style={{ margin: 0 }}>Contributor Details</h2>
               <button
                 className="close-modal"
                 onClick={() => setSelectedApp(null)}
@@ -221,114 +212,329 @@ const AdminContributors = () => {
                 ×
               </button>
             </div>
-            <div className="modal-body-scroll">
+
+            <div className="modal-body">
+              <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                {selectedApp.profile_image ? (
+                  <img
+                    src={selectedApp.profile_image}
+                    alt={selectedApp.name}
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "4px solid #f1f5f9",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      borderRadius: "50%",
+                      background: "#e2e8f0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto",
+                      fontSize: "40px",
+                      color: "#64748b",
+                      border: "4px solid #f1f5f9",
+                    }}
+                  >
+                    {selectedApp.name.charAt(0)}
+                  </div>
+                )}
+                <h3
+                  style={{
+                    marginTop: "15px",
+                    marginBottom: "5px",
+                    fontSize: "1.5rem",
+                  }}
+                >
+                  {selectedApp.name}
+                </h3>
+                <span className={`status-badge status-${selectedApp.status}`}>
+                  {selectedApp.status}
+                </span>
+              </div>
+
               <div
                 className="detail-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "20px",
+                  marginBottom: "20px",
                 }}
               >
                 <div>
-                  <strong>Email:</strong> {selectedApp.email}
+                  <strong>Email:</strong>
+                  <div style={{ color: "#475569" }}>{selectedApp.email}</div>
                 </div>
                 <div>
-                  <strong>LinkedIn:</strong>{" "}
-                  <a
-                    href={selectedApp.linkedin}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {selectedApp.linkedin}
-                  </a>
+                  <strong>Role:</strong>
+                  <div style={{ color: "#475569" }}>{selectedApp.role}</div>
                 </div>
                 <div>
-                  <strong>Country:</strong> {selectedApp.country}
+                  <strong>Joined:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {new Date(selectedApp.created_at).toLocaleDateString()}
+                  </div>
                 </div>
                 <div>
-                  <strong>Organization:</strong> {selectedApp.organization}
+                  <strong>Organization:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.organization || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Designation:</strong> {selectedApp.designation}
+                  <strong>Designation:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.designation || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Role Applied:</strong> {selectedApp.role}
+                  <strong>Country:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.country || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Experience:</strong> {selectedApp.years_experience}
+                  <strong>LinkedIn:</strong>
+                  <div>
+                    {selectedApp.linkedin ? (
+                      <a
+                        href={selectedApp.linkedin}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          color: "#2563eb",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        View Profile
+                      </a>
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <strong>Weekly Time:</strong> {selectedApp.weekly_time}
+                  <strong>Experience:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.years_experience || "N/A"} years
+                  </div>
                 </div>
                 <div>
-                  <strong>Volunteer for Events?</strong>{" "}
-                  {selectedApp.volunteer_events}
+                  <strong>Weekly Availability:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.weekly_time || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Product Eval?</strong>{" "}
-                  {selectedApp.product_evaluation}
+                  <strong>Preferred Frequency:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.preferred_frequency || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Frequency:</strong> {selectedApp.preferred_frequency}
+                  <strong>Volunteer for Events:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.volunteer_events || "N/A"}
+                  </div>
                 </div>
                 <div>
-                  <strong>Motivation:</strong> {selectedApp.primary_motivation}
+                  <strong>Product Evaluation:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.product_evaluation || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <strong>Personal Website:</strong>
+                  <div>
+                    {selectedApp.personal_website ? (
+                      <a
+                        href={selectedApp.personal_website}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#2563eb" }}
+                      >
+                        Visit Data
+                      </a>
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <strong>Twitter / X:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.twitter_handle || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <strong>Contributed Elsewhere:</strong>
+                  <div style={{ color: "#475569" }}>
+                    {selectedApp.contributed_elsewhere || "N/A"}
+                  </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: "20px" }}>
-                <strong>Expertise:</strong>
-                <pre
+              <div style={{ marginBottom: "15px" }}>
+                <strong>Primary Motivation:</strong>
+                <p
                   style={{
-                    background: "#f8fafc",
-                    padding: "10px",
-                    borderRadius: "4px",
+                    background: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginTop: "5px",
+                    color: "#334155",
                   }}
                 >
-                  {typeof selectedApp.expertise === "string"
-                    ? JSON.stringify(JSON.parse(selectedApp.expertise), null, 2)
-                    : JSON.stringify(selectedApp.expertise, null, 2)}
-                </pre>
+                  {selectedApp.primary_motivation || "N/A"}
+                </p>
               </div>
 
-              <div style={{ marginTop: "20px" }}>
+              <div style={{ marginBottom: "15px" }}>
+                <strong>Short Bio:</strong>
+                <p
+                  style={{
+                    background: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginTop: "5px",
+                    lineHeight: "1.5",
+                    color: "#334155",
+                  }}
+                >
+                  {selectedApp.short_bio || "No bio provided."}
+                </p>
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
                 <strong>Contribution Types:</strong>
-                <pre
+                <div
                   style={{
-                    background: "#f8fafc",
-                    padding: "10px",
-                    borderRadius: "4px",
+                    background: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginTop: "5px",
+                    color: "#334155",
                   }}
                 >
-                  {typeof selectedApp.contribution_types === "string"
-                    ? JSON.stringify(
-                        JSON.parse(selectedApp.contribution_types),
-                        null,
-                        2,
-                      )
-                    : JSON.stringify(selectedApp.contribution_types, null, 2)}
-                </pre>
+                  {(() => {
+                    if (!selectedApp.contribution_types) return "None";
+                    try {
+                      const types =
+                        typeof selectedApp.contribution_types === "string"
+                          ? JSON.parse(selectedApp.contribution_types)
+                          : selectedApp.contribution_types;
+                      if (typeof types === "object" && !Array.isArray(types)) {
+                        const active = Object.keys(types).filter(
+                          (k) => types[k] === true,
+                        );
+                        return active.length > 0 ? active.join(", ") : "None";
+                      }
+                      return JSON.stringify(types);
+                    } catch (e) {
+                      return selectedApp.contribution_types;
+                    }
+                  })()}
+                </div>
               </div>
 
-              {selectedApp.proposed_topics && (
-                <div style={{ marginTop: "20px" }}>
-                  <strong>Proposed Topics:</strong>
-                  <p>{selectedApp.proposed_topics}</p>
-                </div>
-              )}
+              <div style={{ marginBottom: "15px" }}>
+                <strong>Proposed Topics:</strong>
+                <p
+                  style={{
+                    background: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginTop: "5px",
+                    color: "#334155",
+                  }}
+                >
+                  {selectedApp.proposed_topics || "N/A"}
+                </p>
+              </div>
 
-              {selectedApp.message && (
-                <div style={{ marginTop: "20px" }}>
-                  <strong>Bio/Message:</strong>
-                  <p>{selectedApp.message}</p>
+              <div style={{ marginBottom: "15px" }}>
+                <strong>Expertise:</strong>
+                <div
+                  style={{
+                    background: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginTop: "5px",
+                    color: "#334155",
+                  }}
+                >
+                  {(() => {
+                    if (!selectedApp.expertise) return "None listed";
+                    try {
+                      const exp =
+                        typeof selectedApp.expertise === "string"
+                          ? JSON.parse(selectedApp.expertise)
+                          : selectedApp.expertise;
+
+                      // If object with booleans (from new form)
+                      if (!Array.isArray(exp) && typeof exp === "object") {
+                        const active = Object.keys(exp).filter(
+                          (k) => exp[k] === true,
+                        );
+                        return active.length > 0
+                          ? active.join(", ")
+                          : "None listed";
+                      }
+
+                      return Array.isArray(exp)
+                        ? exp.join(", ")
+                        : JSON.stringify(exp);
+                    } catch (e) {
+                      return selectedApp.expertise;
+                    }
+                  })()}
                 </div>
-              )}
+              </div>
             </div>
-            <div className="modal-footer">
+
+            <div
+              className="modal-footer"
+              style={{
+                textAlign: "right",
+                borderTop: "1px solid #eee",
+                paddingTop: "15px",
+                marginTop: "10px",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                onClick={() => handleDelete(selectedApp.id)}
+                style={{
+                  padding: "8px 16px",
+                  background: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
               <button
                 onClick={() => setSelectedApp(null)}
-                className="btn-text-only"
+                style={{
+                  padding: "8px 16px",
+                  background: "#64748b",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
               >
                 Close
               </button>

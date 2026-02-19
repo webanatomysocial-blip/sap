@@ -81,6 +81,9 @@ const Footer = () => {
               <li>
                 <Link to="/other-tools">Other Tools</Link>
               </li>
+              <li>
+                <Link to="/become-a-contributor">Become a Contributor</Link>
+              </li>
             </ul>
           </div>
 
@@ -88,15 +91,29 @@ const Footer = () => {
             <h4>Legal & Contact</h4>
             <ul>
               <li>
-                <span className="footer-email">
-                  hello@sapsecurityexpert.com
-                </span>
-              </li>
-              <li>
-                <Link to="/become-a-contributor">Become a Contributor</Link>
-              </li>
-              <li>
                 <Link to="/contact-us">Contact Us</Link>
+              </li>
+              <li>
+                <Link to="/privacy-policy">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/terms-conditions">Terms & Conditions</Link>
+              </li>
+              <li>
+                <Link to="/accessibility-statement">Accessibility</Link>
+              </li>
+              <li>
+                <Link to="/safety-movement">Safety Movement</Link>
+              </li>
+              <li>
+                <Link to="/security-compliance-overview">
+                  Security & Compliance
+                </Link>
+              </li>
+              <li>
+                <Link to="/responsible-ai-automation-statement">
+                  Responsible AI
+                </Link>
               </li>
             </ul>
           </div>

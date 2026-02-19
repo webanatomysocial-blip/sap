@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         // Fetch approved contributors
         $stmt = $pdo->prepare("
-            SELECT full_name, email, linkedin, short_bio, role, expertise, created_at
-            FROM contributor_applications
+            SELECT full_name, email, linkedin, short_bio, role, expertise, created_at, image AS profile_image, status
+            FROM contributors
             WHERE status = 'approved'
             ORDER BY created_at DESC
         ");

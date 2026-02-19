@@ -16,7 +16,7 @@ $id = $data['id'];
 $status = $data['status']; // 'approved', 'rejected', 'pending'
 
 try {
-    $stmt = $pdo->prepare("UPDATE contributor_applications SET status = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE contributors SET status = ? WHERE id = ?");
     $stmt->execute([$status, $id]);
 
     // Optional: Send email notification logic here based on status

@@ -80,6 +80,12 @@ if ($path === '/admin/stats') {
     exit;
 }
 
+// 7. Views API
+if ($path === '/views') {
+    require 'save_view.php';
+    exit;
+}
+
 // 404 Fallback
 http_response_code(404);
 echo json_encode(["status" => "error", "message" => "Endpoint not found: $path"]);

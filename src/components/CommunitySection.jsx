@@ -24,44 +24,39 @@ export default function CommunitySection() {
 
   // State for Ads
   const [adsConfig, setAdsConfig] = useState({
-    home_left: { active: false, image: "", link: "" },
-    home_right: { active: false, image: "", link: "" },
+    community_left: { active: false, image: "", link: "" },
+    community_right: { active: false, image: "", link: "" },
   });
 
   // Corrected API base URL
   const API_URL = import.meta.env.VITE_API_URL || "/api";
 
+  // Dynamic Data State
+  const [featuredArticle, setFeaturedArticle] = useState({});
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // 1. Fetch Community Stats
-    fetch(`${API_URL}/stats/community`)
-      .then((res) => {
-        if (!res.ok) throw new Error("API not found");
-        return res.json();
-      })
+    setLoading(true);
+    // Fetch consolidated homepage data
+    fetch(`${API_URL}/get_homepage_data.php`)
+      .then((res) => res.json())
       .then((data) => {
-        if (data && data.active_contributors) {
-          setContributorCount(parseInt(data.active_contributors));
-        }
-        if (data && data.trending_topics) {
-          setTrendingTopics(data.trending_topics);
-        }
-      })
-      .catch((err) => console.warn("Community stats API failed:", err));
-
-    // 2. Fetch approved contributors
-    fetch(`${API_URL}/contributors/approved`)
-      .then((res) => {
-        if (!res.ok) throw new Error("API not found");
-        return res.json();
-      })
-      .then((data) => {
-        if (data.status === "success" || data.contributors) {
+        if (data.status === "success") {
+          setFeaturedArticle(data.featured || {});
+          setRecentActivity(data.recent || []);
           setContributors(data.contributors || []);
+          setContributorCount(data.contributors ? data.contributors.length : 0);
         }
+        setLoading(false);
       })
-      .catch((err) => console.warn("Contributors API failed:", err));
+      .catch((err) => {
+        console.error("Homepage API failed", err);
+        setLoading(false);
+      });
 
-    // 3. Fetch Announcements
+    // Keep Announcements & Ads separate as they might have different caching/logic
+    // Fetch Announcements
     fetch(`${API_URL}/announcements`)
       .then((res) => {
         if (!res.ok) throw new Error("API Error");
@@ -76,93 +71,46 @@ export default function CommunitySection() {
         setLoadingAnnouncements(false);
       });
 
-    // 4. Fetch Ads
+    // Fetch Ads
     fetch(`${API_URL}/ads`)
       .then((res) => res.json())
       .then((data) => {
-        // Laravel returns array of ads
-        const leftAd = data.find((ad) => ad.zone === "home_left");
-        const rightAd = data.find((ad) => ad.zone === "home_right");
+        // API returns object keyed by zone
+        const leftAd = data.community_left || data["community_left"];
+        const rightAd = data.community_right || data["community_right"];
 
         setAdsConfig({
-          home_left: leftAd
-            ? { active: true, image: leftAd.image_url, link: leftAd.target_url }
+          community_left: leftAd?.active
+            ? { active: true, image: leftAd.image, link: leftAd.link }
             : { active: false },
-          home_right: rightAd
-            ? {
-                active: true,
-                image: rightAd.image_url,
-                link: rightAd.target_url,
-              }
+          community_right: rightAd?.active
+            ? { active: true, image: rightAd.image, link: rightAd.link }
             : { active: false },
         });
       })
       .catch((err) => console.error("Ads Fetch Failed", err));
-  }, [API_URL]);
 
-  const handleNewsletterSubmit = async (e) => {
-    e.preventDefault();
-    if (!newsletterEmail) return;
-
-    try {
-      const response = await fetch("/api/send_mail.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: newsletterEmail,
-          subject: "New Newsletter Subscription",
-          message: "A new user has subscribed to the newsletter.",
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.status === "success") {
-        alert("Thank you for subscribing!");
-        setNewsletterEmail("");
-      } else {
-        alert(result.message || "Subscription failed. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error subscribing:", error);
-      alert("An error occurred. Please ensure the backend server is running.");
-    }
-  };
-
-  // Dynamic Recent Posts State
-  const [recentPosts, setRecentPosts] = useState([]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/posts`)
+    // Fetch total contributor count separately if needed for the big number,
+    // or rely on the length of the list if that's what was intended.
+    // The user asked for "Latest 3 approved contributors" in list, but maybe total count in stats.
+    // Let's keep the specific stats call for the big number if it exists, otherwise fallback.
+    fetch(`${API_URL}/stats/community`)
       .then((res) => res.json())
       .then((data) => {
-        const sorted = data
-          .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .slice(0, 5);
-        setRecentPosts(sorted);
+        if (data && data.active_contributors) {
+          setContributorCount(parseInt(data.active_contributors));
+        }
       })
-      .catch((err) => console.error("Recent posts fetch failed", err));
+      .catch((err) => console.warn("Stats failed", err));
   }, [API_URL]);
-
-  const recentActivity = recentPosts.slice(0, 3);
-
-  // Get featured article (most recent)
-  const featuredArticle = recentPosts.length > 0 ? recentPosts[0] : {};
 
   // Format date
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const options = { month: "long", day: "numeric", year: "numeric" };
     return date.toLocaleDateString("en-US", options);
   };
-
-  // Dynamic Data State
-  const [trendingTopics, setTrendingTopics] = useState([]);
-
-  // Newsletter and other interactions will be migrated to use the api.js service in Phase 6
-  // For now, disabling the secondary duplicate useEffect
 
   const scrollToSection = (e, id) => {
     e.preventDefault();
@@ -190,10 +138,14 @@ export default function CommunitySection() {
                 <h3>Recent Topics</h3>
               </div>
               <div className="topics-list">
-                {recentPosts.slice(0, 3).map((post) => (
+                {recentActivity.map((post) => (
                   <Link
                     key={post.slug}
-                    to={`/blogs/${post.slug}`}
+                    to={
+                      post.category
+                        ? `/${post.category}/${post.slug}`
+                        : `/blogs/${post.slug}`
+                    }
                     className="topic-item"
                   >
                     <span className="topic-label">R</span>
@@ -217,14 +169,14 @@ export default function CommunitySection() {
 
             {/* Promotion */}
             <div className="widget promo-widget">
-              {adsConfig.home_left.active ? (
+              {adsConfig.community_left.active ? (
                 <a
-                  href={adsConfig.home_left.link || "#"}
-                  target={adsConfig.home_left.link ? "_blank" : "_self"}
+                  href={adsConfig.community_left.link || "#"}
+                  target={adsConfig.community_left.link ? "_blank" : "_self"}
                   rel="noopener noreferrer"
                 >
                   <img
-                    src={adsConfig.home_left.image}
+                    src={adsConfig.community_left.image}
                     alt="Promotion 1"
                     onError={(e) => (e.target.style.display = "none")}
                   />
@@ -234,50 +186,88 @@ export default function CommunitySection() {
               )}
             </div>
 
-            {/* Trending Topics */}
-            <div className="widget">
-              <div className="widget-header">
-                <h3>Trending Topics</h3>
+            {/* Our Contributors (Left Side) */}
+            {contributors.length > 0 && (
+              <div className="widget">
+                <div className="widget-header">
+                  <h3>Our Contributors</h3>
+                </div>
+                <div className="contributors-list-left">
+                  {contributors.map((contributor, index) => (
+                    <div key={index} className="contributor-card-new">
+                      <div className="contributor-avatar">
+                        {contributor.profile_image ? (
+                          <img
+                            src={contributor.profile_image}
+                            alt={contributor.full_name}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        {/* Fallback Avatar if image fails or is missing */}
+                        <div
+                          className="avatar-fallback"
+                          style={{
+                            display: contributor.profile_image
+                              ? "none"
+                              : "flex",
+                          }}
+                        >
+                          {contributor.full_name
+                            ? contributor.full_name.charAt(0)
+                            : "C"}
+                        </div>
+                      </div>
+                      <div className="contributor-info">
+                        <h4>{contributor.full_name}</h4>
+                        <span className="joined-date">
+                          Joined:{" "}
+                          {formatDate(contributor.created_at || new Date())}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="trending-tags">
-                {trendingTopics.map((tag) => (
-                  <span key={tag} className="trending-tag">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* CENTER COLUMN */}
           <div className="community-center">
             {/* Featured Insight */}
-            <div className="featured-insight-card">
-              <span className="featured-badge">Featured Insight</span>
-              <h2>{featuredArticle.title}</h2>
-              <p>{featuredArticle.excerpt}</p>
-              <div className="featured-meta">
-                <span>
-                  <i className="bi bi-clock"></i> 6 min read
-                </span>
-                <span>
-                  <i className="bi bi-eye"></i>{" "}
-                  {stats.views[featuredArticle.slug] ||
-                    featuredArticle.views ||
-                    0}
-                </span>
-                <span>
-                  <i className="bi bi-chat"></i>{" "}
-                  {stats.comments[featuredArticle.slug] || 0}
-                </span>
+            {featuredArticle && featuredArticle.title && (
+              <div className="featured-insight-card">
+                <span className="featured-badge">Featured Insight</span>
+                <h2>{featuredArticle.title}</h2>
+                <p>{featuredArticle.excerpt}</p>
+                <div className="featured-meta">
+                  <span>
+                    <i className="bi bi-clock"></i> 6 min read
+                  </span>
+                  <span>
+                    <i className="bi bi-eye"></i>{" "}
+                    {featuredArticle.view_count || featuredArticle.views || 0}
+                  </span>
+                  <span>
+                    <i className="bi bi-chat"></i>{" "}
+                    {featuredArticle.comment_count || 0}
+                  </span>
+                </div>
+                <Link
+                  to={
+                    featuredArticle.category
+                      ? `/${featuredArticle.category}/${featuredArticle.slug}`
+                      : `/blogs/${featuredArticle.slug}`
+                  }
+                  className="btn-read-insight"
+                >
+                  Read Full Insight →
+                </Link>
               </div>
-              <Link
-                to={`/blogs/${featuredArticle.slug}`}
-                className="btn-read-insight"
-              >
-                Read Full Insight →
-              </Link>
-            </div>
+            )}
 
             {/* Recent Activity */}
             <div className="widget">
@@ -288,16 +278,30 @@ export default function CommunitySection() {
                 {recentActivity.map((activity) => (
                   <Link
                     key={activity.slug}
-                    to={`/blogs/${activity.slug}`}
+                    to={
+                      activity.category
+                        ? `/${activity.category}/${activity.slug}`
+                        : `/blogs/${activity.slug}`
+                    }
                     className="activity-item"
                   >
-                    <img src={activity.image} alt={activity.title} />
+                    {/* Handle optional image safely */}
+                    {activity.image && (
+                      <img src={activity.image} alt={activity.title} />
+                    )}
                     <div className="activity-content">
                       <span className="activity-badge">
-                        {activity.category.replace("sap-", "").toUpperCase()}
+                        {activity.category
+                          ? activity.category.replace("sap-", "").toUpperCase()
+                          : "BLOG"}
                       </span>
                       <h4>{activity.title}</h4>
-                      <p>{activity.excerpt.substring(0, 100)}...</p>
+                      <p>
+                        {activity.excerpt
+                          ? activity.excerpt.substring(0, 100)
+                          : ""}
+                        ...
+                      </p>
                       <div className="activity-meta">
                         <span>
                           <i className="bi bi-person-circle"></i>{" "}
@@ -312,7 +316,8 @@ export default function CommunitySection() {
                   </Link>
                 ))}
               </div>
-              <Link to="/contact" className="view-all-link-center">
+              {/* FIXED: Using Link for navigation */}
+              <Link to="/become-a-contributor" className="view-all-link-center">
                 Join the Community →
               </Link>
             </div>
@@ -364,14 +369,14 @@ export default function CommunitySection() {
 
             {/* Promotion */}
             <div className="widget promo-widget">
-              {adsConfig.home_right.active ? (
+              {adsConfig.community_right.active ? (
                 <a
-                  href={adsConfig.home_right.link || "#"}
-                  target={adsConfig.home_right.link ? "_blank" : "_self"}
+                  href={adsConfig.community_right.link || "#"}
+                  target={adsConfig.community_right.link ? "_blank" : "_self"}
                   rel="noopener noreferrer"
                 >
                   <img
-                    src={adsConfig.home_right.image}
+                    src={adsConfig.community_right.image}
                     alt="Promotion 2"
                     onError={(e) => (e.target.style.display = "none")}
                   />
@@ -415,84 +420,28 @@ export default function CommunitySection() {
               </div>
             </div>
 
-            {/* Approved Contributors List */}
-            {contributors.length > 0 && (
-              <div className="widget" style={{ marginTop: "20px" }}>
-                <div className="widget-header">
-                  <h3>Our Contributors</h3>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  {contributors.slice(0, 5).map((contributor, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: "10px",
-                        background: "#f8fafc",
-                        borderRadius: "6px",
-                        borderLeft: "3px solid #2563eb",
-                      }}
-                    >
-                      <strong style={{ color: "#1e293b", fontSize: "0.95rem" }}>
-                        {contributor.full_name}
-                      </strong>
-                      {contributor.role && (
-                        <div
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "#64748b",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {contributor.role}
-                        </div>
-                      )}
-                      {contributor.linkedin && (
-                        <a
-                          href={contributor.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "#2563eb",
-                            marginTop: "4px",
-                            display: "inline-block",
-                          }}
-                        >
-                          LinkedIn →
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Approved Contributors List - Removed from Right (Moved to Left) */}
 
             {/* Newsletter */}
             <div className="widget newsletter-widget">
               <div className="newsletter-icon">
                 <i className="bi bi-envelope"></i>
               </div>
-              <h3>Newsletter</h3>
+              <h3>Subscribe for Expert Insights</h3>
               <p>Check Latest Updates</p>
-              <form
-                className="newsletter-form"
-                onSubmit={handleNewsletterSubmit}
-              >
-                <input
-                  type="email"
-                  placeholder="Enter Your Email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  required
-                />
-                <button type="submit">→</button>
-              </form>
+              <iframe
+                src="https://grcwithraghu.substack.com/embed"
+                width="100%"
+                height="150"
+                // style={{
+                //   border: "1px solid #EEE",
+                //   background: "white",
+                //   borderRadius: "8px",
+                // }}
+                frameBorder="0"
+                scrolling="no"
+                title="Newsletter Subscription"
+              ></iframe>
             </div>
           </div>
         </div>

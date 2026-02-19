@@ -4,3 +4,9 @@ node_modules/
 .next/
 build/
 dist/
+_BACKUP/
+*.zip
+*.tar.gz
+*.log
+api/.env
+*.sql

@@ -46,6 +46,24 @@ try {
         $exists = $check->fetch();
 
         if ($exists) {
+            // Fetch current image to delete if changing
+            $stmt = $pdo->prepare("SELECT image FROM ads WHERE zone = ?");
+            $stmt->execute([$zone]);
+            $current = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($current && !empty($current['image']) && $current['image'] !== $image && !empty($image)) {
+                 $possiblePaths = [
+                    __DIR__ . '/../public' . $current['image'],
+                    __DIR__ . '/..' . $current['image']
+                 ];
+                 foreach($possiblePaths as $p) {
+                    if (file_exists($p) && is_file($p)) {
+                        unlink($p);
+                        break;
+                    }
+                 }
+            }
+
             $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ? WHERE zone = ?");
             $stmt->execute([$image, $link, $active, $zone]);
         } else {

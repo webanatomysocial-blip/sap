@@ -135,7 +135,7 @@
 /* Promotion Widget */
 .promo-widget {
   height: 300px;
-  width:100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -567,14 +567,14 @@
     padding: 30px 0;
   }
 
-  .promo-widget{
-    width:auto;
-    height:auto;
+  .promo-widget {
+    width: auto;
+    height: auto;
   }
 
-  .promo-widget img{
-    width:auto;
-    height:auto;
+  .promo-widget img {
+    width: auto;
+    height: auto;
   }
 
   .community-header h1 {
@@ -631,4 +631,67 @@
     width: 100%;
     text-align: center;
   }
+}
+
+/* New Contributor Card Styles */
+/* .contributor-card styles */
+.contributor-card-new {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.contributor-card-new:last-child {
+  border-bottom: none;
+}
+
+.contributor-avatar img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.contributor-info h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.contributor-info .joined-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.contributor-photo {
+  flex-shrink: 0;
+}
+
+.contributor-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.contributor-name {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.contributor-joined {
+  margin-top: 2px;
 }

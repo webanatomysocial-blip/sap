@@ -16,7 +16,7 @@ const categoryMapping = {
 };
 
 export default function FeaturedInsights({ id }) {
-  const [activeTab, setActiveTab] = useState("sap-access-control");
+  const [activeTab, setActiveTab] = useState("All");
   const [stats, setStats] = useState({ views: {}, comments: {} });
   const [allBlogs, setAllBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ export default function FeaturedInsights({ id }) {
     if (loading) return [];
 
     if (activeTab === "All") {
-      return allBlogs.slice(0, 4);
+      return allBlogs.slice(0, 3);
     }
 
     const categoryKey = categoryMapping[activeTab];
@@ -89,7 +89,7 @@ export default function FeaturedInsights({ id }) {
         }
         return false;
       })
-      .slice(0, 4); // Keep limit of 4
+      .slice(0, 3); // Limit to 3
   };
 
   const filteredBlogs = getFilteredBlogs();
@@ -172,11 +172,10 @@ export default function FeaturedInsights({ id }) {
                   <div className="latest-blog-stats">
                     <span>
                       <i className="bi bi-eye"></i>{" "}
-                      {stats.views[blog.slug] || blog.views || 0}
+                      {blog.view_count || blog.views || 0}
                     </span>
                     <span>
-                      <i className="bi bi-chat"></i>{" "}
-                      {stats.comments[blog.slug] || 0}
+                      <i className="bi bi-chat"></i> {blog.comment_count || 0}
                     </span>
                   </div>
                 </div>

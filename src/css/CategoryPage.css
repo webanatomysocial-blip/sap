@@ -12,6 +12,11 @@
   margin-bottom: 60px;
 }
 
+.legal-links{
+  color: #d32f2f;
+  text-decoration: none;
+}
+
 .breadcrumbs {
   font-size: 14px;
   color: #666;
@@ -44,6 +49,10 @@
   display: grid;
   grid-template-columns: 1fr 300px; /* Content + Sidebar */
   gap: 60px;
+  padding-bottom: 80px;
+}
+
+.legal-layout-grid{
   padding-bottom: 80px;
 }
 
@@ -127,6 +136,18 @@
   color: #ee5e42;
 }
 
+/* Blog Excerpt */
+.blog-excerpt {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 10px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .read-more-link {
   font-size: 14px;
   font-weight: 700;
@@ -142,7 +163,27 @@
   text-decoration: underline;
 }
 
-/* Global .container is now in index.css */
+/* Loading and Error States */
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  grid-column: 1 / -1;
+}
+
+.loading-state p,
+.error-state p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.error-state p {
+  color: #d32f2f;
+  margin-bottom: 20px;
+}
 
 /* No Posts */
 .no-posts {
@@ -179,5 +220,13 @@
 @media (max-width: 768px) {
   .blog-grid-2-col {
     grid-template-columns: 1fr; /* Stack cards on mobile */
+  }
+
+  .category-header-section {
+    padding: 60px 0;
+  }
+
+  .category-header-section h1 {
+    font-size: 32px;
   }
 }

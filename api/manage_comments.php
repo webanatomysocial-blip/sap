@@ -39,7 +39,7 @@ try {
             $originalText = $comment['original_text'] ?: $comment['content'];
             
             // Update with new content and timestamp
-            $stmt = $pdo->prepare("UPDATE comments SET content = ?, original_text = ?, edited_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE comments SET content = ?, original_text = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$newContent, $originalText, $id]);
             
             echo json_encode(['status' => 'success', 'message' => 'Comment updated']);

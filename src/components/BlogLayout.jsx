@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useMemo, useState } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "../css/blog-post.css";
 
 // Icons and Components
@@ -11,12 +11,14 @@ import AuthorBio from "./AuthorBio"; // Keep as fallback
 import CommentSection from "./CommentSection";
 import SEO from "./SEO";
 import AuthorProfile from "./AuthorProfile";
+import FAQ from "./FAQ";
 import { authors } from "../data/authors";
 
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
 const BlogLayout = ({
+  blogId,
   title,
   content,
   image,
@@ -25,12 +27,13 @@ const BlogLayout = ({
   authorImage, // New prop
   sidebarAd = {}, // Sidebar ad data
   dynamicRecentPosts = [], // New prop for passing recent posts if available
+  viewCount = 0,
+  commentCount = 0,
+  faqs = [],
+  cta = {},
 }) => {
   const progressBarRef = useRef(null);
   const currentUrl = window.location.href;
-  const { blogId } = useParams(); // Get slug from URL
-  const [viewCount, setViewCount] = useState(0);
-  const [commentCount, setCommentCount] = useState(0);
 
   // Helper to find author ID based on name or ID passed
   const authorId = useMemo(() => {
@@ -46,8 +49,6 @@ const BlogLayout = ({
   const prevPost = null;
   const nextPost = null;
 
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
-
   useEffect(() => {
     // Animate Progress Bar
     if (progressBarRef.current) {
@@ -61,12 +62,6 @@ const BlogLayout = ({
           scrub: 0.3,
         },
       });
-    }
-
-    // Views and Comments are now handled via the Post object returned by the API
-    // If this component is used with hardcoded metadata (legacy), we fetch stats
-    if (blogId && !title) {
-      // Future: Migrate this component to fetch POST data by slug from API
     }
   }, [blogId, title]);
 
@@ -93,8 +88,6 @@ const BlogLayout = ({
               <img src={image} alt={title} />
             </div>
           )}
-
-          {/* Breadcrumbs Removed */}
 
           {/* 3. Meta Row: Author, Date, Views */}
           <div className="blog-meta-row">
@@ -130,6 +123,75 @@ const BlogLayout = ({
 
           {/* 5. Content Body */}
           <article className="blog-content-body">{content}</article>
+
+          {/* FAQS SECTION */}
+          {faqs && faqs.length > 0 && (
+            <div
+              className="blog-faqs-section"
+              style={{ marginTop: "40px", marginBottom: "40px" }}
+            >
+              <FAQ title="Frequently Asked Questions" faqs={faqs} />
+            </div>
+          )}
+
+          {/* CTA SECTION */}
+          {cta && cta.title && (
+            <div
+              className="blog-cta-section"
+              style={{
+                background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+                color: "white",
+                padding: "40px",
+                borderRadius: "16px",
+                textAlign: "center",
+                margin: "40px 0",
+                boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.4)",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "1.8rem",
+                  marginBottom: "16px",
+                  color: "white",
+                }}
+              >
+                {cta.title}
+              </h2>
+              {cta.description && (
+                <p
+                  style={{
+                    fontSize: "1.1rem",
+                    marginBottom: "24px",
+                    opacity: 0.9,
+                  }}
+                >
+                  {cta.description}
+                </p>
+              )}
+              {cta.buttonText && cta.buttonLink && (
+                <a
+                  href={cta.buttonLink}
+                  className="btn-cta"
+                  style={{
+                    display: "inline-block",
+                    background: "white",
+                    color: "#1e40af",
+                    padding: "12px 32px",
+                    borderRadius: "50px",
+                    fontWeight: "bold",
+                    textDecoration: "none",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.transform = "scale(1.05)")
+                  }
+                  onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+                >
+                  {cta.buttonText}
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="post-footer-divider"></div>
 

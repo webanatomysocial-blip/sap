@@ -52,19 +52,6 @@ export const posts = [
     component: "PublicCloudAuthUpgrade"
   },
   {
-    id: 5,
-    title: "Why Traditional SAP Audit Controls Fail in Public Cloud",
-    slug: "traditional-sap-audit-controls-fail-public-cloud",
-    category: "sap-security",
-    subcategory: "sap-cloud-public",
-    author: "Raghu Boddu",
-    date: "January 25, 2026",
-    readTime: "9 min read",
-    excerpt: "Understanding the shift from detective validation to preventive platform-level controls in the cloud.",
-    image: "/src/assets/blogs/audit-controls-fail.jpg",
-    component: "AuditControlsFail"
-  },
-  {
     id: 6,
     title: "Configuration Without SPRO: The New Audit Reality",
     slug: "configuration-without-spro-sap-public-cloud",

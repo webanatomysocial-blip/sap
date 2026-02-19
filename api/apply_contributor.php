@@ -11,31 +11,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Check if it's a multipart form data request (file upload) or JSON
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    
+    if (strpos($contentType, 'application/json') !== false) {
+        $input = json_decode(file_get_contents('php://input'), true);
+    } else {
+        $input = $_POST;
+    }
     
     if (!$input) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON input']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
         exit;
     }
     
     try {
-        // Extract expertise array into a JSON string
-        $expertise = isset($input['expertise']) ? json_encode($input['expertise']) : '{}';
-        $contributionTypes = isset($input['contributionTypes']) ? json_encode($input['contributionTypes']) : '{}';
+// Handle File Upload
+        $imagePath = null; // Default to null if no image or upload fails
         
+        if (isset($_FILES['profilePhoto']) && $_FILES['profilePhoto']['error'] === UPLOAD_ERR_OK) {
+            // FIX: Use public/assets path for web accessibility
+            $uploadDir = __DIR__ . '/../public/assets/contributors/';
+            
+            // Create directory if it doesn't exist
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileTmpPath = $_FILES['profilePhoto']['tmp_name'];
+            $fileName = basename($_FILES['profilePhoto']['name']);
+            $fileSize = $_FILES['profilePhoto']['size'];
+            $fileType = $_FILES['profilePhoto']['type'];
+            
+            $fileNameCmps = explode(".", $fileName);
+            $fileExtension = strtolower(end($fileNameCmps));
+            
+            // Security: Allow specific extensions
+            $allowedfileExtensions = array('jpg', 'gif', 'png', 'webp', 'jpeg');
+            
+            // Security: Enforce size limit (e.g., 5MB)
+            if ($fileSize > 5 * 1024 * 1024) {
+                 echo json_encode(['status' => 'error', 'message' => 'File too large. Max 5MB.']);
+                 exit;
+            }
+
+            if (in_array($fileExtension, $allowedfileExtensions)) {
+                // Security: Unique filename to prevent overwrites
+                $newFileName = 'contributor_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $fileExtension;
+                $dest_path = $uploadDir . $newFileName;
+                
+                if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                    // Store relative path for frontend usage
+                    $imagePath = '/assets/contributors/' . $newFileName;
+                } else {
+                     echo json_encode(['status' => 'error', 'message' => 'Failed to move uploaded file.']);
+                     exit;
+                }
+            } else {
+                 echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Allowed: jpg, png, webp.']);
+                 exit;
+            }
+        }
+
+        // Extract expertise array into a JSON string
+        // If input came from FormData, arrays might be passed as strings or individual keys?
+        // In the React app: payload.append("expertise", JSON.stringify(formData[key]));
+        $expertise = isset($input['expertise']) ? $input['expertise'] : '{}';
+        // If it was posted as JSON string (from FormData), we keep it as is.
+        // If it was posted as array (from JSON body), we json_encode it.
+        if (is_array($expertise)) {
+            $expertise = json_encode($expertise);
+        }
+
+        $contributionTypes = isset($input['contributionTypes']) ? $input['contributionTypes'] : '{}';
+        if (is_array($contributionTypes)) {
+            $contributionTypes = json_encode($contributionTypes);
+        }
+        
+        // Prepare SQL with named placeholders matches new variable names
         $stmt = $pdo->prepare("
-            INSERT INTO contributor_applications (
+            INSERT INTO contributors (
                 full_name, email, linkedin, country, organization, designation,
                 role, expertise, other_expertise, years_experience, short_bio,
                 contribution_types, proposed_topics, contributed_elsewhere, previous_work_links,
                 preferred_frequency, primary_motivation, weekly_time, volunteer_events,
-                product_evaluation, personal_website, twitter_handle, status, created_at
+                product_evaluation, personal_website, twitter_handle, image, status, created_at
             ) VALUES (
                 :full_name, :email, :linkedin, :country, :organization, :designation,
                 :role, :expertise, :other_expertise, :years_experience, :short_bio,
                 :contribution_types, :proposed_topics, :contributed_elsewhere, :previous_work_links,
                 :preferred_frequency, :primary_motivation, :weekly_time, :volunteer_events,
-                :product_evaluation, :personal_website, :twitter_handle, 'pending', NOW()
+                :product_evaluation, :personal_website, :twitter_handle, :image, 'pending', CURRENT_TIMESTAMP
             )
         ");
         
@@ -61,7 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':volunteer_events' => $input['volunteerEvents'] ?? 'No',
             ':product_evaluation' => $input['productEvaluation'] ?? 'No',
             ':personal_website' => $input['personalWebsite'] ?? '',
-            ':twitter_handle' => $input['twitterHandle'] ?? ''
+            ':twitter_handle' => $input['twitterHandle'] ?? '',
+            ':image' => $imagePath 
         ]);
         
         echo json_encode([

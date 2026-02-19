@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $file = $_FILES['image'];
-    $uploadDir = __DIR__ . '/../public/assets/blog-images/';
+    $uploadDir = __DIR__ . '/../public/assets/blog-images/'; // for production one 
+    //    $uploadDir = __DIR__ . '/../assets/blog-images/'; // for development one
     
     // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
@@ -53,13 +54,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $filename = uniqid('blog_') . '_' . time() . '.' . $extension;
     $filePath = $uploadDir . $filename;
 
+    // Check if there is an old image to delete (optional, passed from frontend)
+    $oldImage = $_POST['old_image'] ?? '';
+    if (!empty($oldImage)) {
+        $oldPath = __DIR__ . '/..' . $oldImage;
+        // Check also in public/assets if distinct
+        if (!file_exists($oldPath)) {
+            $oldPath = __DIR__ . '/../public' . $oldImage;
+        }
+        
+        if (file_exists($oldPath) && is_file($oldPath)) {
+            unlink($oldPath);
+        }
+    }
+
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
         echo json_encode([
             'status' => 'success',
             'message' => 'Image uploaded successfully',
             'filename' => $filename,
-            'path' => '/assets/blog-images/' . $filename
+            'path' => '/public/assets/blog-images/' . $filename
         ]);
     } else {
         echo json_encode([

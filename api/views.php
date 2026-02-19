@@ -3,6 +3,13 @@
 require_once 'db.php';
 
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 // Get the post_id from query string or body
 $post_id = $_REQUEST['post_id'] ?? null;
@@ -15,13 +22,11 @@ if (!$post_id) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Function to get the real IP address (System/Public IP)
+// Function to get the real IP address
 function get_client_ip() {
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
         return $_SERVER['HTTP_CLIENT_IP'];
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        // HTTP_X_FORWARDED_FOR can be a comma-separated list of IPs
-        // The first IP is the original client IP
         $ip_list = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         return trim($ip_list[0]);
     } else {
@@ -30,17 +35,11 @@ function get_client_ip() {
 }
 
 $ip_address = get_client_ip();
-// Append User Agent to create a more unique fingerprint for the session/view
-$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-
-// Generate a unique fingerprint for the device
-// This allows different devices on the same network (same IP) to be counted separately
-$device_fingerprint = md5($ip_address . $user_agent);
 
 try {
     if ($method === 'GET') {
-        // Fetch view count
-        $stmt = $pdo->prepare("SELECT count FROM views WHERE post_id = ?");
+        // Fetch view count from blog_views table
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM blog_views WHERE post_id = ?");
         $stmt->execute([$post_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -49,53 +48,38 @@ try {
     elseif ($method === 'POST') {
         // Read JSON input
         $input = json_decode(file_get_contents('php://input'), true);
-        $viewer_id = $input['viewer_id'] ?? null;
+        $visitor_token = $input['visitor_token'] ?? null;
 
-        // Determine effective identifier:
-        // If viewer_id is present (from client), use that.
-        // Otherwise fallback to IP+UA hash.
-        if ($viewer_id) {
-            // Identify by Client UUID
-            // We still store it in the ip_address column for schema compatibility
-            // but prefix it to distinguish
-            $identifier = "uuid:" . $viewer_id;
-        } else {
-            // Fallback: Device Fingerprint (IP + UA)
-            $identifier = "ip:" . md5($ip_address . $user_agent);
+        if (!$visitor_token) {
+             // Fallback if no token provided, though frontend should send it
+             $visitor_token = 'ip_' . md5($ip_address . ($_SERVER['HTTP_USER_AGENT'] ?? ''));
         }
 
-        // Check if this Identifier has already viewed this post
-        $checkStmt = $pdo->prepare("SELECT id FROM analytics WHERE post_id = ? AND ip_hash = ? AND event_type = 'view'");
-        $checkStmt->execute([$post_id, $identifier]);
+        // Check if this visitor has already viewed this post
+        $checkStmt = $pdo->prepare("SELECT id FROM blog_views WHERE post_id = ? AND visitor_token = ?");
+        $checkStmt->execute([$post_id, $visitor_token]);
         $hasViewed = $checkStmt->fetch();
 
         if (!$hasViewed) {
-            // First time view: Log it and increment count in blogs table
-            $pdo->beginTransaction();
-            
-            // Log the view with the identifier
-            $logStmt = $pdo->prepare("INSERT INTO analytics (post_id, ip_hash, event_type) VALUES (?, ?, 'view')");
-            $logStmt->execute([$post_id, $identifier]);
+            // First time view: Log it
+            $logStmt = $pdo->prepare("INSERT INTO blog_views (post_id, visitor_token, ip_address) VALUES (?, ?, ?)");
+            $logStmt->execute([$post_id, $visitor_token, $ip_address]);
 
-            // Increment count in the blogs table
-            $updateStmt = $pdo->prepare("UPDATE blogs SET view_count = view_count + 1 WHERE id = ? OR slug = ?");
-            $updateStmt->execute([$post_id, $post_id]);
-            
-            $pdo->commit();
+             // Update the cache count in blogs table for performance (optional but good practice)
+            $updateStmt = $pdo->prepare("UPDATE blogs SET view_count = (SELECT COUNT(*) FROM blog_views WHERE post_id = ?) WHERE id = ? OR slug = ?");
+            $updateStmt->execute([$post_id, $post_id, $post_id]);
         }
 
-        // Return current count
-        $countStmt = $pdo->prepare("SELECT view_count FROM blogs WHERE id = ? OR slug = ?");
-        $countStmt->execute([$post_id, $post_id]);
+        // Return current count using the same logic as GET
+        $countStmt = $pdo->prepare("SELECT COUNT(*) as count FROM blog_views WHERE post_id = ?");
+        $countStmt->execute([$post_id]);
         $result = $countStmt->fetch(PDO::FETCH_ASSOC);
         
-        echo json_encode(['views' => $result ? (int)$result['view_count'] : 0]);
+        echo json_encode(['views' => $result ? (int)$result['count'] : 0]);
     }
 } catch (PDOException $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     http_response_code(500);
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }
 ?>
+

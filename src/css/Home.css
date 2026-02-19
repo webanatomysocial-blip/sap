@@ -440,6 +440,13 @@
 .newsletter-form-container {
   max-width: 500px;
   margin: 0 auto;
+  margin-top: -40px !important;
+}
+
+.newsletter-form-container iframe {
+  width: 100%;
+  max-width: 480px;
+  height: 150px;
 }
 
 .newsletter-form-row {
@@ -552,5 +559,13 @@
   }
   .newsletter-btn {
     width: 100%;
+  }
+  .newsletter-form-container {
+    max-width: 350px;
+    margin: 0 auto !important;
+  }
+  .newsletter-form-container iframe {
+    width: 100%;
+    height: 150px;
   }
 }

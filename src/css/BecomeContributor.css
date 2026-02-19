@@ -420,8 +420,7 @@
 
 .checkbox-item {
   display: flex;
-  align-items: center; /* Center align items vertically */
-  /* Remove flex-start to prevent top alignment if multiline text */
+  align-items: flex-start; /* Align to top for multi-line text */
   background: #f8fafc;
   padding: 10px 12px;
   border-radius: 6px;
@@ -430,6 +429,7 @@
   transition: all 0.2s;
   font-size: 0.95rem;
   color: #475569;
+  min-height: 46px; /* Ensure uniform height */
 }
 
 .checkbox-item:hover {
@@ -441,6 +441,7 @@
   width: 18px;
   height: 18px;
   margin-right: 12px;
+  margin-top: 3px; /* Align with first line of text */
   accent-color: #2563eb;
   cursor: pointer;
   flex-shrink: 0; /* Prevent checkbox squishing */

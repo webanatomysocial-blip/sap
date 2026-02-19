@@ -1,21 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import SimpleRTE from "./SimpleRTE";
 import "../../css/AdminDashboard.css";
+import { authors } from "../../data/authors";
 
 const AdminBlogs = () => {
   const [blogs, setBlogs] = useState([]);
   const [view, setView] = useState("list"); // 'list' or 'editor'
-  const [formData, setFormData] = useState({
+
+  // Initial State
+  const initialFormState = {
     id: "",
     title: "",
     slug: "",
     excerpt: "",
     content: "",
-    author: "User",
+    author: "raghu_boddu", // Default to main author ID
     date: new Date().toISOString().split("T")[0],
     image: "",
     category: "sap-security",
     tags: "",
-  });
+    faqs: [], // Array of { question: "", answer: "" }
+    cta_title: "",
+    cta_description: "",
+    cta_button_text: "",
+    cta_button_link: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -25,7 +36,18 @@ const AdminBlogs = () => {
   const fetchBlogs = async () => {
     try {
       const res = await fetch("/api/posts");
-      if (res.ok) setBlogs(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        // Parse FAQs if string
+        const parsedData = data.map((blog) => ({
+          ...blog,
+          faqs:
+            typeof blog.faqs === "string"
+              ? JSON.parse(blog.faqs || "[]")
+              : blog.faqs || [],
+        }));
+        setBlogs(parsedData);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -45,11 +67,56 @@ const AdminBlogs = () => {
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
       if (name === "title" && !prev.id) {
-        // Auto-generate slug only for new posts
         newData.slug = generateSlug(value);
       }
       return newData;
     });
+  };
+
+  // Content Change Handler
+  const handleContentChange = (content) => {
+    setFormData((prev) => ({ ...prev, content }));
+  };
+
+  // FAQ Handlers
+  const handleFAQChange = (index, field, value) => {
+    const newFAQs = [...formData.faqs];
+    newFAQs[index][field] = value;
+    setFormData((prev) => ({ ...prev, faqs: newFAQs }));
+  };
+
+  const addFAQ = () => {
+    setFormData((prev) => ({
+      ...prev,
+      faqs: [...prev.faqs, { question: "", answer: "" }],
+    }));
+  };
+
+  const removeFAQ = (index) => {
+    const newFAQs = formData.faqs.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, faqs: newFAQs }));
+  };
+
+  // Helper for RTE Image Upload
+  const rteImageUpload = async (file) => {
+    const body = new FormData();
+    body.append("image", file);
+    try {
+      const res = await fetch("/api/upload_blog_image.php", {
+        method: "POST",
+        body: body,
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        return data.path;
+      } else {
+        alert(data.message || "Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Upload error");
+    }
+    return null;
   };
 
   const handleImageUpload = async (file) => {
@@ -77,16 +144,27 @@ const AdminBlogs = () => {
   };
 
   const handleEdit = (blog) => {
-    setFormData(blog);
+    // Ensure nested structures are initialized
+    setFormData({
+      ...initialFormState, // defaults
+      ...blog,
+      faqs:
+        typeof blog.faqs === "string"
+          ? JSON.parse(blog.faqs || "[]")
+          : blog.faqs || [],
+      // Ensure nulls become empty strings for inputs
+      cta_title: blog.cta_title || "",
+      cta_description: blog.cta_description || "",
+      cta_button_text: blog.cta_button_text || "",
+      cta_button_link: blog.cta_button_link || "",
+    });
     setView("editor");
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this blog?")) {
       try {
-        const res = await fetch(`/api/posts/${id}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
         if (res.ok) fetchBlogs();
       } catch (err) {
         console.error(err);
@@ -95,6 +173,16 @@ const AdminBlogs = () => {
   };
 
   const handleSave = async () => {
+    // Date validation
+    const selectedDate = new Date(formData.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate > new Date()) {
+      alert("Date cannot be in the future.");
+      return;
+    }
+
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
@@ -114,23 +202,17 @@ const AdminBlogs = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      id: "",
-      title: "",
-      slug: "",
-      excerpt: "",
-      content: "",
-      author: "User",
-      date: new Date().toISOString().split("T")[0],
-      image: "",
-      category: "sap-security",
-      tags: "",
-    });
+    setFormData(initialFormState);
   };
 
+  const authorOptions = Object.entries(authors).map(([id, author]) => ({
+    id,
+    name: author.name,
+  }));
+
   return (
-    <div className="admin-content">
-      <div className="admin-header">
+    <div className="admin-page-wrapper">
+      <div className="page-header">
         <h2>Blog Management</h2>
         {view === "list" && (
           <button
@@ -151,52 +233,55 @@ const AdminBlogs = () => {
       </div>
 
       {view === "list" ? (
-        <div className="admin-table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blogs.length === 0 ? (
+        <div className="admin-card">
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>
-                    No custom blogs found.
-                  </td>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Date</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                blogs.map((blog) => (
-                  <tr key={blog.id}>
-                    <td>{blog.title}</td>
-                    <td>{blog.author}</td>
-                    <td>{blog.date}</td>
-                    <td>
-                      <button
-                        className="btn-edit"
-                        style={{ marginRight: "10px" }}
-                        onClick={() => handleEdit(blog)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn-reject"
-                        onClick={() => handleDelete(blog.id)}
-                      >
-                        Delete
-                      </button>
+              </thead>
+              <tbody>
+                {blogs.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: "center" }}>
+                      No custom blogs found.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  blogs.map((blog) => (
+                    <tr key={blog.id}>
+                      <td>{blog.title}</td>
+                      <td>{authors[blog.author]?.name || blog.author}</td>
+                      <td>{blog.date}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(blog)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(blog.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
-        <div className="blog-editor-form">
+        <div className="admin-card">
           <div className="form-group">
             <label>Title</label>
             <input
@@ -222,28 +307,35 @@ const AdminBlogs = () => {
               value={formData.excerpt}
               onChange={handleInputChange}
               rows="3"
-              placeholder="Sort summary for cards..."
+              placeholder="Short summary for cards..."
             />
           </div>
+
           <div className="form-group">
-            <label>Content (HTML/Text)</label>
-            <textarea
-              name="content"
+            <label>Content (Rich Text)</label>
+            <SimpleRTE
               value={formData.content}
-              onChange={handleInputChange}
-              rows="15"
-              style={{ fontFamily: "monospace" }}
-              placeholder="<p>Write your blog content here...</p>"
+              onChange={handleContentChange}
+              onImageUpload={rteImageUpload}
             />
           </div>
+
           <div className="form-row">
             <div className="form-group half">
               <label>Author</label>
-              <input
+              <select
                 name="author"
                 value={formData.author}
                 onChange={handleInputChange}
-              />
+                className="form-control"
+              >
+                {authorOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
+                <option value="Admin">Admin (Legacy)</option>
+              </select>
             </div>
             <div className="form-group half">
               <label>Date</label>
@@ -251,10 +343,12 @@ const AdminBlogs = () => {
                 type="date"
                 name="date"
                 value={formData.date}
+                max={new Date().toISOString().split("T")[0]}
                 onChange={handleInputChange}
               />
             </div>
           </div>
+
           <div className="form-group">
             <label>Blog Featured Image</label>
             <div
@@ -303,14 +397,17 @@ const AdminBlogs = () => {
               )}
             </div>
           </div>
+
           <div className="form-group">
             <label>Category</label>
             <select
               name="category"
               value={formData.category}
               onChange={handleInputChange}
+              className="form-control"
             >
               <option value="sap-security">SAP Security</option>
+              {/* ... other options same as before ... */}
               <option value="sap-s4hana-security">SAP S/4HANA Security</option>
               <option value="sap-fiori-security">SAP Fiori Security</option>
               <option value="sap-btp-security">SAP BTP Security</option>
@@ -321,21 +418,137 @@ const AdminBlogs = () => {
                 SuccessFactors
               </option>
               <option value="sap-security-other">Other SAP Security</option>
-
               <option value="sap-access-control">Access Control</option>
               <option value="sap-process-control">Process Control</option>
               <option value="sap-iag">SAP IAG</option>
               <option value="sap-grc">SAP GRC</option>
-
               <option value="sap-cybersecurity">Cybersecurity</option>
               <option value="sap-licensing">SAP Licensing</option>
-
               <option value="product-reviews">Product Reviews</option>
               <option value="podcasts">Podcasts</option>
               <option value="videos">Videos</option>
               <option value="other-tools">Other Tools</option>
             </select>
           </div>
+
+          <div className="editor-section">
+            <h3>SEO Settings</h3>
+            <div className="form-group">
+              <label>Meta Title</label>
+              <input
+                name="meta_title"
+                value={formData.meta_title || ""}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Custom SEO Title"
+              />
+            </div>
+            <div className="form-group">
+              <label>Meta Description</label>
+              <textarea
+                name="meta_description"
+                value={formData.meta_description || ""}
+                onChange={handleInputChange}
+                className="form-control"
+                rows="3"
+                placeholder="Custom SEO Description"
+              />
+            </div>
+            <div className="form-group">
+              <label>Meta Keywords</label>
+              <input
+                name="meta_keywords"
+                value={formData.meta_keywords || ""}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="keyword1, keyword2, keyword3"
+              />
+            </div>
+          </div>
+
+          <div className="editor-section">
+            <h3>FAQs</h3>
+            {formData.faqs.map((faq, index) => (
+              <div key={index} className="faq-editor-item">
+                <input
+                  placeholder="Question"
+                  value={faq.question}
+                  onChange={(e) =>
+                    handleFAQChange(index, "question", e.target.value)
+                  }
+                  className="form-control"
+                  style={{ marginBottom: "8px" }}
+                />
+                <textarea
+                  placeholder="Answer"
+                  value={faq.answer}
+                  onChange={(e) =>
+                    handleFAQChange(index, "answer", e.target.value)
+                  }
+                  className="form-control"
+                  rows="2"
+                />
+                <button
+                  className="btn-delete"
+                  onClick={() => removeFAQ(index)}
+                  style={{ marginTop: "8px" }}
+                >
+                  Remove FAQ
+                </button>
+              </div>
+            ))}
+            <button
+              className="btn-edit"
+              onClick={addFAQ}
+              style={{ marginTop: "12px" }}
+            >
+              + Add FAQ
+            </button>
+          </div>
+
+          <div className="editor-section">
+            <h3>Call to Action (CTA)</h3>
+            <div className="form-group">
+              <label>CTA Title</label>
+              <input
+                name="cta_title"
+                value={formData.cta_title}
+                onChange={handleInputChange}
+                className="form-control"
+              />
+            </div>
+            <div className="form-group">
+              <label>CTA Description</label>
+              <textarea
+                name="cta_description"
+                value={formData.cta_description}
+                onChange={handleInputChange}
+                className="form-control"
+                rows="2"
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group half">
+                <label>Button Text</label>
+                <input
+                  name="cta_button_text"
+                  value={formData.cta_button_text}
+                  onChange={handleInputChange}
+                  className="form-control"
+                />
+              </div>
+              <div className="form-group half">
+                <label>Button Link</label>
+                <input
+                  name="cta_button_link"
+                  value={formData.cta_button_link}
+                  onChange={handleInputChange}
+                  className="form-control"
+                />
+              </div>
+            </div>
+          </div>
+
           <button
             className="btn-approve"
             onClick={handleSave}
@@ -346,20 +559,29 @@ const AdminBlogs = () => {
         </div>
       )}
       <style>{`
-            .blog-editor-form {
-                background: white;
-                padding: 24px;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                max-width: 800px;
-                margin: 0 auto;
-            }
             .form-row {
                 display: flex;
                 gap: 20px;
             }
             .form-group.half {
                 flex: 1;
+            }
+            .editor-section {
+                margin-top: 32px;
+                padding-top: 24px;
+                border-top: 1px solid #e2e8f0;
+            }
+            .editor-section h3 {
+                font-size: 1.1rem;
+                margin-bottom: 16px;
+                color: var(--slate-800);
+            }
+            .faq-editor-item {
+                background: var(--slate-50);
+                padding: 16px;
+                border-radius: 8px;
+                margin-bottom: 12px;
+                border: 1px solid var(--slate-200);
             }
         `}</style>
     </div>

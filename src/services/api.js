@@ -25,7 +25,7 @@ api.interceptors.response.use(
 
 export const getPosts = (page = 1) => api.get(`/posts?page=${page}`);
 export const getPostBySlug = (slug) => api.get(`/posts/${slug}`);
-export const submitComment = (data) => api.post('/comments', data);
+export const submitComment = (data) => fetch('/api/save_comment.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 export const applyContributor = (data) => api.post('/contributors/apply', data);
 export const trackAnalytics = (data) => api.post('/analytics/track', data);
 export const getAds = (zone) => api.get(`/ads${zone ? `?zone=${zone}` : ''}`);

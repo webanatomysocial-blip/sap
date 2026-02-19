@@ -25,36 +25,62 @@ const AdminHome = () => {
   }, []);
 
   return (
-    <div className="admin-overview">
-      <div className="dashboard-grid">
-        <div className="stat-card">
-          <span className="stat-label">Contributors</span>
-          <span className="stat-value">{stats.contributors}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Pending Reviews</span>
-          <span className="stat-value">{stats.pending_reviews}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Blog Posts</span>
-          <span className="stat-value">{stats.blogs}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Total Views</span>
-          <span className="stat-value">
-            {stats.total_views > 999
-              ? (stats.total_views / 1000).toFixed(1) + "k"
-              : stats.total_views}
-          </span>
-        </div>
+    <div className="admin-page-wrapper">
+      <div className="page-header">
+        <h2>Dashboard</h2>
       </div>
 
-      <div className="dashboard-intro">
-        <h3>Welcome to the SAP Security Expert Admin Panel</h3>
-        <p>
-          Select a module from the sidebar to confirm approvals or manage
-          content.
-        </p>
+      <div className="admin-card">
+        <div className="dashboard-grid">
+          <div className="stat-card">
+            <div className="stat-icon">
+              <i className="bi bi-people"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.contributors}</span>
+              <span className="stat-label">Contributors</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">
+              <i className="bi bi-hourglass-split"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.pending_reviews}</span>
+              <span className="stat-label">Pending Reviews</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">
+              <i className="bi bi-file-earmark-text"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.blogs}</span>
+              <span className="stat-label">Blog Posts</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">
+              <i className="bi bi-eye"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">
+                {stats.total_views > 999
+                  ? (stats.total_views / 1000).toFixed(1) + "k"
+                  : stats.total_views}
+              </span>
+              <span className="stat-label">Total Views</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-intro">
+          <h3>Welcome to the SAP Security Expert Admin Panel</h3>
+          <p>
+            Select a module from the sidebar to confirm approvals or manage
+            content.
+          </p>
+        </div>
       </div>
     </div>
   );

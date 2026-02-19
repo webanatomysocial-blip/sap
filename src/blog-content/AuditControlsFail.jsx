@@ -1,3 +1,4 @@
+/*
 import React from "react";
 import BlogLayout from "../components/BlogLayout";
 import featuredImage from "../assets/blogs/audit-controls-fail.jpg";
@@ -147,3 +148,5 @@ const AuditControlsFail = () => {
 };
 
 export default AuditControlsFail;
+*/
+export default () => <div>Blog Migrated to Database</div>;

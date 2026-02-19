@@ -18,8 +18,14 @@ const AdminLayout = () => {
     }
   }, []);
 
+  const [loginError, setLoginError] = useState("");
+  const [loginSuccess, setLoginSuccess] = useState("");
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoginError("");
+    setLoginSuccess("");
+
     try {
       const response = await axios.post("/api/login", {
         username,
@@ -27,12 +33,18 @@ const AdminLayout = () => {
       });
 
       if (response.data.status === "success") {
+        setLoginSuccess("Login successful! Redirecting...");
         localStorage.setItem("adminAuth", "true");
         localStorage.setItem("adminUser", JSON.stringify(response.data.user));
-        setIsAuthenticated(true);
+        // Small delay to show success message
+        setTimeout(() => {
+          setIsAuthenticated(true);
+        }, 800);
       }
     } catch (error) {
-      alert(error.response?.data?.message || "Login failed. Please try again.");
+      setLoginError(
+        error.response?.data?.message || "Login failed. Please try again.",
+      );
     }
   };
 
@@ -60,6 +72,10 @@ const AdminLayout = () => {
       <div className="admin-login-wrapper">
         <div className="admin-login-box">
           <h2>Admin Login</h2>
+          {loginError && <div className="admin-alert error">{loginError}</div>}
+          {loginSuccess && (
+            <div className="admin-alert success">{loginSuccess}</div>
+          )}
           <form onSubmit={handleLogin}>
             <div className="form-group">
               <label>Username</label>

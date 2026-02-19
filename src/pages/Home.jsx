@@ -14,67 +14,10 @@ import {
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { HiArrowRight } from "react-icons/hi";
 import FeaturedInsights from "../components/FeaturedInsights";
-import LatestBlogs from "../components/LatestBlogs";
 import CommunitySection from "../components/CommunitySection";
 import "../css/Home.css";
 
 // Dummy data for visual layout
-// const activeMembers = [
-//   {
-//     name: "John Doe",
-//     role: "SAP Architect",
-//     img: "https://i.pravatar.cc/150?img=1",
-//   },
-//   {
-//     name: "Sarah Smith",
-//     role: "GRC Consultant",
-//     img: "https://i.pravatar.cc/150?img=5",
-//   },
-//   {
-//     name: "Mike Ross",
-//     role: "Security Lead",
-//     img: "https://i.pravatar.cc/150?img=3",
-//   },
-//   {
-//     name: "Emily White",
-//     role: "BTP Expert",
-//     img: "https://i.pravatar.cc/150?img=9",
-//   },
-// ];
-
-// const announcements = [
-//   { title: "New SAP Security Patch Day - Oct 2025", date: "2 hours ago" },
-//   { title: "Webinar: Moving GRC to the Cloud", date: "1 day ago" },
-//   { title: "Community Meetup in Berlin", date: "3 days ago" },
-// ];
-
-// const featuredInsights = [
-//   {
-//     title: "Understanding SAP FUE vs User Metrics",
-//     category: "Licensing",
-//     date: "Oct 10",
-//     img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&q=80",
-//   },
-//   {
-//     title: "Integrating Okta with SAP IAS",
-//     category: "Security",
-//     date: "Oct 01",
-//     img: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=500&q=80",
-//   },
-//   {
-//     title: "Migrating GRC to IAG",
-//     category: "IAG",
-//     date: "Oct 12",
-//     img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80",
-//   },
-//   {
-//     title: "Top VS Code Extensions",
-//     category: "Tools",
-//     date: "Oct 28",
-//     img: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&q=80",
-//   },
-// ];
-
 import SEO from "../components/SEO";
 
 export default function Home() {
@@ -92,9 +35,6 @@ export default function Home() {
         {/* Featured Insights with Tabs - Dynamic from metadata */}
         <FeaturedInsights id="featured-insights" />
 
-        {/* Latest Blogs & Activity - Dynamic from metadata */}
-        <LatestBlogs />
-
         <div className="container main-layout">
           {/* Explore by Expertise */}
           <section className="expertise-section">
@@ -106,15 +46,87 @@ export default function Home() {
               </p>
             </div>
             <div className="expertise-grid">
-              <Link to="/sap-grc" className="expertise-card-new soft-shadow">
+              <Link
+                to="/sap-security"
+                className="expertise-card-new soft-shadow"
+              >
                 <div className="expertise-row">
                   <div className="expertise-icon">
                     <LuShield />
                   </div>
-                  <h3>SAP GRC</h3>
+                  <h3>SAP Security</h3>
                 </div>
                 <div className="expertise-info">
-                  <p>Access Control, Process Control, Risk Management.</p>
+                  <p>Core security, roles, authorizations, and auditing.</p>
+                  <span className="article-count">
+                    Articles <HiArrowRight />
+                  </span>
+                </div>
+              </Link>
+              <Link to="/sap-grc" className="expertise-card-new soft-shadow">
+                <div className="expertise-row">
+                  <div className="expertise-icon">
+                    <LuFileCheck />
+                  </div>
+                  <h3>SAP GRC & IAG</h3>
+                </div>
+                <div className="expertise-info">
+                  <p>Access Control, Process Control, and Risk Management.</p>
+                  <span className="article-count">
+                    Articles <HiArrowRight />
+                  </span>
+                </div>
+              </Link>
+              <Link
+                to="/sap-cybersecurity"
+                className="expertise-card-new soft-shadow"
+              >
+                <div className="expertise-row">
+                  <div className="expertise-icon">
+                    <LuLock />
+                  </div>
+                  <h3>SAP Cybersecurity</h3>
+                </div>
+                <div className="expertise-info">
+                  <p>
+                    Threat detection, monitoring, and infrastructure security.
+                  </p>
+                  <span className="article-count">
+                    Articles <HiArrowRight />
+                  </span>
+                </div>
+              </Link>
+              <Link
+                to="/sap-licensing"
+                className="expertise-card-new soft-shadow"
+              >
+                <div className="expertise-row">
+                  <div className="expertise-icon">
+                    <LuKeyRound />
+                  </div>
+                  <h3>SAP Licensing</h3>
+                </div>
+                <div className="expertise-info">
+                  <p>
+                    Audit readiness, usage analysis, and license optimization.
+                  </p>
+                  <span className="article-count">
+                    Articles <HiArrowRight />
+                  </span>
+                </div>
+              </Link>
+              <Link
+                to="/sap-s4hana-security"
+                className="expertise-card-new soft-shadow"
+              >
+                <div className="expertise-row">
+                  <div className="expertise-icon">
+                    <LuCloud />
+                  </div>
+                  <h3>SAP S/4HANA Security</h3>
+                </div>
+                <div className="expertise-info">
+                  <p>Security for S/4HANA Finance, Supply Chain, and Cloud.</p>
                   <span className="article-count">
                     Articles <HiArrowRight />
                   </span>
@@ -128,76 +140,7 @@ export default function Home() {
                   <h3>SAP IAG</h3>
                 </div>
                 <div className="expertise-info">
-                  <p>Identity Access Governance in the cloud.</p>
-                  <span className="article-count">
-                    Articles <HiArrowRight />
-                  </span>
-                </div>
-              </Link>
-              <Link
-                to="/sap-security"
-                className="expertise-card-new soft-shadow"
-              >
-                <div className="expertise-row">
-                  <div className="expertise-icon">
-                    <LuLock />
-                  </div>
-                  <h3>Cybersecurity</h3>
-                </div>
-                <div className="expertise-info">
-                  <p>Threat detection, vulnerability management.</p>
-                  <span className="article-count">
-                    Articles <HiArrowRight />
-                  </span>
-                </div>
-              </Link>
-              <Link
-                to="/sap-licensing"
-                className="expertise-card-new soft-shadow"
-              >
-                <div className="expertise-row">
-                  <div className="expertise-icon">
-                    <LuFileCheck />
-                  </div>
-                  <h3>License Compliance</h3>
-                </div>
-                <div className="expertise-info">
-                  <p>SAP licensing optimization strategies.</p>
-                  <span className="article-count">
-                    Articles <HiArrowRight />
-                  </span>
-                </div>
-              </Link>
-              <Link
-                to="/sap-btp-security"
-                className="expertise-card-new soft-shadow"
-              >
-                <div className="expertise-row">
-                  <div className="expertise-icon">
-                    <LuCloud />
-                  </div>
-                  <h3>Cloud Security</h3>
-                </div>
-                <div className="expertise-info">
-                  <p>S/4HANA Cloud, BTP security.</p>
-                  <span className="article-count">
-                    Articles <HiArrowRight />
-                  </span>
-                </div>
-              </Link>
-              <Link
-                to="/sap-security"
-                className="expertise-card-new soft-shadow"
-              >
-                <div className="expertise-row">
-                  <div className="expertise-icon">
-                    <LuKeyRound />
-                  </div>
-                  <h3>IAM</h3>
-                </div>
-
-                <div className="expertise-info">
-                  <p>Identity & Access Management best practices.</p>
+                  <p>Identity Access Governance and Cloud Identity services.</p>
                   <span className="article-count">
                     Articles <HiArrowRight />
                   </span>
@@ -262,17 +205,19 @@ export default function Home() {
               </p>
             </div>
             <div className="newsletter-form-container">
-              <div className="newsletter-form-row">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="newsletter-input"
-                />
-                <button className="newsletter-btn">Subscribe</button>
-              </div>
-              <p className="newsletter-disclaimer">
-                We respect your privacy. Unsubscribe at any time.
-              </p>
+              <iframe
+                src="https://grcwithraghu.substack.com/embed"
+                // style={{
+                //   border: "1px solid #EEE",
+                //   background: "white",
+                //   borderRadius: "8px",
+                //   margin: "0 auto",
+                //   display: "block",
+                // }}
+                frameBorder="0"
+                scrolling="no"
+                title="Newsletter Subscription"
+              ></iframe>
             </div>
           </div>
         </section>

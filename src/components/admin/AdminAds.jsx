@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
+import useScrollLock from "../../hooks/useScrollLock";
 
 const AdminAds = () => {
   const [ads, setAds] = useState({
-    home_left: { image: "", link: "", active: false },
-    home_right: { image: "", link: "", active: false },
-    sidebar: { image: "", link: "", active: false },
+    community_left: { image: "", link: "", active: false },
+    community_right: { image: "", link: "", active: false },
+    blog_sidebar: { image: "", link: "", active: false },
   });
 
   const [uploading, setUploading] = useState(null);
   const [message, setMessage] = useState("");
+
+  // editingZone is declared later, so we should move useScrollLock there or move state up.
+  // BETTER: Move useScrollLock to after the existing state declaration or move state up.
+  // Since I can't easily see where the other declaration is without reading full file again,
+  // I will just remove this block and add useScrollLock where editingZone IS declared.
 
   useEffect(() => {
     const fetchAds = async () => {
@@ -91,100 +97,275 @@ const AdminAds = () => {
     }
   };
 
+  const [editingZone, setEditingZone] = useState(null);
+
+  useScrollLock(!!editingZone);
+
   const zones = [
-    { id: "home_left", label: "Home Page - Left Ad", dimensions: "300x250px" },
     {
-      id: "home_right",
-      label: "Home Page - Right Ad",
+      id: "community_left",
+      label: "Community Page - Left Ad",
       dimensions: "300x250px",
     },
-    { id: "sidebar", label: "Blog Sidebar Ad", dimensions: "300x600px" },
+    {
+      id: "community_right",
+      label: "Community Page - Right Ad",
+      dimensions: "300x250px",
+    },
+    { id: "blog_sidebar", label: "Blog Sidebar Ad", dimensions: "400x400px" },
   ];
 
+  const handleEdit = (zoneId) => {
+    setEditingZone(zoneId);
+  };
+
+  const handleCloseModal = () => {
+    setEditingZone(null);
+    setMessage("");
+  };
+
+  const handleSaveZone = async (e) => {
+    e.preventDefault();
+    if (!editingZone) return;
+
+    try {
+      const zoneData = { ...ads[editingZone], zone: editingZone };
+      const res = await fetch("/api/admin/ads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(zoneData),
+      });
+
+      if (res.ok) {
+        setMessage("Changes saved successfully!");
+        setTimeout(() => {
+          handleCloseModal();
+        }, 1000);
+      } else {
+        setMessage("Failed to save.");
+      }
+    } catch (error) {
+      console.error("Save failed", error);
+      setMessage("Error saving changes.");
+    }
+  };
+
   return (
-    <div className="admin-content">
-      <div className="admin-header">
-        <h2>Ads Management</h2>
-      </div>
-
-      {message && <div className="alert-success">{message}</div>}
-
-      <div className="ads-grid">
-        {zones.map((zone) => (
-          <div
-            key={zone.id}
-            className="admin-card"
-            style={{ marginBottom: "20px" }}
-          >
-            <h3>{zone.label}</h3>
-            <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
-              Required dimensions: {zone.dimensions}
-            </p>
-
-            <div className="form-group">
-              <label>Status</label>
-              <select
-                value={ads[zone.id].active ? "true" : "false"}
-                onChange={(e) =>
-                  handleChange(zone.id, "active", e.target.value === "true")
-                }
-                className="form-control"
-              >
-                <option value="false">Inactive</option>
-                <option value="true">Active</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Ad Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files[0]) {
-                    handleImageUpload(zone.id, e.target.files[0]);
-                  }
-                }}
-                className="form-control"
-              />
-              {uploading === zone.id && <p>Uploading...</p>}
-              {ads[zone.id].image && (
-                <div style={{ marginTop: "10px" }}>
-                  <img
-                    src={ads[zone.id].image}
-                    alt={`${zone.label} preview`}
-                    style={{
-                      maxWidth: zone.id === "sidebar" ? "150px" : "150px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <p style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                    Current: {ads[zone.id].image}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Link URL</label>
-              <input
-                type="url"
-                value={ads[zone.id].link}
-                onChange={(e) => handleChange(zone.id, "link", e.target.value)}
-                placeholder="https://example.com"
-                className="form-control"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="admin-actions">
-        <button className="btn-primary" onClick={handleSave}>
-          Save All Changes
+    <div className="admin-page-wrapper">
+      <div className="page-header">
+        <h2>Ads & Promotions</h2>
+        <button
+          className="btn-approve"
+          onClick={() => {
+            // setEditingAd(null);
+            // setFormData({ image: "", link: "", position: "sidebar_top" });
+            // setIsModalOpen(true);
+          }}
+        >
+          + New Ad
         </button>
       </div>
+
+      <div className="admin-card">
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Zone / Placement</th>
+                <th>Preview</th>
+                <th>Link Destination</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {zones.map((zone) => {
+                const ad = ads[zone.id];
+                return (
+                  <tr key={zone.id}>
+                    <td>
+                      <strong>{zone.label}</strong>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "#64748b",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {zone.dimensions}
+                      </div>
+                    </td>
+                    <td>
+                      {ad.image ? (
+                        <img
+                          src={ad.image}
+                          alt={zone.label}
+                          className="ad-thumbnail"
+                        />
+                      ) : (
+                        <div className="ad-thumbnail-placeholder">
+                          <i className="bi bi-image"></i>
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {ad.link ? (
+                        <a
+                          href={ad.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            color: "#2563eb",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          {ad.link}
+                        </a>
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>No link set</span>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          ad.active ? "status-active" : "status-rejected"
+                        }`}
+                      >
+                        {ad.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(zone.id)}
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {editingZone && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Edit {zones.find((z) => z.id === editingZone)?.label}</h3>
+              <button className="close-modal" onClick={handleCloseModal}>
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleSaveZone}>
+              <div className="modal-body">
+                {message && (
+                  <div
+                    style={{
+                      padding: "10px",
+                      background: "#dcfce7",
+                      color: "#166534",
+                      marginBottom: "15px",
+                      borderRadius: "8px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {message}
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={ads[editingZone].active ? "true" : "false"}
+                    onChange={(e) =>
+                      handleChange(
+                        editingZone,
+                        "active",
+                        e.target.value === "true",
+                      )
+                    }
+                    className="form-control"
+                  >
+                    <option value="false">Inactive</option>
+                    <option value="true">Active</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Ad Image URL / Upload</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    {ads[editingZone].image && (
+                      <img
+                        src={ads[editingZone].image}
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                        alt="Preview"
+                      />
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files[0]) {
+                            handleImageUpload(editingZone, e.target.files[0]);
+                          }
+                        }}
+                        className="form-control"
+                        style={{ marginBottom: "8px" }}
+                      />
+                      {uploading === editingZone && (
+                        <p style={{ color: "#2563eb", fontSize: "0.85rem" }}>
+                          Uploading...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Destination Link</label>
+                  <input
+                    type="url"
+                    value={ads[editingZone].link}
+                    onChange={(e) =>
+                      handleChange(editingZone, "link", e.target.value)
+                    }
+                    placeholder="https://..."
+                    className="form-control"
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={handleCloseModal}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

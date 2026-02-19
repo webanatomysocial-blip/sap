@@ -22,14 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $file = $_FILES['image'];
     $zone = $_POST['zone'] ?? 'unknown';
 
-    // Flexible path detection for deployment
-    // If api/ is next to assets/ (common in dist deployments), go up one level
-    $uploadDir = __DIR__ . '/../assets/ads/';
-    
-    // If that doesn't exist, try the local dev structure (../public/assets/ads/)
-    if (!is_dir($uploadDir) && !is_dir(__DIR__ . '/../assets/')) {
-         $uploadDir = __DIR__ . '/../public/assets/ads/';
-    }
+    // Use same structure as blog images
+    $uploadDir = __DIR__ . '/../public/assets/ads/'; // for local development
+    // $uploadDir = __DIR__ . '/../assets/ads/'; // for production
     
     // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
@@ -61,9 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     list($width, $height) = getimagesize($file['tmp_name']);
     
     $expectedDimensions = [
-        'home_left' => ['width' => 300, 'height' => 250],
-        'home_right' => ['width' => 300, 'height' => 250],
-        'sidebar' => ['width' => 300, 'height' => 600]
+        'community_left' => ['width' => 300, 'height' => 250],
+        'community_right' => ['width' => 300, 'height' => 250],
+        'blog_sidebar' => ['width' => 400, 'height' => 400]
     ];
 
     if (isset($expectedDimensions[$zone])) {
@@ -86,16 +81,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $filename = 'ad_' . $zone . '_' . time() . '.' . $extension;
     $filePath = $uploadDir . $filename;
 
+    // Check if there is an old image to delete
+    $oldImage = $_POST['old_image'] ?? '';
+    if (!empty($oldImage)) {
+        $oldPath = __DIR__ . '/..' . $oldImage;
+         if (!file_exists($oldPath)) {
+            $oldPath = __DIR__ . '/../public' . $oldImage;
+        }
+        
+        if (file_exists($oldPath) && is_file($oldPath)) {
+            unlink($oldPath);
+        }
+    }
+
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
         echo json_encode([
             'status' => 'success',
             'message' => 'Ad image uploaded successfully',
             'filename' => $filename,
-            // Return path relative to web root. 
-            // If we uploaded to ../assets, path is /assets
-            // If we uploaded to ../public/assets, path is /assets (since public is usually root)
-            'path' => '/assets/ads/' . $filename
+            'path' => '/public/assets/ads/' . $filename
+            // 'path' => '/assets/ads/' . $filename
+
         ]);
     } else {
         echo json_encode([

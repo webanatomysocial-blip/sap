@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
+import useScrollLock from "../../hooks/useScrollLock";
 
 const AdminAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  useScrollLock(isModalOpen);
   const [formData, setFormData] = useState({
     title: "",
     date: new Date().toISOString().split("T")[0],
@@ -96,8 +99,8 @@ const AdminAnnouncements = () => {
   };
 
   return (
-    <div className="admin-content">
-      <div className="admin-header-actions">
+    <div className="admin-page-wrapper">
+      <div className="page-header">
         <h2>Announcements</h2>
         <button className="btn-primary" onClick={() => handleOpenModal()}>
           <i className="bi bi-plus-lg"></i> New Announcement
@@ -105,55 +108,51 @@ const AdminAnnouncements = () => {
       </div>
 
       <div className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Date</th>
-              <th>Status</th>
-
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {announcements.length === 0 ? (
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
               <tr>
-                <td colSpan="5" className="text-center">
-                  No announcements found.
-                </td>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Actions</th>
               </tr>
-            ) : (
-              announcements.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.title}</td>
-                  <td>{item.date}</td>
-                  <td>
-                    <span className={`status-badge status-${item.status}`}>
-                      {item.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button
-                      className="btn-icon"
-                      onClick={() => handleOpenModal(item)}
-                      title="Edit"
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      className="btn-icon delete"
-                      onClick={() => handleDelete(item.id)}
-                      title="Delete"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+            </thead>
+            <tbody>
+              {announcements.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="text-center">
+                    No announcements found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                announcements.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.title}</td>
+                    <td>{item.date}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleOpenModal(item)}
+                          title="Edit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(item.id)}
+                          title="Delete"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isModalOpen && (
@@ -161,7 +160,7 @@ const AdminAnnouncements = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? "Edit Announcement" : "New Announcement"}</h3>
-              <button className="btn-close" onClick={handleCloseModal}>
+              <button className="close-modal" onClick={handleCloseModal}>
                 ×
               </button>
             </div>
@@ -197,17 +196,6 @@ const AdminAnnouncements = () => {
                     onChange={handleChange}
                     placeholder="https://..."
                   />
-                </div>
-                <div className="form-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                  >
-                    <option value="active">Active</option>
-                    <option value="archived">Archived</option>
-                  </select>
                 </div>
               </div>
               <div className="modal-footer">

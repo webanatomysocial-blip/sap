@@ -27,13 +27,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo json_encode(["status" => "error", "message" => "Spam detected."]); 
         exit; 
     }
-    
-    // Validate Math Challenge (Simple 2+2 check passed from frontend)
-    if (!isset($data['math_answer']) || intval($data['math_answer']) !== 4) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Incorrect math answer."]);
-        exit;
-    }
 
     $blogId = isset($data['blogId']) ? trim($data['blogId']) : '';
     $author = isset($data['author']) ? trim($data['author']) : '';
@@ -55,6 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ':content' => htmlspecialchars($text)
         ]);
 
+        http_response_code(201);
         echo json_encode(["status" => "success", "message" => "Comment saved successfully. It will be visible after approval."]);
     } catch (PDOException $e) {
         http_response_code(500);

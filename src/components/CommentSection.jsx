@@ -27,11 +27,23 @@ const CommentSection = ({ blogId }) => {
   // Note: For now, we assume comments are passed via props or loaded with the blog.
   // If we need independent reloading, we should add a getComments API.
   // The PHP fetch code is removed.
-  /*
+  // Load comments from API
   useEffect(() => {
-     // ... legacy fetch logic ...
-  }, [blogId]); 
-  */
+    if (!blogId) return;
+
+    // Corrected API URL handling
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
+
+    fetch(`${API_URL}/get_comments.php?blogId=${blogId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setComments(data);
+          setTotalComments(data.length);
+        }
+      })
+      .catch((err) => console.error("Failed to load comments", err));
+  }, [blogId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,10 +62,10 @@ const CommentSection = ({ blogId }) => {
     }
 
     const payload = {
-      post_id: blogId, // Backend expects post_id
-      author_name: authorName,
-      author_email: email,
-      content: newComment,
+      blogId: blogId, // Backend expects blogId
+      author: authorName,
+      email: email,
+      text: newComment,
     };
 
     try {
@@ -179,7 +191,7 @@ const CommentSection = ({ blogId }) => {
               display: "block",
             }}
           >
-            Security Question: What is {mathQuestion.q}? *
+            What is {mathQuestion.q}? *
           </label>
           <input
             type="text"

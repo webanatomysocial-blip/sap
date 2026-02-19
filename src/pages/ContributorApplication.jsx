@@ -4,11 +4,15 @@ import "../css/BecomeContributor.css";
 import { Helmet } from "react-helmet-async";
 import { applyContributor } from "../services/api";
 
+import useScrollLock from "../hooks/useScrollLock";
+
 const ContributorApplication = () => {
   const location = useLocation();
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // success | error
+
+  useScrollLock(showTermsModal);
 
   const [formData, setFormData] = useState({
     // Section 1
@@ -95,16 +99,35 @@ const ContributorApplication = () => {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
-    try {
-      // Send to backend API
-      const response = await applyContributor(formData);
+    // Prepare FormData
+    const payload = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key === "expertise" || key === "contributionTypes") {
+        payload.append(key, JSON.stringify(formData[key]));
+      } else if (key === "profilePhoto") {
+        if (formData.profilePhoto instanceof File) {
+          payload.append("profilePhoto", formData.profilePhoto);
+        }
+      } else {
+        payload.append(key, formData[key] || "");
+      }
+    });
 
-      if (response.status === 201 || response.status === 200) {
-        console.log("Application successfully submitted!");
+    try {
+      // Use fetch to allow multipart/form-data
+      const API_URL = import.meta.env.VITE_API_URL || "/api";
+      const response = await fetch(`${API_URL}/contributors/apply`, {
+        method: "POST",
+        body: payload,
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
         setSubmitStatus("success");
         window.scrollTo(0, 0);
       } else {
-        console.error("Server error:", response.data?.message);
+        console.error("Server error:", result.message);
         setSubmitStatus("error");
       }
     } catch (error) {
@@ -117,18 +140,6 @@ const ContributorApplication = () => {
       }
     }
   };
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (showTermsModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [showTermsModal]);
 
   return (
     <div className="become-contributor-page">
@@ -597,7 +608,7 @@ const ContributorApplication = () => {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          profilePhoto: e.target.files[0]?.name,
+                          profilePhoto: e.target.files[0],
                         })
                       }
                       accept="image/*"

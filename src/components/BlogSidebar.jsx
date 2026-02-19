@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BsSearch } from "react-icons/bs";
-import { categories } from "../data/categories";
+// Removed static categories import
 import "../css/BlogSidebar.css";
 
 const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
@@ -14,7 +14,55 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Dynamic Categories State
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
   const API_URL = import.meta.env.VITE_API_URL || "/api";
+
+  // Helper to format slug to name
+  const formatCategoryName = (slug) => {
+    if (!slug) return "";
+    // Manual overrides for specific acronyms
+    const overrides = {
+      "sap-grc": "SAP GRC",
+      "sap-iag": "SAP IAG",
+      "sap-cis": "SAP CIS (IAS/IPS)",
+      "sap-sac-security": "SAP SAC Security",
+      "sap-btp-security": "SAP BTP Security",
+      "sap-s4hana-security": "SAP S/4HANA Security",
+      "sap-fiori-security": "SAP Fiori Security",
+      "sap-public-cloud": "SAP Public Cloud",
+      "sap-successfactors-security": "SuccessFactors",
+      "sap-security-other": "Other SAP Security",
+      "sap-access-control": "SAP Access Control",
+      "sap-process-control": "SAP Process Control",
+      "sap-cybersecurity": "SAP Cybersecurity",
+      "sap-licensing": "SAP Licensing",
+    };
+    if (overrides[slug]) return overrides[slug];
+
+    return slug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  // Fetch Categories
+  useEffect(() => {
+    fetch(`${API_URL}/get_categories.php`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "success") {
+          setCategories(data.categories || []);
+        }
+        setLoadingCategories(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching categories:", err);
+        setLoadingCategories(false);
+      });
+  }, [API_URL]);
 
   // Fetch Posts for Search & Latest
   useEffect(() => {
@@ -42,7 +90,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
     if (propSidebarAd && propSidebarAd.active) {
       setSidebarAd(propSidebarAd);
     } else {
-      fetch(`${API_URL}/ads?zone=sidebar`)
+      fetch(`${API_URL}/ads?zone=blog_sidebar`)
         .then((res) => res.json())
         .then((data) => {
           // Laravel returns an array of ads or single object depending on endpoint implementation
@@ -51,8 +99,8 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
             const ad = data[0];
             setSidebarAd({
               active: true,
-              image: ad.image_url,
-              link: ad.target_url,
+              image: ad.image,
+              link: ad.link,
             });
           } else if (data && data.active) {
             setSidebarAd(data);
@@ -117,14 +165,22 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
       {/* Categories Widget */}
       <div className="sidebar-widget categories-widget">
         <h3 className="widget-title">Categories</h3>
-        <ul className="categories-list">
-          {categories.map((cat, idx) => (
-            <li key={idx}>
-              {/* Removed /category/ prefix */}
-              <Link to={`/${cat.slug}`}>{cat.name}</Link>
+        {loadingCategories ? (
+          <p>Loading categories...</p>
+        ) : (
+          <ul className="categories-list">
+            <li>
+              <Link to="/blogs" className="cat-link-all">
+                All Categories
+              </Link>
             </li>
-          ))}
-        </ul>
+            {categories.map((slug, idx) => (
+              <li key={idx}>
+                <Link to={`/${slug}`}>{formatCategoryName(slug)}</Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Dynamic Sidebar Ad */}
