@@ -270,57 +270,64 @@ export default function CommunitySection() {
             )}
 
             {/* Recent Activity */}
-            <div className="widget">
-              <div className="widget-header">
-                <h3>Recent Activity</h3>
-              </div>
-              <div className="activity-list">
-                {recentActivity.map((activity) => (
-                  <Link
-                    key={activity.slug}
-                    to={
-                      activity.category
-                        ? `/${activity.category}/${activity.slug}`
-                        : `/blogs/${activity.slug}`
-                    }
-                    className="activity-item"
-                  >
-                    {/* Handle optional image safely */}
-                    {activity.image && (
-                      <img src={activity.image} alt={activity.title} />
-                    )}
-                    <div className="activity-content">
-                      <span className="activity-badge">
-                        {activity.category
-                          ? activity.category.replace("sap-", "").toUpperCase()
-                          : "BLOG"}
-                      </span>
-                      <h4>{activity.title}</h4>
-                      <p>
-                        {activity.excerpt
-                          ? activity.excerpt.substring(0, 100)
-                          : ""}
-                        ...
-                      </p>
-                      <div className="activity-meta">
-                        <span>
-                          <i className="bi bi-person-circle"></i>{" "}
-                          {authors[activity.author]?.name || activity.author}
+            {recentActivity && recentActivity.length > 0 && (
+              <div className="widget">
+                <div className="widget-header">
+                  <h3>Recent Activity</h3>
+                </div>
+                <div className="activity-list">
+                  {recentActivity.map((activity) => (
+                    <Link
+                      key={activity.slug}
+                      to={
+                        activity.category
+                          ? `/${activity.category}/${activity.slug}`
+                          : `/blogs/${activity.slug}`
+                      }
+                      className="activity-item"
+                    >
+                      {/* Handle optional image safely */}
+                      {activity.image && (
+                        <img src={activity.image} alt={activity.title} />
+                      )}
+                      <div className="activity-content">
+                        <span className="activity-badge">
+                          {activity.category
+                            ? activity.category
+                                .replace("sap-", "")
+                                .toUpperCase()
+                            : "BLOG"}
                         </span>
-                        <span>{formatDate(activity.date)}</span>
+                        <h4>{activity.title}</h4>
+                        <p>
+                          {activity.excerpt
+                            ? activity.excerpt.substring(0, 100)
+                            : ""}
+                          ...
+                        </p>
+                        <div className="activity-meta">
+                          <span>
+                            <i className="bi bi-person-circle"></i>{" "}
+                            {authors[activity.author]?.name || activity.author}
+                          </span>
+                          <span>{formatDate(activity.date)}</span>
+                        </div>
+                        <span className="activity-link">
+                          Read & Join Discussion →
+                        </span>
                       </div>
-                      <span className="activity-link">
-                        Read & Join Discussion →
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
+                </div>
+                {/* FIXED: Using Link for navigation */}
+                <Link
+                  to="/become-a-contributor"
+                  className="view-all-link-center"
+                >
+                  Join the Community →
+                </Link>
               </div>
-              {/* FIXED: Using Link for navigation */}
-              <Link to="/become-a-contributor" className="view-all-link-center">
-                Join the Community →
-              </Link>
-            </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN */}

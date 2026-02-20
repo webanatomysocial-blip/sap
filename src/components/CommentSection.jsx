@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "../css/CommentSection.css";
 import { submitComment } from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 const CommentSection = ({ blogId }) => {
   const [comments, setComments] = useState([]);
@@ -12,6 +13,7 @@ const CommentSection = ({ blogId }) => {
   const [honeypot, setHoneypot] = useState(""); // Spam trap
   /* eslint-enable no-unused-vars */
   const [mathAnswer, setMathAnswer] = useState("");
+  const { addToast } = useToast();
 
   // Initialize random math question
   const [mathQuestion, setMathQuestion] = useState(() => {
@@ -57,7 +59,10 @@ const CommentSection = ({ blogId }) => {
 
     // Spam Check 2: Math
     if (mathAnswer !== mathQuestion.a) {
-      alert(`Incorrect security answer. Please calculate: ${mathQuestion.q}`);
+      addToast(
+        `Incorrect security answer. Please calculate: ${mathQuestion.q}`,
+        "error",
+      );
       return;
     }
 
@@ -72,7 +77,7 @@ const CommentSection = ({ blogId }) => {
       const response = await submitComment(payload);
 
       if (response.status === 201) {
-        alert("Comment submitted for approval!");
+        addToast("Comment submitted for approval!", "success");
         setNewComment("");
         setAuthorName("");
         setEmail(""); // Reset email
@@ -86,11 +91,17 @@ const CommentSection = ({ blogId }) => {
           a: (num1 + num2).toString(),
         });
       } else {
-        alert("Failed to post comment.");
+        addToast(
+          "Something went wrong while posting your comment. Please try again.",
+          "error",
+        );
       }
     } catch (error) {
       console.error("Failed to save comment:", error);
-      alert("Error submitting comment. Please try again.");
+      addToast(
+        "Something went wrong while submitting your comment. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -121,7 +132,7 @@ const CommentSection = ({ blogId }) => {
         ))}
 
         {visibleCount < comments.length && (
-          <button className="btn-load-more" onClick={handleLoadMore}>
+          <button className="comment-load-more-btn" onClick={handleLoadMore}>
             Load More comments
           </button>
         )}
@@ -147,8 +158,10 @@ const CommentSection = ({ blogId }) => {
         </div>
 
         <div className="form-group">
+          <label className="form-label">Name *</label>
           <input
             type="text"
+            className="form-control"
             placeholder="Your Name *"
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
@@ -157,24 +170,21 @@ const CommentSection = ({ blogId }) => {
         </div>
 
         <div className="form-group">
+          <label className="form-label">Email *</label>
           <input
             type="email"
+            className="form-control"
             placeholder="Your Email *"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginTop: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-            }}
           />
         </div>
 
         <div className="form-group">
+          <label className="form-label">Comment</label>
           <textarea
+            className="form-control"
             placeholder="Join the discussion... *"
             rows="4"
             value={newComment}
@@ -184,17 +194,10 @@ const CommentSection = ({ blogId }) => {
         </div>
 
         <div className="form-group" style={{ maxWidth: "200px" }}>
-          <label
-            style={{
-              fontSize: "0.9rem",
-              marginBottom: "5px",
-              display: "block",
-            }}
-          >
-            What is {mathQuestion.q}? *
-          </label>
+          <label className="form-label">What is {mathQuestion.q}? *</label>
           <input
             type="text"
+            className="form-control"
             placeholder="Answer"
             value={mathAnswer}
             onChange={(e) => setMathAnswer(e.target.value)}
@@ -202,7 +205,7 @@ const CommentSection = ({ blogId }) => {
           />
         </div>
 
-        <button type="submit" className="btn-submit-comment">
+        <button type="submit" className="btn-primary btn-submit-comment">
           Post Comment
         </button>
       </form>

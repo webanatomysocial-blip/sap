@@ -2,10 +2,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import SimpleRTE from "./SimpleRTE";
 import "../../css/AdminDashboard.css";
 import { authors } from "../../data/authors";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmationContext";
 
 const AdminBlogs = () => {
   const [blogs, setBlogs] = useState([]);
   const [view, setView] = useState("list"); // 'list' or 'editor'
+  const { addToast } = useToast();
+  const { openConfirm } = useConfirm();
 
   // Initial State
   const initialFormState = {
@@ -50,6 +54,10 @@ const AdminBlogs = () => {
       }
     } catch (err) {
       console.error(err);
+      addToast(
+        "We couldn't load the blogs right now. Please try again later.",
+        "error",
+      );
     }
   };
 
@@ -110,11 +118,17 @@ const AdminBlogs = () => {
       if (data.status === "success") {
         return data.path;
       } else {
-        alert(data.message || "Upload failed");
+        addToast(
+          data.message || "Something went wrong while uploading your image.",
+          "error",
+        );
       }
     } catch (err) {
       console.error(err);
-      alert("Upload error");
+      addToast(
+        "Something went wrong while connecting to the system. Please try again.",
+        "error",
+      );
     }
     return null;
   };
@@ -132,12 +146,19 @@ const AdminBlogs = () => {
       const data = await res.json();
       if (data.status === "success") {
         setFormData((prev) => ({ ...prev, image: data.path }));
+        addToast("Image uploaded successfully", "success");
       } else {
-        alert(data.message || "Upload failed");
+        addToast(
+          data.message || "Something went wrong while uploading your image.",
+          "error",
+        );
       }
     } catch (err) {
       console.error(err);
-      alert("Upload error");
+      addToast(
+        "Something went wrong while connecting to the system. Please try again.",
+        "error",
+      );
     } finally {
       setUploading(false);
     }
@@ -161,15 +182,34 @@ const AdminBlogs = () => {
     setView("editor");
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this blog?")) {
-      try {
-        const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
-        if (res.ok) fetchBlogs();
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  const handleDelete = (id) => {
+    openConfirm({
+      title: "Delete Blog?",
+      message:
+        "Are you sure you want to delete this blog? This action cannot be undone.",
+      confirmText: "Delete",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+          if (res.ok) {
+            fetchBlogs();
+            addToast("Blog deleted successfully", "success");
+          } else {
+            addToast(
+              "Something went wrong while deleting the blog post. Please try again.",
+              "error",
+            );
+          }
+        } catch (err) {
+          console.error(err);
+          addToast(
+            "We're having trouble connecting to the system. Please try again.",
+            "error",
+          );
+        }
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -179,7 +219,13 @@ const AdminBlogs = () => {
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate > new Date()) {
-      alert("Date cannot be in the future.");
+      addToast("Date cannot be in the future.", "error");
+      return;
+    }
+
+    // Basic validation
+    if (!formData.title || !formData.slug) {
+      addToast("Title and Slug are required.", "error");
       return;
     }
 
@@ -193,11 +239,19 @@ const AdminBlogs = () => {
         fetchBlogs();
         setView("list");
         resetForm();
+        addToast("Blog saved successfully", "success");
       } else {
-        alert("Failed to save blog");
+        addToast(
+          "Something went wrong while saving the blog post. Please try again.",
+          "error",
+        );
       }
     } catch (err) {
       console.error(err);
+      addToast(
+        "We're having trouble connecting to the system. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -238,35 +292,37 @@ const AdminBlogs = () => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>Date</th>
+                  <th className="text-left col-title">Title</th>
+                  <th className="text-left">Author</th>
+                  <th className="text-left">Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {blogs.length === 0 ? (
                   <tr>
-                    <td colSpan="4" style={{ textAlign: "center" }}>
-                      No custom blogs found.
-                    </td>
+                    <td colSpan="4">No custom blogs found.</td>
                   </tr>
                 ) : (
                   blogs.map((blog) => (
                     <tr key={blog.id}>
-                      <td>{blog.title}</td>
-                      <td>{authors[blog.author]?.name || blog.author}</td>
-                      <td>{blog.date}</td>
+                      <td className="text-left col-title" title={blog.title}>
+                        {blog.title}
+                      </td>
+                      <td className="text-left">
+                        {authors[blog.author]?.name || blog.author}
+                      </td>
+                      <td className="text-left">{blog.date}</td>
                       <td>
                         <div className="action-buttons">
                           <button
-                            className="btn-edit"
+                            className="btn-edit btn-sm"
                             onClick={() => handleEdit(blog)}
                           >
                             Edit
                           </button>
                           <button
-                            className="btn-delete"
+                            className="btn-delete btn-sm"
                             onClick={() => handleDelete(blog.id)}
                           >
                             Delete
@@ -283,8 +339,9 @@ const AdminBlogs = () => {
       ) : (
         <div className="admin-card">
           <div className="form-group">
-            <label>Title</label>
+            <label className="form-label">Title</label>
             <input
+              className="form-control"
               name="title"
               value={formData.title}
               onChange={handleInputChange}
@@ -292,8 +349,9 @@ const AdminBlogs = () => {
             />
           </div>
           <div className="form-group">
-            <label>Slug (URL)</label>
+            <label className="form-label">Slug (URL)</label>
             <input
+              className="form-control"
               name="slug"
               value={formData.slug}
               onChange={handleInputChange}
@@ -301,8 +359,9 @@ const AdminBlogs = () => {
             />
           </div>
           <div className="form-group">
-            <label>Excerpt (Short Summary)</label>
+            <label className="form-label">Excerpt (Short Summary)</label>
             <textarea
+              className="form-control"
               name="excerpt"
               value={formData.excerpt}
               onChange={handleInputChange}
@@ -312,7 +371,7 @@ const AdminBlogs = () => {
           </div>
 
           <div className="form-group">
-            <label>Content (Rich Text)</label>
+            <label className="form-label">Content (Rich Text)</label>
             <SimpleRTE
               value={formData.content}
               onChange={handleContentChange}
@@ -322,7 +381,7 @@ const AdminBlogs = () => {
 
           <div className="form-row">
             <div className="form-group half">
-              <label>Author</label>
+              <label className="form-label">Author</label>
               <select
                 name="author"
                 value={formData.author}
@@ -338,8 +397,9 @@ const AdminBlogs = () => {
               </select>
             </div>
             <div className="form-group half">
-              <label>Date</label>
+              <label className="form-label">Date</label>
               <input
+                className="form-control"
                 type="date"
                 name="date"
                 value={formData.date}
@@ -350,7 +410,7 @@ const AdminBlogs = () => {
           </div>
 
           <div className="form-group">
-            <label>Blog Featured Image</label>
+            <label className="form-label">Blog Featured Image</label>
             <div
               className="upload-container"
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
@@ -364,6 +424,7 @@ const AdminBlogs = () => {
                   }
                 }}
                 className="form-control"
+                style={{ padding: "8px" }}
               />
               {uploading && (
                 <p style={{ fontSize: "0.8rem", color: "#2563eb" }}>
@@ -371,35 +432,16 @@ const AdminBlogs = () => {
                 </p>
               )}
               {formData.image && (
-                <div
-                  className="image-preview"
-                  style={{ position: "relative", display: "inline-block" }}
-                >
-                  <img
-                    src={formData.image}
-                    alt="Blog preview"
-                    style={{
-                      maxWidth: "200px",
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  />
-                  <p
-                    style={{
-                      fontSize: "0.85rem",
-                      color: "#64748b",
-                      marginTop: "5px",
-                    }}
-                  >
-                    URL: {formData.image}
-                  </p>
+                <div className="image-preview">
+                  <img src={formData.image} alt="Blog preview" />
+                  <p className="image-path-text">URL: {formData.image}</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="form-group">
-            <label>Category</label>
+            <label className="form-label">Category</label>
             <select
               name="category"
               value={formData.category}
@@ -434,7 +476,7 @@ const AdminBlogs = () => {
           <div className="editor-section">
             <h3>SEO Settings</h3>
             <div className="form-group">
-              <label>Meta Title</label>
+              <label className="form-label">Meta Title</label>
               <input
                 name="meta_title"
                 value={formData.meta_title || ""}
@@ -444,7 +486,7 @@ const AdminBlogs = () => {
               />
             </div>
             <div className="form-group">
-              <label>Meta Description</label>
+              <label className="form-label">Meta Description</label>
               <textarea
                 name="meta_description"
                 value={formData.meta_description || ""}
@@ -455,7 +497,7 @@ const AdminBlogs = () => {
               />
             </div>
             <div className="form-group">
-              <label>Meta Keywords</label>
+              <label className="form-label">Meta Keywords</label>
               <input
                 name="meta_keywords"
                 value={formData.meta_keywords || ""}
@@ -509,7 +551,7 @@ const AdminBlogs = () => {
           <div className="editor-section">
             <h3>Call to Action (CTA)</h3>
             <div className="form-group">
-              <label>CTA Title</label>
+              <label className="form-label">CTA Title</label>
               <input
                 name="cta_title"
                 value={formData.cta_title}
@@ -518,7 +560,7 @@ const AdminBlogs = () => {
               />
             </div>
             <div className="form-group">
-              <label>CTA Description</label>
+              <label className="form-label">CTA Description</label>
               <textarea
                 name="cta_description"
                 value={formData.cta_description}
@@ -529,7 +571,7 @@ const AdminBlogs = () => {
             </div>
             <div className="form-row">
               <div className="form-group half">
-                <label>Button Text</label>
+                <label className="form-label">Button Text</label>
                 <input
                   name="cta_button_text"
                   value={formData.cta_button_text}
@@ -538,7 +580,7 @@ const AdminBlogs = () => {
                 />
               </div>
               <div className="form-group half">
-                <label>Button Link</label>
+                <label className="form-label">Button Link</label>
                 <input
                   name="cta_button_link"
                   value={formData.cta_button_link}
@@ -549,11 +591,7 @@ const AdminBlogs = () => {
             </div>
           </div>
 
-          <button
-            className="btn-approve"
-            onClick={handleSave}
-            style={{ width: "100%", marginTop: "20px" }}
-          >
+          <button className="btn-approve btn-full mt-4" onClick={handleSave}>
             Save Blog Post
           </button>
         </div>
@@ -562,9 +600,11 @@ const AdminBlogs = () => {
             .form-row {
                 display: flex;
                 gap: 20px;
+                margin-bottom: 20px;
             }
             .form-group.half {
                 flex: 1;
+                margin-bottom: 0;
             }
             .editor-section {
                 margin-top: 32px;
@@ -577,11 +617,11 @@ const AdminBlogs = () => {
                 color: var(--slate-800);
             }
             .faq-editor-item {
-                background: var(--slate-50);
+                background: #f8fafc;
                 padding: 16px;
                 border-radius: 8px;
                 margin-bottom: 12px;
-                border: 1px solid var(--slate-200);
+                border: 1px solid #e2e8f0;
             }
         `}</style>
     </div>

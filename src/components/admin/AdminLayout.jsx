@@ -4,12 +4,15 @@ import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import "../../css/AdminDashboard.css";
 
+import { useToast } from "../../context/ToastContext";
+
 const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const { addToast } = useToast();
 
   useEffect(() => {
     const auth = localStorage.getItem("adminAuth");
@@ -18,13 +21,8 @@ const AdminLayout = () => {
     }
   }, []);
 
-  const [loginError, setLoginError] = useState("");
-  const [loginSuccess, setLoginSuccess] = useState("");
-
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError("");
-    setLoginSuccess("");
 
     try {
       const response = await axios.post("/api/login", {
@@ -33,7 +31,7 @@ const AdminLayout = () => {
       });
 
       if (response.data.status === "success") {
-        setLoginSuccess("Login successful! Redirecting...");
+        addToast("Login successful! Redirecting...", "success");
         localStorage.setItem("adminAuth", "true");
         localStorage.setItem("adminUser", JSON.stringify(response.data.user));
         // Small delay to show success message
@@ -42,8 +40,9 @@ const AdminLayout = () => {
         }, 800);
       }
     } catch (error) {
-      setLoginError(
+      addToast(
         error.response?.data?.message || "Login failed. Please try again.",
+        "error",
       );
     }
   };
@@ -52,7 +51,8 @@ const AdminLayout = () => {
     localStorage.removeItem("adminAuth");
     localStorage.removeItem("adminUser"); // Also remove the user data on logout
     setIsAuthenticated(false);
-    navigate("/admin-dashboard");
+    navigate("/"); // Redirect to home on logout? Or login? User said "Logout -> Green toast".
+    addToast("Logged out successfully", "success");
   };
 
   // Map routes to titles
@@ -71,31 +71,35 @@ const AdminLayout = () => {
     return (
       <div className="admin-login-wrapper">
         <div className="admin-login-box">
-          <h2>Admin Login</h2>
-          {loginError && <div className="admin-alert error">{loginError}</div>}
-          {loginSuccess && (
-            <div className="admin-alert success">{loginSuccess}</div>
-          )}
+          <h2 style={{ marginBottom: "20px", textAlign: "center" }}>
+            Admin Login
+          </h2>
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label>Username</label>
+              <label className="form-label">Username</label>
               <input
                 type="text"
+                className="form-control"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
             <div className="form-group">
-              <label>Password</label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
+                className="form-control"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-            <button type="submit" className="btn-login">
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ width: "100%", marginTop: "10px" }}
+            >
               Login
             </button>
           </form>

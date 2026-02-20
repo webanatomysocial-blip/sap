@@ -27,7 +27,7 @@ const ShareButton = ({ title, url }) => {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!");
+      addToast("Link copied to clipboard!", "success");
       setIsOpen(false);
     } catch (err) {
       console.error("Failed to copy: ", err);

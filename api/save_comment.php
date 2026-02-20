@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo json_encode(["status" => "success", "message" => "Comment saved successfully. It will be visible after approval."]);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Something went wrong while saving your comment. Please try again."]);
     }
 } else {
     http_response_code(405);

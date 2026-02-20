@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'No file uploaded or upload error: ' . ($_FILES['image']['error'] ?? 'unknown')
+            'message' => 'Please select an ad image to upload.'
         ]);
         exit;
     }
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($fileType, $allowedTypes)) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Invalid file type. Only JPG, PNG, WEBP, and GIF are allowed.'
+            'message' => 'Please upload a valid image file (JPG, PNG, WEBP, or GIF).'
         ]);
         exit;
     }
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($file['size'] > 2 * 1024 * 1024) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'File size exceeds 2MB limit.'
+            'message' => 'The ad image is too large. Please upload an image smaller than 2MB.'
         ]);
         exit;
     }
@@ -55,25 +55,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate image dimensions based on zone
     list($width, $height) = getimagesize($file['tmp_name']);
     
-    $expectedDimensions = [
-        'community_left' => ['width' => 300, 'height' => 250],
-        'community_right' => ['width' => 300, 'height' => 250],
-        'blog_sidebar' => ['width' => 400, 'height' => 400]
-    ];
+    // We expect ads to be square (1:1 ratio) and at least 300x300 px for crisp quality.
+    $minWidth = 300;
+    $minHeight = 300;
 
-    if (isset($expectedDimensions[$zone])) {
-        $expected = $expectedDimensions[$zone];
-        // Allow 10% tolerance
-        $widthOk = abs($width - $expected['width']) <= ($expected['width'] * 0.1);
-        $heightOk = abs($height - $expected['height']) <= ($expected['height'] * 0.1);
-        
-        if (!$widthOk || !$heightOk) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => "Image dimensions ({$width}x{$height}px) don't match required size for {$zone} ({$expected['width']}x{$expected['height']}px)"
-            ]);
-            exit;
-        }
+    if ($width < $minWidth || $height < $minHeight) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => "The image is too small. It must be at least {$minWidth}x{$minHeight} pixels for high quality display."
+        ]);
+        exit;
+    }
+
+    // Check if the image is square (allow a very small 5% margin of error for cropping inaccuracies)
+    $ratio = ($width > 0 && $height > 0) ? ($width / $height) : 0;
+    if ($ratio < 0.95 || $ratio > 1.05) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'The ad image must be a perfectly square shape (e.g., 300x300, 600x600).'
+        ]);
+        exit;
     }
 
     // Generate unique filename
@@ -107,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Failed to move uploaded file'
+            'message' => 'Something went wrong while saving your ad image. Please try again.'
         ]);
     }
 } else {

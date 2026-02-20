@@ -105,14 +105,18 @@ const AdminAds = () => {
     {
       id: "community_left",
       label: "Community Page - Left Ad",
-      dimensions: "300x250px",
+      dimensions: "Min 300x300px (1:1 Square)",
     },
     {
       id: "community_right",
       label: "Community Page - Right Ad",
-      dimensions: "300x250px",
+      dimensions: "Min 300x300px (1:1 Square)",
     },
-    { id: "blog_sidebar", label: "Blog Sidebar Ad", dimensions: "400x400px" },
+    {
+      id: "blog_sidebar",
+      label: "Blog Sidebar Ad",
+      dimensions: "Min 300x300px (1:1 Square)",
+    },
   ];
 
   const handleEdit = (zoneId) => {
@@ -154,16 +158,6 @@ const AdminAds = () => {
     <div className="admin-page-wrapper">
       <div className="page-header">
         <h2>Ads & Promotions</h2>
-        <button
-          className="btn-approve"
-          onClick={() => {
-            // setEditingAd(null);
-            // setFormData({ image: "", link: "", position: "sidebar_top" });
-            // setIsModalOpen(true);
-          }}
-        >
-          + New Ad
-        </button>
       </div>
 
       <div className="admin-card">
@@ -171,10 +165,10 @@ const AdminAds = () => {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Zone / Placement</th>
-                <th>Preview</th>
-                <th>Link Destination</th>
-                <th>Status</th>
+                <th className="text-left">Zone / Placement</th>
+                <th className="text-left">Preview</th>
+                <th className="text-left">Link Destination</th>
+                <th className="col-status">Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -185,15 +179,7 @@ const AdminAds = () => {
                   <tr key={zone.id}>
                     <td>
                       <strong>{zone.label}</strong>
-                      <div
-                        style={{
-                          fontSize: "0.8rem",
-                          color: "#64748b",
-                          marginTop: "4px",
-                        }}
-                      >
-                        {zone.dimensions}
-                      </div>
+                      <div className="zone-details">{zone.dimensions}</div>
                     </td>
                     <td>
                       {ad.image ? (
@@ -225,7 +211,7 @@ const AdminAds = () => {
                         <span style={{ color: "#94a3b8" }}>No link set</span>
                       )}
                     </td>
-                    <td>
+                    <td className="col-status">
                       <span
                         className={`status-badge ${
                           ad.active ? "status-active" : "status-rejected"
@@ -236,7 +222,7 @@ const AdminAds = () => {
                     </td>
                     <td>
                       <button
-                        className="btn-edit"
+                        className="btn-edit btn-sm"
                         onClick={() => handleEdit(zone.id)}
                       >
                         Edit
@@ -252,15 +238,24 @@ const AdminAds = () => {
 
       {editingZone && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-container">
             <div className="modal-header">
               <h3>Edit {zones.find((z) => z.id === editingZone)?.label}</h3>
-              <button className="close-modal" onClick={handleCloseModal}>
+              <button className="modal-close-btn" onClick={handleCloseModal}>
                 ×
               </button>
             </div>
-            <form onSubmit={handleSaveZone}>
-              <div className="modal-body">
+            <form
+              onSubmit={handleSaveZone}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                overflow: "hidden",
+                minHeight: 0, // Fix for scrolling
+              }}
+            >
+              <div className="modal-body" data-lenis-prevent>
                 {message && (
                   <div
                     style={{
@@ -277,21 +272,17 @@ const AdminAds = () => {
                 )}
 
                 <div className="form-group">
-                  <label>Status</label>
-                  <select
-                    value={ads[editingZone].active ? "true" : "false"}
-                    onChange={(e) =>
-                      handleChange(
-                        editingZone,
-                        "active",
-                        e.target.value === "true",
-                      )
-                    }
-                    className="form-control"
-                  >
-                    <option value="false">Inactive</option>
-                    <option value="true">Active</option>
-                  </select>
+                  <label className="admin-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={ads[editingZone].active}
+                      onChange={(e) =>
+                        handleChange(editingZone, "active", e.target.checked)
+                      }
+                    />
+                    <span></span>
+                    Show this ad (Active)
+                  </label>
                 </div>
 
                 <div className="form-group">

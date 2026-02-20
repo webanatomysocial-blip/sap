@@ -6,6 +6,10 @@ header("Content-Type: application/json");
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+session_start();
+$isAdmin = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+$currentDate = date('Y-m-d');
+
 try {
     if ($method === 'GET') {
         // Check if slug or id parameter is provided
@@ -13,14 +17,33 @@ try {
         $id = $_GET['id'] ?? null;
         
         if ($slug || $id) {
-            $stmt = $pdo->prepare("SELECT * FROM blogs WHERE slug = ? OR id = ? LIMIT 1");
-            $stmt->execute([$slug, $id]);
+            $sql = "SELECT * FROM blogs WHERE (slug = ? OR id = ?)";
+            $params = [$slug, $id];
+            
+            if (!$isAdmin) {
+                $sql .= " AND status = 'published' AND (date <= ? OR date IS NULL)";
+                $params[] = $currentDate;
+            }
+            
+            $sql .= " LIMIT 1";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
             $blog = $stmt->fetch(PDO::FETCH_ASSOC);
             echo json_encode($blog ? $blog : ['status' => 'error', 'message' => 'Blog not found']);
             exit;
         }
         
-        $stmt = $pdo->query("SELECT *, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved') as comment_count FROM blogs ORDER BY date DESC");
+        $sql = "SELECT *, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved') as comment_count FROM blogs";
+        $params = [];
+        
+        if (!$isAdmin) {
+            $sql .= " WHERE status = 'published' AND (date <= ? OR date IS NULL)";
+            $params[] = $currentDate;
+        }
+        
+        $sql .= " ORDER BY date DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($blogs);
     } 
@@ -145,6 +168,6 @@ try {
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Something went wrong while saving the blog post. Please try again.']);
 }
 ?>

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmationContext";
 
 const AdminContributors = () => {
   // Mock Data for Demo
@@ -9,6 +11,8 @@ const AdminContributors = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null); // For modal details
+  const { addToast } = useToast();
+  const { openConfirm } = useConfirm();
 
   useScrollLock(!!selectedApp);
 
@@ -21,6 +25,7 @@ const AdminContributors = () => {
       setApplications(data);
     } catch (error) {
       console.error("Error fetching applications:", error);
+      addToast("Failed to fetch applications", "error");
     } finally {
       setLoading(false);
     }
@@ -46,68 +51,73 @@ const AdminContributors = () => {
           prev.map((app) => (app.id === id ? { ...app, status } : app)),
         );
         setSelectedApp(null);
-        alert(`Application ${status}.`);
+        addToast(`Application ${status}.`, "success");
       } else {
-        alert("Failed to update status: " + result.message);
+        addToast("Failed to update status: " + result.message, "error");
       }
     } catch (error) {
       console.error(`Error updating status to ${status}:`, error);
-      alert("Network error.");
+      addToast("Network error.", "error");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (
-      window.confirm(
-        "Are you sure you want to PERMANENTLY delete this contributor?",
-      )
-    ) {
-      try {
-        const response = await fetch("/api/delete_contributor.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id }),
-        });
-        const result = await response.json();
-        if (result.status === "success") {
-          setApplications((prev) => prev.filter((app) => app.id !== id));
-          if (selectedApp && selectedApp.id === id) {
-            setSelectedApp(null);
+  const handleDelete = (id) => {
+    openConfirm({
+      title: "Delete Contributor?",
+      message: "Are you sure you want to PERMANENTLY delete this contributor?",
+      confirmText: "Delete",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const response = await fetch("/api/delete_contributor.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id }),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            setApplications((prev) => prev.filter((app) => app.id !== id));
+            if (selectedApp && selectedApp.id === id) {
+              setSelectedApp(null);
+            }
+            addToast("Contributor deleted.", "success");
+          } else {
+            addToast("Failed to delete: " + result.message, "error");
           }
-          alert("Contributor deleted.");
-        } else {
-          alert("Failed to delete: " + result.message);
+        } catch (error) {
+          console.error("Error deleting contributor:", error);
+          addToast("Network error.", "error");
         }
-      } catch (error) {
-        console.error("Error deleting contributor:", error);
-        alert("Network error.");
-      }
-    }
+      },
+    });
   };
 
   const handleApprove = (id) => {
-    if (window.confirm("Are you sure you want to approve this applicant?")) {
-      updateStatus(id, "approved");
-    }
+    openConfirm({
+      title: "Approve Applicant",
+      message: "Are you sure you want to approve this applicant?",
+      confirmText: "Approve",
+      onConfirm: () => updateStatus(id, "approved"),
+    });
   };
 
   const handleReject = (id) => {
-    if (window.confirm("Are you sure you want to reject this applicant?")) {
-      updateStatus(id, "rejected");
-    }
+    openConfirm({
+      title: "Reject Applicant",
+      message: "Are you sure you want to reject this applicant?",
+      confirmText: "Reject",
+      isDanger: true,
+      onConfirm: () => updateStatus(id, "rejected"),
+    });
   };
 
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
         <h3>Contributor Management</h3>
-        <button
-          onClick={fetchApplications}
-          className="btn-primary" // Changed from btn-refresh to standard btn-primary or similar
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
-        >
+        <button onClick={fetchApplications} className="btn-primary">
           <i className="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
@@ -120,43 +130,44 @@ const AdminContributors = () => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Date</th>
+                  <th className="text-center">ID</th>
+                  <th className="text-left">Name</th>
+                  <th className="text-left">Role</th>
+                  <th className="col-status">Status</th>
+                  <th className="text-left">Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {applications.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center" }}>
+                    <td colSpan="6" className="text-center">
                       No applications found.
                     </td>
                   </tr>
                 ) : (
                   applications.map((app) => (
                     <tr key={app.id}>
-                      <td>{app.id}</td>
-                      <td>
+                      <td className="text-center">{app.id}</td>
+                      <td className="text-left">
                         <strong>{app.name}</strong>
                         <br />
                         <small>{app.email}</small>
                       </td>
-                      <td>{app.role}</td>
-                      <td>
+                      <td className="text-left">{app.role}</td>
+                      <td className="col-status">
                         <span className={`status-badge status-${app.status}`}>
                           {app.status}
                         </span>
                       </td>
-                      <td>{new Date(app.created_at).toLocaleDateString()}</td>
+                      <td className="text-left">
+                        {new Date(app.created_at).toLocaleDateString()}
+                      </td>
                       <td>
                         <div className="action-buttons">
                           <button
                             onClick={() => setSelectedApp(app)}
-                            className="btn-edit"
-                            style={{ marginRight: "0" }} // Reset margin if class adds it
+                            className="btn-view btn-sm"
                           >
                             View
                           </button>
@@ -165,13 +176,13 @@ const AdminContributors = () => {
                             <>
                               <button
                                 onClick={() => handleApprove(app.id)}
-                                className="btn-approve"
+                                className="btn-approve btn-sm"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject(app.id)}
-                                className="btn-reject"
+                                className="btn-reject btn-sm"
                               >
                                 Reject
                               </button>
@@ -180,7 +191,7 @@ const AdminContributors = () => {
 
                           <button
                             onClick={() => handleDelete(app.id)}
-                            className="btn-delete"
+                            className="btn-delete btn-sm"
                             title="Delete Permanently"
                           >
                             Delete
@@ -199,21 +210,20 @@ const AdminContributors = () => {
       {selectedApp && (
         <div className="modal-overlay" onClick={() => setSelectedApp(null)}>
           <div
-            className="modal-content"
+            className="modal-container large"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "800px" }} // Override width if needed
           >
             <div className="modal-header">
               <h2 style={{ margin: 0 }}>Contributor Details</h2>
               <button
-                className="close-modal"
+                className="modal-close-btn"
                 onClick={() => setSelectedApp(null)}
               >
                 ×
               </button>
             </div>
 
-            <div className="modal-body">
+            <div className="modal-body" data-lenis-prevent>
               <div style={{ textAlign: "center", marginBottom: "20px" }}>
                 {selectedApp.profile_image ? (
                   <img
@@ -500,41 +510,16 @@ const AdminContributors = () => {
               </div>
             </div>
 
-            <div
-              className="modal-footer"
-              style={{
-                textAlign: "right",
-                borderTop: "1px solid #eee",
-                paddingTop: "15px",
-                marginTop: "10px",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
+            <div className="modal-footer">
               <button
+                className="btn-delete"
                 onClick={() => handleDelete(selectedApp.id)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#dc2626",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
               >
                 Delete
               </button>
               <button
+                className="btn-cancel"
                 onClick={() => setSelectedApp(null)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#64748b",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
               >
                 Close
               </button>

@@ -197,7 +197,14 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
             <img
               src={sidebarAd.image}
               alt="Sidebar Ad"
-              style={{ maxWidth: "100%", borderRadius: "8px" }}
+              style={{
+                width: "300px",
+                height: "300px",
+                objectFit: "contain",
+                borderRadius: "8px",
+                display: "block",
+                margin: "0 auto",
+              }}
               onError={(e) => (e.target.style.display = "none")}
             />
           </a>

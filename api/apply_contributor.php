@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (!$input) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
+        echo json_encode(['status' => 'error', 'message' => 'Please provide all required application details.']);
         exit;
     }
     
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Security: Enforce size limit (e.g., 5MB)
             if ($fileSize > 5 * 1024 * 1024) {
-                 echo json_encode(['status' => 'error', 'message' => 'File too large. Max 5MB.']);
+                 echo json_encode(['status' => 'error', 'message' => 'The profile picture is too large. Please upload an image smaller than 5MB.']);
                  exit;
             }
 
@@ -64,11 +64,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Store relative path for frontend usage
                     $imagePath = '/assets/contributors/' . $newFileName;
                 } else {
-                     echo json_encode(['status' => 'error', 'message' => 'Failed to move uploaded file.']);
+                     echo json_encode(['status' => 'error', 'message' => 'Something went wrong while saving your profile picture. Please try again.']);
                      exit;
                 }
             } else {
-                 echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Allowed: jpg, png, webp.']);
+                 echo json_encode(['status' => 'error', 'message' => 'Please upload a valid image file (JPG, PNG, or WEBP).']);
                  exit;
             }
         }
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (PDOException $e) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Database error: ' . $e->getMessage()
+            'message' => 'Something went wrong while processing your application. Please try again later.'
         ]);
     }
 } else {

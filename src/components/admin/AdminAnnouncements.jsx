@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmationContext";
 
 const AdminAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const { addToast } = useToast();
+  const { openConfirm } = useConfirm();
 
   useScrollLock(isModalOpen);
   const [formData, setFormData] = useState({
@@ -25,6 +29,7 @@ const AdminAnnouncements = () => {
       }
     } catch (error) {
       console.error("Error fetching announcements:", error);
+      addToast("Failed to fetch announcements", "error");
     }
   };
 
@@ -75,27 +80,44 @@ const AdminAnnouncements = () => {
       if (res.ok) {
         fetchAnnouncements();
         handleCloseModal();
+        addToast(
+          editingId
+            ? "Announcement updated successfully"
+            : "Announcement created successfully",
+          "success",
+        );
       } else {
-        alert("Failed to save announcement.");
+        addToast("Failed to save announcement.", "error");
       }
     } catch (error) {
       console.error("Error saving:", error);
+      addToast("Error saving announcement", "error");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this announcement?")) {
-      try {
-        const res = await fetch(`/api/admin/announcements?id=${id}`, {
-          method: "DELETE",
-        });
-        if (res.ok) {
-          fetchAnnouncements();
+  const handleDelete = (id) => {
+    openConfirm({
+      title: "Delete Announcement?",
+      message: "Are you sure you want to delete this announcement?",
+      confirmText: "Delete",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/announcements?id=${id}`, {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            fetchAnnouncements();
+            addToast("Announcement deleted successfully", "success");
+          } else {
+            addToast("Failed to delete announcement", "error");
+          }
+        } catch (error) {
+          console.error("Error deleting:", error);
+          addToast("Error deleting announcement", "error");
         }
-      } catch (error) {
-        console.error("Error deleting:", error);
-      }
-    }
+      },
+    });
   };
 
   return (
@@ -112,8 +134,8 @@ const AdminAnnouncements = () => {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Date</th>
+                <th className="text-left">Title</th>
+                <th className="text-left">Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -127,19 +149,19 @@ const AdminAnnouncements = () => {
               ) : (
                 announcements.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.title}</td>
-                    <td>{item.date}</td>
+                    <td className="text-left">{item.title}</td>
+                    <td className="text-left">{item.date}</td>
                     <td>
                       <div className="action-buttons">
                         <button
-                          className="btn-edit"
+                          className="btn-edit btn-sm"
                           onClick={() => handleOpenModal(item)}
                           title="Edit"
                         >
                           Edit
                         </button>
                         <button
-                          className="btn-delete"
+                          className="btn-delete btn-sm"
                           onClick={() => handleDelete(item.id)}
                           title="Delete"
                         >
@@ -157,17 +179,26 @@ const AdminAnnouncements = () => {
 
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-container">
             <div className="modal-header">
               <h3>{editingId ? "Edit Announcement" : "New Announcement"}</h3>
-              <button className="close-modal" onClick={handleCloseModal}>
+              <button className="modal-close-btn" onClick={handleCloseModal}>
                 ×
               </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                overflow: "hidden",
+                minHeight: 0, // Fix for scrolling
+              }}
+            >
+              <div className="modal-body" data-lenis-prevent>
                 <div className="form-group">
-                  <label>Title</label>
+                  <label className="form-label">Title</label>
                   <input
                     type="text"
                     name="title"
@@ -175,33 +206,36 @@ const AdminAnnouncements = () => {
                     onChange={handleChange}
                     required
                     maxLength={100}
+                    className="form-control"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Date</label>
+                  <label className="form-label">Date</label>
                   <input
                     type="date"
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
                     required
+                    className="form-control"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Link (Optional)</label>
+                  <label className="form-label">Link (Optional)</label>
                   <input
                     type="url"
                     name="link"
                     value={formData.link}
                     onChange={handleChange}
                     placeholder="https://..."
+                    className="form-control"
                   />
                 </div>
               </div>
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-cancel"
                   onClick={handleCloseModal}
                 >
                   Cancel

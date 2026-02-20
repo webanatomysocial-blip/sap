@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'No file uploaded or upload error: ' . ($_FILES['image']['error'] ?? 'unknown')
+            'message' => 'Please select an image to upload.'
         ]);
         exit;
     }
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($fileType, $allowedTypes)) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Invalid file type. Only JPG, PNG, and WEBP are allowed.'
+            'message' => 'Please upload a valid image file (JPG, PNG, or WEBP).'
         ]);
         exit;
     }
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($file['size'] > 5 * 1024 * 1024) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'File size exceeds 5MB limit.'
+            'message' => 'The image is too large. Please upload an image smaller than 5MB.'
         ]);
         exit;
     }
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Failed to move uploaded file'
+            'message' => 'Something went wrong while saving your image. Please try again.'
         ]);
     }
 } else {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import "../css/ContactForm.css"; // Reuse existing styles or create new
 import { HiOutlineMail } from "react-icons/hi";
+import { useToast } from "../context/ToastContext";
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,8 @@ const ContactUs = () => {
     description: "",
     captcha: "", // Simple math check
   });
+
+  const { addToast } = useToast();
 
   const [captchaAns, setCaptchaAns] = useState("");
 
@@ -32,11 +35,11 @@ const ContactUs = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (captchaAns !== "8") {
-      alert("Incorrect Captcha. What is 5 + 3?");
+      addToast("Incorrect Captcha. What is 5 + 3?", "error");
       return;
     }
 
-    alert("Message Sent! We will contact you shortly.");
+    addToast("Message Sent! We will contact you shortly.", "success");
   };
 
   return (
@@ -57,12 +60,13 @@ const ContactUs = () => {
       <form
         className="contact-form"
         onSubmit={handleSubmit}
-        style={{ maxWidth: "900px", margin: "0 auto" }}
+        style={{ maxWidth: "600px", margin: "0 auto" }}
       >
         <div className="form-group">
-          <label>Name *</label>
+          <label className="form-label">Name *</label>
           <input
             type="text"
+            className="form-control"
             name="name"
             required
             value={formData.name}
@@ -70,18 +74,20 @@ const ContactUs = () => {
           />
         </div>
         <div className="form-group">
-          <label>Company Name</label>
+          <label className="form-label">Company Name</label>
           <input
             type="text"
+            className="form-control"
             name="companyName"
             value={formData.companyName}
             onChange={handleChange}
           />
         </div>
         <div className="form-group">
-          <label>Email ID *</label>
+          <label className="form-label">Email ID *</label>
           <input
             type="email"
+            className="form-control"
             name="email"
             required
             value={formData.email}
@@ -89,26 +95,33 @@ const ContactUs = () => {
           />
         </div>
         <div className="form-group">
-          <label>Position</label>
+          <label className="form-label">Position</label>
           <input
             type="text"
+            className="form-control"
             name="position"
             value={formData.position}
             onChange={handleChange}
           />
         </div>
         <div className="form-group">
-          <label>Location</label>
+          <label className="form-label">Location</label>
           <input
             type="text"
+            className="form-control"
             name="location"
             value={formData.location}
             onChange={handleChange}
           />
         </div>
         <div className="form-group">
-          <label>Reason *</label>
-          <select name="reason" value={formData.reason} onChange={handleChange}>
+          <label className="form-label">Reason *</label>
+          <select
+            className="form-control"
+            name="reason"
+            value={formData.reason}
+            onChange={handleChange}
+          >
             {reasons.map((r) => (
               <option key={r} value={r}>
                 {r}
@@ -117,8 +130,9 @@ const ContactUs = () => {
           </select>
         </div>
         <div className="form-group">
-          <label>Description</label>
+          <label className="form-label">Description</label>
           <textarea
+            className="form-control"
             name="description"
             rows="4"
             value={formData.description}
@@ -127,17 +141,19 @@ const ContactUs = () => {
         </div>
 
         {/* Captcha */}
-        <div className="form-group" style={{ width: "150px" }}>
-          <label>Captcha: 5 + 3 = ?</label>
+        <div className="form-group" style={{ width: "100%" }}>
+          <label className="form-label">Captcha: 5 + 3 = ?</label>
           <input
             type="tel"
+            className="form-control"
             value={captchaAns}
             onChange={(e) => setCaptchaAns(e.target.value)}
             required
+            placeholder="Enter the result"
           />
         </div>
 
-        <button type="submit" className="submit-btn" style={{ width: "100%" }}>
+        <button type="submit" className="btn-primary" style={{ width: "100%" }}>
           Send Message
         </button>
       </form>

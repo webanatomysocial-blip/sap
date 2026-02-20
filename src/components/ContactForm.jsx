@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { HiOutlineArrowRight } from "react-icons/hi";
 import "../css/ContactForm.css";
+import { useToast } from "../context/ToastContext";
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({

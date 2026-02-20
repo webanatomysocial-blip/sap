@@ -77,17 +77,58 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.btn-submit-comment {
-  background: #111827;
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+.comment-form .btn-submit-comment {
+  display: flex !important;
+  margin-left: auto !important;
 }
 
 .btn-submit-comment:hover {
   background: #000;
+}
+
+/* Load More Button - New Style */
+.comment-load-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  min-height: 40px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid var(--accent-color);
+  background: transparent;
+  color: var(--accent-color);
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
+}
+
+.comment-load-more-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(238, 94, 66, 0.2);
+}
+
+.comment-load-more-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(238, 94, 66, 0.15);
+}
+
+.comment-load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .comment-load-more-btn {
+    width: 100%;
+    margin-top: 16px;
+  }
 }

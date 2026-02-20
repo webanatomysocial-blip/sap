@@ -46,13 +46,20 @@ requestAnimationFrame(raf);
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
+import { ToastProvider } from "./context/ToastContext";
+import { ConfirmationProvider } from "./context/ConfirmationContext";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>
       <HelmetProvider>
         <BrowserRouter>
-          <ScrollToTop />
-          <App />
+          <ToastProvider>
+            <ConfirmationProvider>
+              <ScrollToTop />
+              <App />
+            </ConfirmationProvider>
+          </ToastProvider>
         </BrowserRouter>
       </HelmetProvider>
     </ErrorBoundary>

@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($username) || empty($password)) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Username and password are required']);
+        echo json_encode(['status' => 'error', 'message' => 'Please enter both username and password.']);
         exit;
     }
 
@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_start();
             $_SESSION['admin_id'] = $user['id'];
             $_SESSION['admin_user'] = $user['username'];
+            $_SESSION['admin_logged_in'] = true;
             
             echo json_encode([
                 'status' => 'success',
@@ -36,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         } else {
             http_response_code(401);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
+            echo json_encode(['status' => 'error', 'message' => 'The username or password you entered is incorrect.']);
         }
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        echo json_encode(['status' => 'error', 'message' => 'Something went wrong while connecting to the system. Please try again.']);
     }
 } else {
     http_response_code(405);
