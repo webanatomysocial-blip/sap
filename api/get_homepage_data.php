@@ -13,15 +13,17 @@ try {
     $currentDate = date('Y-m-d');
 
     // 1. Fetch Featured Blog (Latest 1)
-    $featuredSql = "SELECT * FROM blogs WHERE status = 'published'";
+    $featuredSql = "SELECT b.*,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = b.slug AND c.status = 'approved') AS comment_count
+        FROM blogs b WHERE b.status = 'published'";
     $featuredParams = [];
     
     if (!$isAdmin) {
-        $featuredSql .= " AND (date <= ? OR date IS NULL)";
+        $featuredSql .= " AND (b.date <= ? OR b.date IS NULL)";
         $featuredParams[] = $currentDate;
     }
     
-    $featuredSql .= " ORDER BY created_at DESC LIMIT 1";
+    $featuredSql .= " ORDER BY b.date DESC LIMIT 1";
     
     $stmt = $pdo->prepare($featuredSql);
     $stmt->execute($featuredParams);
@@ -45,8 +47,8 @@ try {
         $params[] = $featured['id'];
     }
     
-    // Use created_at for sorting here as well
-    $sql .= " ORDER BY created_at DESC LIMIT 4";
+    // Sort by published date — respects user-set dates (e.g., Jan 25 blog)
+    $sql .= " ORDER BY date DESC LIMIT 4";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);

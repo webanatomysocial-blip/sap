@@ -31,6 +31,10 @@ const BlogLayout = ({
   commentCount = 0,
   faqs = [],
   cta = {},
+  onCommentAdded,
+  metaTitle,
+  metaDescription,
+  metaKeywords,
 }) => {
   const progressBarRef = useRef(null);
   const currentUrl = window.location.href;
@@ -48,6 +52,18 @@ const BlogLayout = ({
   // Compute Previous and Next Posts - Disabled for now as we are 100% DB driven
   const prevPost = null;
   const nextPost = null;
+
+  // Format date correctly e.g., "January 28, 2026"
+  const formatDateForm = (dateString) => {
+    if (!dateString) return "October 16, 2025";
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    } catch {
+      return dateString;
+    }
+  };
 
   useEffect(() => {
     // Animate Progress Bar
@@ -68,13 +84,16 @@ const BlogLayout = ({
   return (
     <div className="blog-post-wrapper">
       <SEO
-        title={title}
-        description={`${title} - Written by ${author || "SAP Security Expert"}. Read more about ${title} on SAP Security Expert.`}
+        title={metaTitle || title}
+        description={
+          metaDescription ||
+          `${title} - Written by ${author || "SAP Security Expert"}. Read more about ${title} on SAP Security Expert.`
+        }
         image={image}
         url={currentUrl}
         type="article"
         author={author}
-        keywords={`SAP Security, ${title}, ${author}, SAP Blog`}
+        keywords={metaKeywords || `SAP Security, ${title}, ${author}, SAP Blog`}
       />
       {/* Reading Progress Bar */}
       {/* <div className="reading-progress-bar" ref={progressBarRef}></div> */}
@@ -97,7 +116,7 @@ const BlogLayout = ({
                 {authorId ? authors[authorId].name : author},
               </span>
               <span className="meta-date" style={{ marginLeft: "5px" }}>
-                {date || "October 16, 2025"}
+                {formatDateForm(date)}
               </span>
               <span className="meta-dot">•</span>
               <span className="meta-read-time">
@@ -206,7 +225,7 @@ const BlogLayout = ({
           )}
 
           {/* Dynamic Comment Section */}
-          <CommentSection blogId={blogId} />
+          <CommentSection blogId={blogId} onCommentAdded={onCommentAdded} />
 
           {/* Navigation (Previous/Next) */}
           <div className="post-navigation">

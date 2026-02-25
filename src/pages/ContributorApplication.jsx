@@ -13,8 +13,17 @@ const ContributorApplication = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // success | error
   const { addToast } = useToast();
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useScrollLock(showTermsModal);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const [formData, setFormData] = useState({
     // Section 1
@@ -283,15 +292,8 @@ const ContributorApplication = () => {
                 <h3>2. Contributor Profile</h3>
                 <div className="form-group">
                   <label className="form-label">Area(s) of Expertise</label>
-                  <div className="checkbox-group block-layout">
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                  <div className="checkbox-group">
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapSecurity}
@@ -302,23 +304,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        SAP Security (ABAP/Java)
-                      </span>
+                      <span>SAP Security (ABAP/Java)</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapGrc}
@@ -329,23 +318,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        SAP GRC (Access Control, Process Control, RM)
-                      </span>
+                      <span>SAP GRC (Access Control, Process Control, RM)</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapIag}
@@ -356,23 +332,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Audit & Compliance
-                      </span>
+                      <span>Audit & Compliance</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapBtp}
@@ -383,23 +346,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Cybersecurity
-                      </span>
+                      <span>Cybersecurity</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapCyber}
@@ -410,23 +360,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        IAM / Cloud Security
-                      </span>
+                      <span>IAM / Cloud Security</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.expertise.sapLicensing}
@@ -437,14 +374,8 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Data Security & Privacy
-                      </span>
+                      <span>Data Security & Privacy</span>
                     </label>
                   </div>
                 </div>
@@ -540,15 +471,8 @@ const ContributorApplication = () => {
                 <h3>3. Contribution Details</h3>
                 <div className="form-group">
                   <label className="form-label">Type of Contribution</label>
-                  <div className="checkbox-group block-layout">
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                  <div className="checkbox-group">
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.contentTypes.technicalArticle}
@@ -559,23 +483,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Technical Article / Tutorial
-                      </span>
+                      <span>Technical Article / Tutorial</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.contentTypes.opinionPiece}
@@ -586,23 +497,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Opinion Piece / Thought Leadership
-                      </span>
+                      <span>Opinion Piece / Thought Leadership</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.contentTypes.news}
@@ -613,23 +511,10 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        News / Industry Updates
-                      </span>
+                      <span>News / Industry Updates</span>
                     </label>
-                    <label
-                      className="checkbox-item full-width"
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <label className="checkbox-item">
                       <input
                         type="checkbox"
                         checked={formData.contentTypes.tools}
@@ -640,14 +525,8 @@ const ContributorApplication = () => {
                             e.target.checked,
                           )
                         }
-                        style={{ marginTop: "4px", marginRight: "10px" }}
                       />
-                      <span
-                        className="checkbox-label"
-                        style={{ marginLeft: 0 }}
-                      >
-                        Tools, Scripts, or Resources
-                      </span>
+                      <span>Tools, Scripts, or Resources</span>
                     </label>
                   </div>
                 </div>
@@ -741,15 +620,38 @@ const ContributorApplication = () => {
                       type="file"
                       className="form-control"
                       name="profilePhoto"
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          profilePhoto: e.target.files[0],
-                        })
-                      }
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setFormData({
+                            ...formData,
+                            profilePhoto: file,
+                          });
+                          if (previewUrl) URL.revokeObjectURL(previewUrl);
+                          setPreviewUrl(URL.createObjectURL(file));
+                        }
+                      }}
                       accept="image/*"
                       style={{ padding: "8px" }} // File input fix
                     />
+                    <span className="image-hint">Required: 300x300 (1:1)</span>
+                    {previewUrl && (
+                      <div
+                        className="image-preview"
+                        style={{ marginTop: "10px" }}
+                      >
+                        <img
+                          src={previewUrl}
+                          alt="Profile Preview"
+                          style={{
+                            width: "100px",
+                            height: "100px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">
@@ -1014,60 +916,36 @@ const ContributorApplication = () => {
               />
 
               <div className="consent-checkboxes">
-                <label
-                  className="checkbox-item full-width"
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    marginBottom: "10px",
-                  }}
-                >
+                <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
                     onChange={(e) =>
                       setFormData({ ...formData, agree1: e.target.checked })
                     }
-                    style={{ marginTop: "4px", marginRight: "10px" }}
                   />
                   <span>
                     I confirm that the submitted content will be original and
                     not infringe on copyrights.
                   </span>
                 </label>
-                <label
-                  className="checkbox-item full-width"
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    marginBottom: "10px",
-                  }}
-                >
+                <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
                     onChange={(e) =>
                       setFormData({ ...formData, agree2: e.target.checked })
                     }
-                    style={{ marginTop: "4px", marginRight: "10px" }}
                   />
                   <span>
                     I agree that the editorial team may review, edit, or suggest
                     changes before publishing.
                   </span>
                 </label>
-                <label
-                  className="checkbox-item full-width"
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    marginBottom: "10px",
-                  }}
-                >
+                <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
                     onChange={(e) =>
                       setFormData({ ...formData, agree3: e.target.checked })
                     }
-                    style={{ marginTop: "4px", marginRight: "10px" }}
                   />
                   <span>
                     I agree to the Terms &amp; Conditions and Community

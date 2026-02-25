@@ -98,11 +98,14 @@ export default function FeaturedInsights({ id }) {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { month: "long", day: "numeric", year: "numeric" };
-    return date.toLocaleDateString("en-US", options);
+    return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   };
 
   // Get category badge label - Reused from LatestBlogs
   const getCategoryLabel = (category, subCategory) => {
+    const val = subCategory || category;
+    if (!val) return "SAP Security";
+
     const categoryLabels = {
       "sap-grc": "SAP GRC",
       "sap-iag": "IAG",
@@ -117,9 +120,17 @@ export default function FeaturedInsights({ id }) {
       "sap-security": "SAP Security",
     };
 
-    return (
-      categoryLabels[subCategory] || categoryLabels[category] || "SAP Security"
-    );
+    if (categoryLabels[val]) return categoryLabels[val];
+
+    // Format slug as label: "sap-security" -> "SAP Security" (handling 'sap' as special case)
+    return val
+      .split("-")
+      .map((word) =>
+        word.toLowerCase() === "sap"
+          ? "SAP"
+          : word.charAt(0).toUpperCase() + word.slice(1),
+      )
+      .join(" ");
   };
 
   return (

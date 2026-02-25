@@ -8,11 +8,11 @@ try {
     $stmt->execute();
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Format dates to "Mar 10 2025" style
+    // Format dates to "February 5, 2026" style
     foreach ($announcements as &$announcement) {
         if (isset($announcement['date'])) {
             $timestamp = strtotime($announcement['date']);
-            $announcement['date'] = date('M j Y', $timestamp); // e.g., "Mar 10 2025"
+            $announcement['date'] = date('F j, Y', $timestamp); // e.g., "February 5, 2026"
         }
         // Remove views field from response
         unset($announcement['views']);

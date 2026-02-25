@@ -120,6 +120,57 @@
   padding-left: 20px;
 }
 
+.blog-content-body li {
+  margin-bottom: 8px;
+}
+
+.blog-content-body a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.blog-content-body a:hover {
+  border-bottom-color: #2563eb;
+}
+
+.blog-content-body blockquote {
+  border-left: 4px solid #2563eb;
+  padding-left: 20px;
+  margin: 30px 0;
+  font-style: italic;
+  color: #555;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.blog-content-body strong,
+.blog-content-body b {
+  font-weight: 700;
+  color: #111;
+}
+
+.blog-content-body pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 30px;
+  font-family: monospace;
+}
+
+.blog-content-body code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #e11d48;
+}
+
 .blog-content-body img {
   max-width: 100%;
   height: auto;
@@ -362,53 +413,54 @@
   overflow-x: auto;
 }
 
-.blog-comparison-table {
+.blog-comparison-table,
+.blog-content-body table {
   width: 100%;
   border-collapse: collapse;
   background: #ffffff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 24px;
 }
 
-.blog-comparison-table thead {
-  background: linear-gradient(135deg, #000000 0%, #000000 100%);
-  color: #ffffff;
+.blog-comparison-table thead,
+.blog-content-body table thead {
+  background: #f4f4f4;
+  color: #333333;
 }
 
-.blog-comparison-table thead th {
-  padding: 18px 20px;
+.blog-comparison-table thead th,
+.blog-content-body table thead th {
+  padding: 16px 20px;
   text-align: left;
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
 }
 
-.blog-comparison-table tbody tr {
-  border-bottom: 1px solid #e8e8e8;
+.blog-comparison-table tbody tr,
+.blog-content-body table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
   transition: background-color 0.2s ease;
 }
 
-.blog-comparison-table tbody tr:last-child {
-  border-bottom: none;
+.blog-comparison-table tbody tr:hover,
+.blog-content-body table tbody tr:hover {
+  background: #fafafa;
 }
 
-.blog-comparison-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.blog-comparison-table tbody td {
+.blog-comparison-table tbody td,
+.blog-content-body table tbody td {
   padding: 16px 20px;
   font-size: 15px;
-  color: #2a2a2a;
+  color: #333333;
   line-height: 1.6;
+  border: 1px solid #e0e0e0;
 }
 
-.blog-comparison-table tbody td:first-child {
-  font-weight: 600;
-  color: #111;
+.blog-comparison-table tbody td:first-child,
+.blog-content-body table tbody td:first-child {
+  font-weight: 700;
+  color: #222222;
 }
 
 /* Responsive Table */
@@ -417,16 +469,20 @@
     margin: 30px -20px;
   }
 
-  .blog-comparison-table {
+  .blog-comparison-table,
+  .blog-content-body table {
     font-size: 14px;
   }
 
   .blog-comparison-table thead th,
-  .blog-comparison-table tbody td {
+  .blog-content-body table thead th,
+  .blog-comparison-table tbody td,
+  .blog-content-body table tbody td {
     padding: 12px 15px;
   }
 
-  .blog-comparison-table thead th {
+  .blog-comparison-table thead th,
+  .blog-content-body table thead th {
     font-size: 13px;
   }
 }

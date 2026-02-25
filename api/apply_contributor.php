@@ -31,7 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (isset($_FILES['profilePhoto']) && $_FILES['profilePhoto']['error'] === UPLOAD_ERR_OK) {
             // FIX: Use public/assets path for web accessibility
-            $uploadDir = __DIR__ . '/../public/assets/contributors/';
+            $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+            $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/contributors/' : __DIR__ . '/../uploads/contributors/';
             
             // Create directory if it doesn't exist
             if (!file_exists($uploadDir)) {
@@ -55,6 +56,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  exit;
             }
 
+            // Validate image dimensions and squareness
+            $imageInfo = getimagesize($fileTmpPath);
+            if ($imageInfo === false) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid image file.']);
+                exit;
+            }
+
+            $width = $imageInfo[0];
+            $height = $imageInfo[1];
+
+            if ($width < 300 || $height < 300) {
+                echo json_encode(['status' => 'error', 'message' => 'Profile image must be at least 300x300 pixels.']);
+                exit;
+            }
+
+            if (abs($width - $height) > 5) {
+                echo json_encode(['status' => 'error', 'message' => 'Profile image must be square (1:1 ratio).']);
+                exit;
+            }
+
             if (in_array($fileExtension, $allowedfileExtensions)) {
                 // Security: Unique filename to prevent overwrites
                 $newFileName = 'contributor_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $fileExtension;
@@ -62,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if(move_uploaded_file($fileTmpPath, $dest_path)) {
                     // Store relative path for frontend usage
-                    $imagePath = '/assets/contributors/' . $newFileName;
+                    $imagePath = '/uploads/contributors/' . $newFileName;
                 } else {
                      echo json_encode(['status' => 'error', 'message' => 'Something went wrong while saving your profile picture. Please try again.']);
                      exit;
@@ -88,7 +109,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $contributionTypes = json_encode($contributionTypes);
         }
         
-        // Prepare SQL with named placeholders matches new variable names
+        $email = $input['email'] ?? '';
+        
+        $checkStmt = $pdo->prepare("SELECT id, status, image FROM contributors WHERE email = ?");
+        $checkStmt->execute([$email]);
+        $existing = $checkStmt->fetch();
+
+        if ($existing) {
+            if ($existing['status'] === 'rejected') {
+                // Delete old image if a new one is being uploaded
+                if (!empty($imagePath) && !empty($existing['image']) && $existing['image'] !== $imagePath) {
+                    deleteImage($existing['image']);
+                }
+
+                // Update existing record
+                $stmt = $pdo->prepare("
+                    UPDATE contributors SET 
+                        full_name = :full_name, linkedin = :linkedin, country = :country, 
+                        organization = :organization, designation = :designation,
+                        role = :role, expertise = :expertise, other_expertise = :other_expertise, 
+                        years_experience = :years_experience, short_bio = :short_bio,
+                        contribution_types = :contribution_types, proposed_topics = :proposed_topics, 
+                        contributed_elsewhere = :contributed_elsewhere, previous_work_links = :previous_work_links,
+                        preferred_frequency = :preferred_frequency, primary_motivation = :primary_motivation, 
+                        weekly_time = :weekly_time, volunteer_events = :volunteer_events,
+                        product_evaluation = :product_evaluation, personal_website = :personal_website, 
+                        twitter_handle = :twitter_handle, image = COALESCE(:image, image), 
+                        status = 'pending', created_at = CURRENT_TIMESTAMP
+                    WHERE id = :id
+                ");
+                
+                $stmt->execute([
+                    ':full_name' => $input['fullName'] ?? '',
+                    ':linkedin' => $input['linkedin'] ?? '',
+                    ':country' => $input['country'] ?? '',
+                    ':organization' => $input['organization'] ?? '',
+                    ':designation' => $input['designation'] ?? '',
+                    ':role' => $input['role'] ?? '',
+                    ':expertise' => $expertise,
+                    ':other_expertise' => $input['otherExpertiseText'] ?? '',
+                    ':years_experience' => $input['yearsExperience'] ?? '',
+                    ':short_bio' => $input['shortBio'] ?? '',
+                    ':contribution_types' => $contributionTypes,
+                    ':proposed_topics' => $input['proposedTopics'] ?? '',
+                    ':contributed_elsewhere' => $input['contributedElsewhere'] ?? 'No',
+                    ':previous_work_links' => $input['previousWorkLinks'] ?? '',
+                    ':preferred_frequency' => $input['preferredFrequency'] ?? 'One-time',
+                    ':primary_motivation' => $input['primaryMotivation'] ?? '',
+                    ':weekly_time' => $input['weeklyTime'] ?? '',
+                    ':volunteer_events' => $input['volunteerEvents'] ?? 'No',
+                    ':product_evaluation' => $input['productEvaluation'] ?? 'No',
+                    ':personal_website' => $input['personalWebsite'] ?? '',
+                    ':twitter_handle' => $input['twitterHandle'] ?? '',
+                    ':image' => $imagePath,
+                    ':id' => $existing['id']
+                ]);
+
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'Application re-submitted successfully',
+                    'id' => $existing['id']
+                ]);
+                exit;
+            } else {
+                echo json_encode([
+                    'status' => 'error', 
+                    'message' => 'An application with this email already exists and is ' . $existing['status'] . '.'
+                ]);
+                exit;
+            }
+        }
+
+        // Prepare SQL for new record
         $stmt = $pdo->prepare("
             INSERT INTO contributors (
                 full_name, email, linkedin, country, organization, designation,
@@ -107,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $stmt->execute([
             ':full_name' => $input['fullName'] ?? '',
-            ':email' => $input['email'] ?? '',
+            ':email' => $email,
             ':linkedin' => $input['linkedin'] ?? '',
             ':country' => $input['country'] ?? '',
             ':organization' => $input['organization'] ?? '',

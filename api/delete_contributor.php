@@ -21,10 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($contributor) {
             // 2. Delete image if exists
             if (!empty($contributor['image'])) {
-                $imagePath = __DIR__ . '/..' . $contributor['image'];
-                if (file_exists($imagePath)) {
-                    unlink($imagePath);
-                }
+                deleteImage($contributor['image']);
             }
 
             // 3. Delete record

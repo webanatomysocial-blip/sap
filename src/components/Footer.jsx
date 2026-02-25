@@ -121,6 +121,18 @@ const Footer = () => {
       </div>
 
       <div className="footer-bottom">
+        <p className="footer-disclaimer">
+          SAP SE, SAP AG, or any of their affiliates ("SAP") has no affiliation,
+          association, endorsement, sponsorship, or connection whatsoever with
+          SAP Security Expert or the website{" "}
+          <a href="https://www.sapsecurityexpert.com">
+            www.sapsecurityexpert.com
+          </a>
+          . This website is independently owned and operated by a third party
+          and is not authorized, approved, or related in any manner to SAP. All
+          content provided herein is for informational purposes only and does
+          not represent the views, products, or services of SAP.
+        </p>
         <p>© {currentYear} SAP Security Expert. All rights reserved.</p>
       </div>
     </footer>

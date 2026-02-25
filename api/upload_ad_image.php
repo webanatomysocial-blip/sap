@@ -23,12 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $zone = $_POST['zone'] ?? 'unknown';
 
     // Use same structure as blog images
-    $uploadDir = __DIR__ . '/../public/assets/ads/'; // for local development
-    // $uploadDir = __DIR__ . '/../assets/ads/'; // for production
+    $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+    $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/ads/' : __DIR__ . '/../uploads/ads/';
     
     // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        mkdir($uploadDir, 0755, true);
     }
 
     // Validate file type
@@ -82,17 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $filename = 'ad_' . $zone . '_' . time() . '.' . $extension;
     $filePath = $uploadDir . $filename;
 
-    // Check if there is an old image to delete
+    // Check if there is an old image to delete (passed from frontend)
     $oldImage = $_POST['old_image'] ?? '';
     if (!empty($oldImage)) {
-        $oldPath = __DIR__ . '/..' . $oldImage;
-         if (!file_exists($oldPath)) {
-            $oldPath = __DIR__ . '/../public' . $oldImage;
-        }
-        
-        if (file_exists($oldPath) && is_file($oldPath)) {
-            unlink($oldPath);
-        }
+        deleteImage($oldImage);
     }
 
     // Move uploaded file
@@ -101,9 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => 'success',
             'message' => 'Ad image uploaded successfully',
             'filename' => $filename,
-            'path' => '/public/assets/ads/' . $filename
-            // 'path' => '/assets/ads/' . $filename
-
+            'path' => '/uploads/ads/' . $filename
         ]);
     } else {
         echo json_encode([

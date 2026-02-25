@@ -20,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $file = $_FILES['image'];
-    $uploadDir = __DIR__ . '/../public/assets/blog-images/'; // for production one 
-    //    $uploadDir = __DIR__ . '/../assets/blog-images/'; // for development one
+    $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+    $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/blogs/' : __DIR__ . '/../uploads/blogs/';
     
     // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        mkdir($uploadDir, 0755, true);
     }
 
     // Validate file type
@@ -38,6 +38,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'message' => 'Please upload a valid image file (JPG, PNG, or WEBP).'
         ]);
         exit;
+    }
+
+    // Validate image dimensions and ratio
+    $imageInfo = getimagesize($file['tmp_name']);
+    if ($imageInfo === false) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid image file.'
+        ]);
+        exit;
+    }
+
+    $width = $imageInfo[0];
+    $height = $imageInfo[1];
+
+    $type = $_POST['type'] ?? 'featured'; // Default to featured if not specified
+
+    if ($type === 'featured') {
+        if ($width < 1920 || $height < 1080) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Featured image must be at least 1920x1080 pixels.'
+            ]);
+            exit;
+        }
+
+        $ratio = $width / $height;
+        $targetRatio = 16 / 9;
+        if (abs($ratio - $targetRatio) > 0.02) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Featured image must be 16:9 ratio (minimum 1920x1080).'
+            ]);
+            exit;
+        }
     }
 
     // Validate file size (max 5MB)
@@ -57,15 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if there is an old image to delete (optional, passed from frontend)
     $oldImage = $_POST['old_image'] ?? '';
     if (!empty($oldImage)) {
-        $oldPath = __DIR__ . '/..' . $oldImage;
-        // Check also in public/assets if distinct
-        if (!file_exists($oldPath)) {
-            $oldPath = __DIR__ . '/../public' . $oldImage;
-        }
-        
-        if (file_exists($oldPath) && is_file($oldPath)) {
-            unlink($oldPath);
-        }
+        deleteImage($oldImage);
     }
 
     // Move uploaded file
@@ -74,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => 'success',
             'message' => 'Image uploaded successfully',
             'filename' => $filename,
-            'path' => '/public/assets/blog-images/' . $filename
+            'path' => '/uploads/blogs/' . $filename
         ]);
     } else {
         echo json_encode([

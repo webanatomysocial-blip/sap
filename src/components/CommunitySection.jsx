@@ -109,7 +109,11 @@ export default function CommunitySection() {
     if (!dateString) return "";
     const date = new Date(dateString);
     const options = { month: "long", day: "numeric", year: "numeric" };
-    return date.toLocaleDateString("en-US", options);
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const scrollToSection = (e, id) => {
@@ -347,7 +351,23 @@ export default function CommunitySection() {
                     <div key={i} className="announcement-item">
                       <h4>{announcement.title}</h4>
                       <div className="announcement-meta">
-                        <span>{announcement.date}</span>
+                        <span>
+                          {(() => {
+                            // Handle raw MySQL DATETIME "2026-02-15 00:00:00" or already formatted "February 5, 2026"
+                            const raw = announcement.date || "";
+                            const isoStr = raw.includes(" ")
+                              ? raw.replace(" ", "T") + "Z"
+                              : raw;
+                            const d = new Date(isoStr);
+                            if (isNaN(d.getTime())) return raw;
+                            return d.toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                              timeZone: "UTC",
+                            });
+                          })()}
+                        </span>
                         {/* <span>
                           <i className="bi bi-eye"></i> {announcement.views || 0}
                         </span>

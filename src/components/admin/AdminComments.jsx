@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
+// import { API_BASE_URL } from "../../config";
+import ActionMenu from "./ActionMenu";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
 
@@ -153,112 +155,146 @@ const AdminComments = () => {
       </div>
 
       <div className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th className="text-left">Author / Email</th>
-              <th className="text-left">Comment</th>
-              <th className="text-left">Post ID</th>
-              <th className="text-left">Date</th>
-              <th className="col-status">Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredComments.length === 0 ? (
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
               <tr>
-                <td colSpan="6" className="text-center">
-                  No {filter !== "all" ? filter : ""} comments found
-                </td>
+                <th className="text-left col-author">Author / Email</th>
+                <th className="text-left col-content">Comment</th>
+                <th className="text-left col-post">Post</th>
+                <th className="text-left col-date">Date</th>
+                <th className="col-status">Status</th>
+                <th className="col-actions text-center">Actions</th>
               </tr>
-            ) : (
-              filteredComments.map((comment) => (
-                <tr key={comment.id}>
-                  <td className="text-left">
-                    <div className="author-info">
-                      <span className="author-name">{comment.author}</span>
-                      {comment.email && (
-                        <span className="author-email" title={comment.email}>
-                          {comment.email}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="wrap-text">
-                    <div className="comment-text-truncate" title={comment.text}>
-                      {comment.text}
-                    </div>
-                    {comment.edited_at && (
-                      <small className="edited-indicator">
-                        (Edited:{" "}
-                        {new Date(comment.edited_at).toLocaleDateString()})
-                      </small>
-                    )}
-                  </td>
-                  <td className="text-left">{comment.post_id}</td>
-                  <td className="text-left">
-                    {new Date(comment.date).toLocaleDateString()}
-                  </td>
-                  <td className="col-status">
-                    <span
-                      className={`status-badge status-${comment.status || "pending"}`}
-                    >
-                      {comment.status || "pending"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      {comment.status !== "approved" && (
-                        <button
-                          className="btn-approve btn-sm"
-                          onClick={() =>
-                            handleStatusChange(comment.id, "approved")
-                          }
-                        >
-                          Approve
-                        </button>
-                      )}
-
-                      {/* Show View instead of Reject in the Approved tab */}
-                      {filter === "approved" ? (
-                        <button
-                          className="btn-view btn-sm"
-                          onClick={() => handleView(comment)}
-                        >
-                          View
-                        </button>
-                      ) : (
-                        comment.status !== "rejected" && (
-                          <button
-                            className="btn-reject btn-sm"
-                            onClick={() =>
-                              handleStatusChange(comment.id, "rejected")
-                            }
-                          >
-                            Reject
-                          </button>
-                        )
-                      )}
-
-                      <button
-                        className="btn-edit btn-sm"
-                        onClick={() => handleEdit(comment)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn-delete btn-sm"
-                        onClick={() => handleDelete(comment.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
+            </thead>
+            <tbody>
+              {filteredComments.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center">
+                    No {filter !== "all" ? filter : ""} comments found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredComments.map((comment) => (
+                  <tr key={comment.id}>
+                    <td className="text-left col-author">
+                      <div className="author-info">
+                        <span className="author-name">{comment.author}</span>
+                        {comment.email && (
+                          <span className="author-email" title={comment.email}>
+                            {comment.email}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="text-left col-content">
+                      {comment.parent_id && (
+                        <div className="reply-indicator">
+                          <span className="badge-reply">
+                            Reply to #{comment.parent_id}
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className="comment-text-truncate"
+                        title={comment.text}
+                      >
+                        {comment.text}
+                      </div>
+                      {comment.edited_at && (
+                        <small className="edited-indicator">
+                          (Edited:{" "}
+                          {new Date(comment.edited_at).toLocaleDateString(
+                            "en-US",
+                            { month: "long", day: "numeric", year: "numeric" },
+                          )}
+                          )
+                        </small>
+                      )}
+                    </td>
+                    <td className="text-left col-post">
+                      {comment.slug ? (
+                        <span className="col-post-truncate">
+                          <a
+                            href={`/blogs/${comment.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="post-link"
+                            title={comment.slug}
+                          >
+                            View Post
+                          </a>
+                        </span>
+                      ) : (
+                        <span className="post-id-fallback">
+                          ID: {comment.post_id}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-left col-date">
+                      <span className="comment-date">
+                        {new Date(comment.date).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </td>
+                    <td className="col-status">
+                      <span
+                        className={`status-badge status-${comment.status || "pending"}`}
+                      >
+                        {comment.status || "pending"}
+                      </span>
+                    </td>
+                    <td className="col-actions text-center">
+                      <ActionMenu>
+                        {comment.status !== "approved" && (
+                          <button
+                            className="btn-approve"
+                            onClick={() =>
+                              handleStatusChange(comment.id, "approved")
+                            }
+                          >
+                            Approve
+                          </button>
+                        )}
+
+                        {/* Show Reject button only if not approved and not rejected */}
+                        {comment.status !== "approved" &&
+                          comment.status !== "rejected" && (
+                            <button
+                              className="btn-reject"
+                              onClick={() =>
+                                handleStatusChange(comment.id, "rejected")
+                              }
+                            >
+                              Reject
+                            </button>
+                          )}
+
+                        {/* Always show View/Edit regardless of tab */}
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEdit(comment)}
+                        >
+                          View/Edit
+                        </button>
+
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(comment.id)}
+                        >
+                          Delete
+                        </button>
+                      </ActionMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Edit Modal */}
@@ -280,6 +316,24 @@ const AdminComments = () => {
                   Author Info: <strong>{editingComment.author}</strong>{" "}
                   {editingComment.email && `<${editingComment.email}>`}
                 </label>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Target Post:</label>
+                {editingComment.slug ? (
+                  <a
+                    href={`/blogs/${editingComment.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="post-link"
+                    style={{ display: "block", marginTop: "4px" }}
+                  >
+                    View Post: {editingComment.slug}
+                  </a>
+                ) : (
+                  <span className="post-id-fallback">
+                    Internal ID: {editingComment.post_id}
+                  </span>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Comment Text</label>
@@ -359,7 +413,12 @@ const AdminComments = () => {
                   </div>
                   <div className="view-group">
                     <label>Date</label>
-                    <p>{new Date(viewingComment.date).toLocaleDateString()}</p>
+                    <p>
+                      {new Date(viewingComment.date).toLocaleDateString(
+                        "en-US",
+                        { month: "long", day: "numeric", year: "numeric" },
+                      )}
+                    </p>
                   </div>
                   <div className="view-group">
                     <label>Status</label>

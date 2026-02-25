@@ -186,7 +186,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
       {/* Dynamic Sidebar Ad */}
       {sidebarAd.active && (
         <div
-          className="sidebar-widget promo-widget"
+          className="sidebar-widget-img promo-widget"
           style={{ textAlign: "center", marginTop: "20px" }}
         >
           <a
@@ -201,7 +201,6 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
                 width: "300px",
                 height: "300px",
                 objectFit: "contain",
-                borderRadius: "8px",
                 display: "block",
                 margin: "0 auto",
               }}

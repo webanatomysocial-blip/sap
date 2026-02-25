@@ -122,11 +122,7 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
                         </span>
                         <span className="blog-date">
                           <i className="bi bi-calendar3"></i>{" "}
-                          {new Date(blog.date).toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          {new Date(blog.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                         </span>
                       </div>
 

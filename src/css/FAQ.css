@@ -56,7 +56,30 @@
   color: var(--text-muted);
   font-size: 16px;
   line-height: 1.6;
-  margin: 0;
+  margin: 0 0 16px 0;
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-answer ul,
+.faq-answer ol {
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-left: 20px;
+  margin: 0 0 16px 0;
+}
+
+.faq-answer a {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+.faq-answer strong {
+  font-weight: 600;
+  color: var(--secondary-color);
 }
 
 @media (max-width: 768px) {

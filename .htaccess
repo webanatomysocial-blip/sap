@@ -1,15 +1,15 @@
 <IfModule mod_rewrite.c>
+  DirectoryIndex index.php index.html
   RewriteEngine On
-  RewriteBase /
 
-  # Allow existing files and folders to be served directly
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Bypass React routing for API folder - let PHP execute normally
-  RewriteRule ^api/ - [L]
+  RewriteCond %{REQUEST_URI} ^/api/
+  RewriteRule ^ - [L]
 
-  # React SPA fallback for all other routes
-  RewriteRule ^ index.html [L]
+  RewriteRule ^ index.php [L]
 </IfModule>

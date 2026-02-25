@@ -477,7 +477,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             title="Align Left"
             disabled={isSourceView}
           >
-            <i className="bi bi-justify-left"></i>
+            <i className="bi bi-text-left"></i>
           </button>
           <button
             type="button"
@@ -485,7 +485,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             title="Align Center"
             disabled={isSourceView}
           >
-            <i className="bi bi-justify-center"></i>
+            <i className="bi bi-text-center"></i>
           </button>
           <button
             type="button"
@@ -493,7 +493,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             title="Align Right"
             disabled={isSourceView}
           >
-            <i className="bi bi-justify-right"></i>
+            <i className="bi bi-text-right"></i>
           </button>
         </div>
 
@@ -578,6 +578,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
           onChange={handleSourceChange}
           onBlur={handleChange}
           placeholder="Type or paste HTML here..."
+          data-lenis-prevent="true"
         />
       ) : (
         <div
@@ -588,8 +589,9 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
           onBlur={handleChange}
           onMouseUp={saveSelection}
           onKeyUp={saveSelection}
-          onPaste={handlePaste} // ✅ ADD THIS
+          onPaste={handlePaste}
           onDoubleClick={handleDoubleClick}
+          data-lenis-prevent="true"
         />
       )}
 
@@ -666,8 +668,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             gap: 6px;
         }
         .rte-content {
-            min-height: 400px;
-            max-height: 700px;
+            height: 500px;
             overflow-y: auto;
             padding: 24px 32px;
             outline: none;
@@ -678,16 +679,19 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
         }
         .rte-source-textarea {
             width: 100%;
-            min-height: 400px;
+            height: 500px;
+            overflow-y: auto;
             padding: 24px;
-            font-family: 'Fira Code', 'Monaco', monospace;
+            font-family: 'Fira Code', 'Monaco', 'Courier New', Courier, monospace;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.8;
             background: #0f172a;
             color: #e2e8f0;
             border: none;
             outline: none;
-            resize: vertical;
+            resize: none;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
 
         /* Content Styling inside Editor */
@@ -735,6 +739,11 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             display: table;
             clear: both;
         }
+
+        /* Text Alignment */
+        .rte-content .text-left { text-align: left !important; }
+        .rte-content .text-center { text-align: center !important; }
+        .rte-content .text-right { text-align: right !important; }
       `}</style>
     </div>
   );

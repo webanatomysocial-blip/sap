@@ -8,8 +8,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     if ($method === 'GET') {
-        // Admin view - Get all comments or filtered
-        $stmt = $pdo->query("SELECT id, post_id, user_name as author, email, content as text, timestamp as date, status, edited_at, original_text FROM comments ORDER BY timestamp DESC");
+        // Admin view - Get all comments with blog slug for clickable links
+        $stmt = $pdo->query("SELECT c.*, c.user_name as author, c.content as text, c.timestamp as date, b.slug 
+                             FROM comments c 
+                             LEFT JOIN blogs b ON c.post_id = b.id 
+                             ORDER BY c.timestamp DESC");
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($comments);
     } 

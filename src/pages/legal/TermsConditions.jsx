@@ -5,7 +5,7 @@ const TermsConditions = () => {
   return (
     <LegalLayout title="Terms & Conditions">
       <p style={{ color: "#666", marginBottom: "40px" }}>
-        Last Updated: {new Date().toLocaleDateString()}
+        Last Updated: {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
       </p>
 
       <section>

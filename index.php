@@ -1,5 +1,41 @@
-// 2. Static Pages Whitelist
-// These should return the React app without trying to find a blog post.
+<?php
+// Function to ensure absolute URL
+if (!function_exists('getAbsoluteUrl')) {
+    function getAbsoluteUrl($path, $baseUrl) {
+        if (strpos($path, 'http') === 0) return $path;
+        return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('getOptimizedOgImage')) {
+    function getOptimizedOgImage($url) {
+        return $url;
+    }
+}
+
+$request_uri = $_SERVER['REQUEST_URI'];
+$path = parse_url($request_uri, PHP_URL_PATH);
+
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+$host = $_SERVER['HTTP_HOST'];
+$baseUrl = $protocol . $host;
+
+$defaultTitle = "SAP Security Expert";
+$defaultDesc = "The leading community for SAP Security, GRC, and BTP professionals. Get the latest insights, tutorials, and best practices.";
+$defaultKeywords = "SAP Security, SAP GRC, SAP BTP, SAP Licensing, SAP Cybersecurity, SAP IAG, SAP Public Cloud";
+
+$defaultAbsImage = getAbsoluteUrl("/assets/sapsecurityexpert-black.png", $baseUrl);
+$defaultImage = $defaultAbsImage;
+$defaultUrl = $baseUrl . "/";
+
+$title = $defaultTitle;
+$description = $defaultDesc;
+$keywords = $defaultKeywords;
+$image = $defaultImage;
+$url = $defaultUrl;
+$type = "website";
+
+// 1. Static Pages Whitelist
 $staticPages = [
     '/', '/blogs', '/about', '/contact', '/privacy-policy', '/terms-conditions', 
     '/accessibility-statement', '/safety-movement', '/security-compliance-overview', 
@@ -25,6 +61,12 @@ $staticPages = [
         'title' => 'Blogs | SAP Security Expert',
         'description' => 'Read our latest blogs on SAP Security, GRC, and BTP.',
         'keywords' => 'SAP Blogs, SAP Security Tutorials, SAP GRC Articles, SAP BTP Guides',
+        "image" => "/assets/sapsecurityexpert-black.png",
+    ],
+    '/about' => [
+        'title' => 'About Us | SAP Security Expert',
+        'description' => 'Learn more about SAP Security Expert, our mission, and our team.',
+        'keywords' => 'About SAP Security Expert, SAP Security History, Mission Statement',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
     '/contact' => [
@@ -158,8 +200,69 @@ $categories = [
 $cleanPath = trim($path, '/');
 if ($cleanPath === "") $cleanPath = "/"; // Handle root
 else $cleanPath = "/" . $cleanPath; // normalize
-
 $found = false;
+$type = "website";
+
+// DYNAMIC BLOG SEO (SAFE ROUTING)
+// Matches BOTH /blogs/{slug} AND /{category}/{slug} patterns
+require_once __DIR__ . "/api/db.php";
+
+$cleanSlug = '';
+
+// Pattern 1: /blogs/{slug}
+if (strpos($cleanPath, '/blogs/') === 0) {
+    $cleanSlug = basename($cleanPath);
+}
+
+// Pattern 2: /{known-category}/{slug}  e.g. /sap-btp-security/intro-to-sap-btp-security
+// Detect a two-segment path that's not a known static page
+if (empty($cleanSlug)) {
+    $segments = explode('/', trim($cleanPath, '/'));
+    if (count($segments) === 2 && !array_key_exists($cleanPath, $staticPages)) {
+        $cleanSlug = $segments[1]; // Use the second segment as the slug
+    }
+}
+
+if ($cleanSlug) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT title, meta_title, meta_description, meta_keywords, image, slug
+            FROM blogs
+            WHERE slug = ? AND status = 'published'
+            LIMIT 1
+        ");
+
+        $stmt->execute([$cleanSlug]);
+        $blog = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($blog) {
+            // Use custom meta_title if set, else fall back to blog title
+            $title = !empty($blog['meta_title'])
+                ? $blog['meta_title']
+                : ($blog['title'] . " | SAP Security Expert");
+
+            $description = !empty($blog['meta_description'])
+                ? $blog['meta_description']
+                : $defaultDesc;
+
+            $keywords = !empty($blog['meta_keywords'])
+                ? $blog['meta_keywords']
+                : $defaultKeywords;
+
+            if (!empty($blog['image'])) {
+                $image = getAbsoluteUrl($blog['image'], $baseUrl);
+            } else {
+                $image = $defaultImage;
+            }
+
+            $url = getAbsoluteUrl($cleanPath, $baseUrl);
+            $type = "article";
+            $found = true;
+        }
+    } catch (Exception $e) {
+        // Silently fail to default
+    }
+}
 
 // Check Static Pages First (Exact Match)
 if (array_key_exists($cleanPath, $staticPages)) {
@@ -177,53 +280,6 @@ else if (array_key_exists(ltrim($cleanPath, '/'), $categories)) {
      $description = $categories[$catKey]['description'];
      $keywords = $categories[$catKey]['keywords'];
      $found = true;
-}
-else {
-    // Check Blog Posts (Dynamic from MySQL v4)
-    // Pattern: /category/slug
-    $pathParts = explode('/', trim($cleanPath, '/'));
-    
-    if (count($pathParts) == 2) {
-        $category = $pathParts[0];
-        $slug = $pathParts[1];
-
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM blogs WHERE slug = ? LIMIT 1");
-            $stmt->execute([$slug]);
-            $item = $stmt->fetch();
-            
-            if ($item) {
-                // Validate Category Match
-                if ($item['category'] !== $category) {
-                     // 301 Redirect to correct category
-                     header("Location: /" . $item['category'] . "/" . $item['slug'], true, 301);
-                     exit;
-                }
-
-                // Dynamic SEO Logic
-                $title = !empty($item['meta_title']) ? $item['meta_title'] . " | SAP Security Expert" : $item['title'] . " | SAP Security Expert";
-                $description = !empty($item['meta_description']) ? $item['meta_description'] : ($item['excerpt'] ?: $defaultDesc);
-                $keywords = !empty($item['meta_keywords']) ? $item['meta_keywords'] : ($item['tags'] ?: $defaultKeywords);
-                
-                // Image Logic
-                if (!empty($item['image'])) {
-                    $absImage = getAbsoluteUrl($item['image'], $baseUrl);
-                    $image = getOptimizedOgImage($absImage);
-                } else {
-                    $image = $defaultAbsImage; // Fallback
-                }
-                
-                $url = $baseUrl . "/" . $category . "/" . $slug;
-                $type = "article";
-                $found = true;
-
-                // View Count
-                $pdo->prepare("UPDATE blogs SET view_count = view_count + 1 WHERE slug = ?")->execute([$slug]);
-            }
-        } catch (Exception $e) {
-            // Log error or silently fail to default
-        }
-    }
 }
 
 
@@ -261,6 +317,7 @@ $ogTags = "
     <meta name=\"keywords\" content=\"" . htmlspecialchars($keywords) . "\">
     <meta name=\"author\" content=\"SAP Security Expert\">
     <meta name=\"robots\" content=\"index, follow\">
+    <link rel=\"canonical\" href=\"" . htmlspecialchars($url) . "\">
 
     <meta property=\"og:title\" content=\"" . htmlspecialchars($title) . "\">
     <meta property=\"og:description\" content=\"" . htmlspecialchars($description) . "\">

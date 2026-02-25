@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import SEO from "../SEO";
+import ActionMenu from "./ActionMenu";
 import SimpleRTE from "./SimpleRTE";
 import "../../css/AdminDashboard.css";
 import { authors } from "../../data/authors";
@@ -32,6 +34,7 @@ const AdminBlogs = () => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [uploading, setUploading] = useState(false);
+  const [imageVersion, setImageVersion] = useState(Date.now());
 
   useEffect(() => {
     fetchBlogs();
@@ -39,7 +42,9 @@ const AdminBlogs = () => {
 
   const fetchBlogs = async () => {
     try {
-      const res = await fetch("/api/posts");
+      const res = await fetch("/api/posts", {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         // Parse FAQs if string
@@ -58,6 +63,21 @@ const AdminBlogs = () => {
         "We couldn't load the blogs right now. Please try again later.",
         "error",
       );
+    }
+  };
+
+  const formatDateForm = (dateString) => {
+    if (!dateString) return "No Date";
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      return d.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return dateString;
     }
   };
 
@@ -109,9 +129,11 @@ const AdminBlogs = () => {
   const rteImageUpload = async (file) => {
     const body = new FormData();
     body.append("image", file);
+    body.append("type", "content");
     try {
-      const res = await fetch("/api/upload_blog_image.php", {
+      const res = await fetch("/api/upload-blog-image", {
         method: "POST",
+        credentials: "include",
         body: body,
       });
       const data = await res.json();
@@ -137,15 +159,18 @@ const AdminBlogs = () => {
     setUploading(true);
     const body = new FormData();
     body.append("image", file);
+    body.append("type", "featured");
 
     try {
-      const res = await fetch("/api/upload_blog_image.php", {
+      const res = await fetch("/api/upload-blog-image", {
         method: "POST",
+        credentials: "include",
         body: body,
       });
       const data = await res.json();
       if (data.status === "success") {
         setFormData((prev) => ({ ...prev, image: data.path }));
+        setImageVersion(Date.now());
         addToast("Image uploaded successfully", "success");
       } else {
         addToast(
@@ -173,6 +198,10 @@ const AdminBlogs = () => {
         typeof blog.faqs === "string"
           ? JSON.parse(blog.faqs || "[]")
           : blog.faqs || [],
+      // Fix date format string slicing for input[type="date"]
+      date: blog.date
+        ? blog.date.split(" ")[0].substring(0, 10)
+        : new Date().toISOString().split("T")[0],
       // Ensure nulls become empty strings for inputs
       cta_title: blog.cta_title || "",
       cta_description: blog.cta_description || "",
@@ -191,7 +220,10 @@ const AdminBlogs = () => {
       isDanger: true,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+          const res = await fetch(`/api/posts/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
           if (res.ok) {
             fetchBlogs();
             addToast("Blog deleted successfully", "success");
@@ -229,10 +261,23 @@ const AdminBlogs = () => {
       return;
     }
 
+    // CTA Link Validation (Phase 5)
+    if (
+      formData.cta_button_link &&
+      !/^https?:\/\//.test(formData.cta_button_link)
+    ) {
+      addToast(
+        "CTA Button Link must be a valid URL starting with http:// or https://",
+        "error",
+      );
+      return;
+    }
+
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
       if (res.ok) {
@@ -288,14 +333,14 @@ const AdminBlogs = () => {
 
       {view === "list" ? (
         <div className="admin-card">
-          <div className="admin-table-container">
+          <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
                 <tr>
                   <th className="text-left col-title">Title</th>
                   <th className="text-left">Author</th>
                   <th className="text-left">Date</th>
-                  <th>Actions</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -312,22 +357,22 @@ const AdminBlogs = () => {
                       <td className="text-left">
                         {authors[blog.author]?.name || blog.author}
                       </td>
-                      <td className="text-left">{blog.date}</td>
-                      <td>
-                        <div className="action-buttons">
+                      <td className="text-left">{formatDateForm(blog.date)}</td>
+                      <td className="text-center">
+                        <ActionMenu>
                           <button
-                            className="btn-edit btn-sm"
+                            className="btn-edit"
                             onClick={() => handleEdit(blog)}
                           >
                             Edit
                           </button>
                           <button
-                            className="btn-delete btn-sm"
+                            className="btn-delete"
                             onClick={() => handleDelete(blog.id)}
                           >
                             Delete
                           </button>
-                        </div>
+                        </ActionMenu>
                       </td>
                     </tr>
                   ))
@@ -426,6 +471,7 @@ const AdminBlogs = () => {
                 className="form-control"
                 style={{ padding: "8px" }}
               />
+              <span className="image-hint">Required: 1920x1080 (16:9)</span>
               {uploading && (
                 <p style={{ fontSize: "0.8rem", color: "#2563eb" }}>
                   Uploading image...
@@ -433,7 +479,10 @@ const AdminBlogs = () => {
               )}
               {formData.image && (
                 <div className="image-preview">
-                  <img src={formData.image} alt="Blog preview" />
+                  <img
+                    src={`${formData.image}?v=${imageVersion}`}
+                    alt="Blog preview"
+                  />
                   <p className="image-path-text">URL: {formData.image}</p>
                 </div>
               )}
@@ -521,15 +570,23 @@ const AdminBlogs = () => {
                   className="form-control"
                   style={{ marginBottom: "8px" }}
                 />
-                <textarea
-                  placeholder="Answer"
-                  value={faq.answer}
-                  onChange={(e) =>
-                    handleFAQChange(index, "answer", e.target.value)
-                  }
-                  className="form-control"
-                  rows="2"
-                />
+                <div
+                  style={{
+                    marginTop: "8px",
+                    border: "1px solid #ccc",
+                    padding: "10px",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <label className="form-label">Answer (Rich Text)</label>
+                  <SimpleRTE
+                    value={faq.answer}
+                    onChange={(content) =>
+                      handleFAQChange(index, "answer", content)
+                    }
+                    onImageUpload={rteImageUpload}
+                  />
+                </div>
                 <button
                   className="btn-delete"
                   onClick={() => removeFAQ(index)}
@@ -540,6 +597,7 @@ const AdminBlogs = () => {
               </div>
             ))}
             <button
+              type="button"
               className="btn-edit"
               onClick={addFAQ}
               style={{ marginTop: "12px" }}
@@ -582,10 +640,12 @@ const AdminBlogs = () => {
               <div className="form-group half">
                 <label className="form-label">Button Link</label>
                 <input
+                  type="url"
                   name="cta_button_link"
                   value={formData.cta_button_link}
                   onChange={handleInputChange}
                   className="form-control"
+                  placeholder="https://..."
                 />
               </div>
             </div>
@@ -622,6 +682,12 @@ const AdminBlogs = () => {
                 border-radius: 8px;
                 margin-bottom: 12px;
                 border: 1px solid #e2e8f0;
+            }
+            .image-hint {
+                font-size: 13px;
+                color: #64748b;
+                margin-top: 4px;
+                display: block;
             }
         `}</style>
     </div>

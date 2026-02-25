@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import "../../css/AdminDashboard.css";
+// import { API_BASE_URL } from "../../config";
+import ActionMenu from "./ActionMenu";
 import useScrollLock from "../../hooks/useScrollLock";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
@@ -31,7 +33,7 @@ const AdminContributors = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchApplications();
   }, []);
 
@@ -126,48 +128,50 @@ const AdminContributors = () => {
         <p>Loading...</p>
       ) : (
         <div className="admin-card">
-          <div className="admin-table-container">
+          <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="text-center">ID</th>
-                  <th className="text-left">Name</th>
-                  <th className="text-left">Role</th>
+                  <th className="col-name text-left">Name</th>
+                  <th className="col-role text-left">Role</th>
                   <th className="col-status">Status</th>
-                  <th className="text-left">Date</th>
-                  <th>Action</th>
+                  <th className="col-date text-left">Date</th>
+                  <th className="col-actions text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {applications.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center">
+                    <td colSpan="5" className="text-center">
                       No applications found.
                     </td>
                   </tr>
                 ) : (
                   applications.map((app) => (
                     <tr key={app.id}>
-                      <td className="text-center">{app.id}</td>
-                      <td className="text-left">
+                      <td className="col-name text-left">
                         <strong>{app.name}</strong>
                         <br />
                         <small>{app.email}</small>
                       </td>
-                      <td className="text-left">{app.role}</td>
+                      <td className="col-role text-left">{app.role}</td>
                       <td className="col-status">
                         <span className={`status-badge status-${app.status}`}>
                           {app.status}
                         </span>
                       </td>
-                      <td className="text-left">
-                        {new Date(app.created_at).toLocaleDateString()}
+                      <td className="col-date text-left">
+                        {new Date(app.created_at).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </td>
-                      <td>
-                        <div className="action-buttons">
+                      <td className="col-actions text-center">
+                        <ActionMenu>
                           <button
                             onClick={() => setSelectedApp(app)}
-                            className="btn-view btn-sm"
+                            className="btn-view"
                           >
                             View
                           </button>
@@ -176,13 +180,13 @@ const AdminContributors = () => {
                             <>
                               <button
                                 onClick={() => handleApprove(app.id)}
-                                className="btn-approve btn-sm"
+                                className="btn-approve"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject(app.id)}
-                                className="btn-reject btn-sm"
+                                className="btn-reject"
                               >
                                 Reject
                               </button>
@@ -191,12 +195,11 @@ const AdminContributors = () => {
 
                           <button
                             onClick={() => handleDelete(app.id)}
-                            className="btn-delete btn-sm"
-                            title="Delete Permanently"
+                            className="btn-delete"
                           >
                             Delete
                           </button>
-                        </div>
+                        </ActionMenu>
                       </td>
                     </tr>
                   ))
@@ -290,7 +293,10 @@ const AdminContributors = () => {
                 <div>
                   <strong>Joined:</strong>
                   <div style={{ color: "#475569" }}>
-                    {new Date(selectedApp.created_at).toLocaleDateString()}
+                    {new Date(selectedApp.created_at).toLocaleDateString(
+                      "en-US",
+                      { month: "long", day: "numeric", year: "numeric" },
+                    )}
                   </div>
                 </div>
                 <div>
@@ -511,9 +517,36 @@ const AdminContributors = () => {
             </div>
 
             <div className="modal-footer">
+              {selectedApp.status !== "approved" && (
+                <>
+                  <button
+                    className="btn-approve"
+                    onClick={() => {
+                      handleApprove(selectedApp.id);
+                      setSelectedApp({ ...selectedApp, status: "approved" });
+                    }}
+                  >
+                    Approve
+                  </button>
+                  {selectedApp.status !== "rejected" && (
+                    <button
+                      className="btn-reject"
+                      onClick={() => {
+                        handleReject(selectedApp.id);
+                        setSelectedApp({ ...selectedApp, status: "rejected" });
+                      }}
+                    >
+                      Reject
+                    </button>
+                  )}
+                </>
+              )}
               <button
                 className="btn-delete"
-                onClick={() => handleDelete(selectedApp.id)}
+                onClick={() => {
+                  handleDelete(selectedApp.id);
+                  setSelectedApp(null);
+                }}
               >
                 Delete
               </button>

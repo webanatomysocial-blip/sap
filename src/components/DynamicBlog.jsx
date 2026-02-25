@@ -72,6 +72,9 @@ export default function DynamicBlog() {
         setBlog(postData);
         setLoading(false);
 
+        // Title and Meta Description are now strictly managed by BlogLayout's <SEO> block
+        // to prevent React-Helmet race conditions that cause tab titles to revert to defaults.
+
         // Track view for virtual blog
         if (postData.id || postData.slug) {
           const postId = postData.slug || postData.id;
@@ -110,12 +113,17 @@ export default function DynamicBlog() {
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
-            setCommentsCount(data.length);
+            const topLevelComments = data.filter((c) => !c.parent_id);
+            setCommentsCount(topLevelComments.length);
           }
         })
         .catch((err) => console.error("Comments fetch failed", err));
     }
   }, [blogId, API_URL, location.pathname, navigate]);
+
+  const handleCommentAdded = () => {
+    setCommentsCount((prevCount) => prevCount + 1);
+  };
 
   // RENDER LOADING
   if (loading) {
@@ -147,26 +155,16 @@ export default function DynamicBlog() {
     );
   }
 
-  // RENDER BLOG (Database Content)
+  const seoTitle =
+    blog.meta_title ||
+    (blog.title
+      ? `${blog.title} | SAP Security Expert`
+      : "Blog | SAP Security Expert");
+  const seoDescription = blog.meta_description || blog.excerpt || "";
+  const seoImage = blog.image || blog.featured_image || "";
+
   return (
     <>
-      <Helmet>
-        <title>
-          {blog.title
-            ? `${blog.title} | SAP Security Expert`
-            : "Blog | SAP Security Expert"}
-        </title>
-        <meta
-          name="description"
-          content={blog.excerpt || blog.meta_description || ""}
-        />
-        {/* Open Graph tags for social sharing */}
-        <meta property="og:title" content={blog.title} />
-        <meta property="og:description" content={blog.excerpt} />
-        <meta property="og:image" content={blog.image || blog.featured_image} />
-        <meta property="og:type" content="article" />
-      </Helmet>
-
       <BlogLayout
         blogId={blogId}
         title={blog.title}
@@ -188,6 +186,10 @@ export default function DynamicBlog() {
         dynamicRecentPosts={[]}
         viewCount={blog.view_count || 0}
         commentCount={commentsCount}
+        onCommentAdded={handleCommentAdded}
+        metaTitle={blog.meta_title}
+        metaDescription={blog.meta_description}
+        metaKeywords={blog.meta_keywords}
         // NEW PROPS
         faqs={
           typeof blog.faqs === "string"

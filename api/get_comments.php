@@ -15,7 +15,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     try {
         // Only fetch APPROVED comments for public display
-        $stmt = $pdo->prepare("SELECT id, user_name as author, content as text, timestamp as date FROM comments WHERE post_id = :post_id AND status = 'approved' ORDER BY timestamp DESC");
+        // parent_id is needed for frontend grouping
+        $stmt = $pdo->prepare("SELECT id, post_id, parent_id, user_name as author, content as text, timestamp as date FROM comments WHERE post_id = :post_id AND status = 'approved' ORDER BY timestamp ASC");
         $stmt->execute([':post_id' => $blogId]);
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

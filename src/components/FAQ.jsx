@@ -11,9 +11,10 @@ const FAQItem = ({ question, answer }) => {
         <h4>{question}</h4>
         <HiPlus className="faq-icon" />
       </button>
-      <div className="faq-answer">
-        <p>{answer}</p>
-      </div>
+      <div
+        className="faq-answer rte-content"
+        dangerouslySetInnerHTML={{ __html: answer }}
+      />
     </div>
   );
 };

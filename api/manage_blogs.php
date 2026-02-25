@@ -33,7 +33,7 @@ try {
             exit;
         }
         
-        $sql = "SELECT *, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved') as comment_count FROM blogs";
+        $sql = "SELECT *, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved' AND parent_id IS NULL) entries, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved' AND parent_id IS NULL) as comment_count FROM blogs";
         $params = [];
         
         if (!$isAdmin) {
@@ -79,23 +79,11 @@ try {
             if ($current) {
                 // Delete old image if it exists and is different from new image
                 if (!empty($current['image']) && $current['image'] !== $image && !empty($image)) {
-                    // Extract relative path from URL (e.g. /assets/blog-images/file.jpg)
-                    $oldPath = __DIR__ . '/..' . $current['image'];
-                    // Support both public/assets and assets
-                    $oldPath = str_replace('/public/assets/', '/assets/', $oldPath);
-                    // Try direct relative first
-                     if (!file_exists($oldPath)) {
-                        // Try with public if it was missing 
-                        $oldPath = __DIR__ . '/../public' . $current['image'];
-                     }
-
-                    if (file_exists($oldPath) && is_file($oldPath)) {
-                        unlink($oldPath);
-                    }
+                    deleteImage($current['image']);
                 }
 
                 // Update
-                $sql = "UPDATE blogs SET title=?, slug=?, excerpt=?, content=?, author=?, date=?, image=?, category=?, tags=?, faqs=?, cta_title=?, cta_description=?, cta_button_text=?, cta_button_link=?, meta_title=?, meta_description=?, meta_keywords=? WHERE id=?";
+                $sql = "UPDATE blogs SET title=?, slug=?, excerpt=?, content=?, author=?, date=?, image=?, category=?, tags=?, faqs=?, cta_title=?, cta_description=?, cta_button_text=?, cta_button_link=?, meta_title=?, meta_description=?, meta_keywords=?, status='published' WHERE id=?";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     $title, $slug, $excerpt, $content, $author, $date, $image, $category, $tags,
@@ -115,7 +103,7 @@ try {
         // Insert (if no ID or ID not found, but usually ID comes from frontend generator for new posts, let's trust frontend ID or generate one)
         if (!$id) $id = uniqid('blog_');
 
-        $sql = "INSERT INTO blogs (id, title, slug, excerpt, content, author, date, image, category, tags, faqs, cta_title, cta_description, cta_button_text, cta_button_link, meta_title, meta_description, meta_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO blogs (id, title, slug, excerpt, content, author, date, image, category, tags, faqs, cta_title, cta_description, cta_button_text, cta_button_link, meta_title, meta_description, meta_keywords, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published')";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $id, $title, $slug, $excerpt, $content, $author, $date, $image, $category, $tags,
@@ -140,25 +128,7 @@ try {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row && !empty($row['image'])) {
-             // Logic to delete file
-             $imagePath = __DIR__ . '/..' . $row['image']; // Default relative
-              // Adjust if path starts with /public
-             if (strpos($row['image'], '/public/') === 0) {
-                 $imagePath = __DIR__ . '/..' . $row['image'];
-             } else {
-                 // If stored as /assets/..., it might be in public/assets or root assets depending on structure
-                 // Using a safer check logic:
-                 $possiblePaths = [
-                    __DIR__ . '/../public' . $row['image'],
-                    __DIR__ . '/..' . $row['image']
-                 ];
-                 foreach($possiblePaths as $p) {
-                    if (file_exists($p) && is_file($p)) {
-                        unlink($p);
-                        break;
-                    }
-                 }
-             }
+             deleteImage($row['image']);
         }
 
         $stmt = $pdo->prepare("DELETE FROM blogs WHERE id = ? OR slug = ?");
@@ -168,6 +138,7 @@ try {
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Something went wrong while saving the blog post. Please try again.']);
+    // Use the actual error message to diagnose DB constraint/schema failures
+    echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
 }
 ?>

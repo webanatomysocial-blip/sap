@@ -331,6 +331,7 @@ body {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--slate-200);
   margin-bottom: 24px;
+  overflow: visible !important;
 }
 
 /* ================================
@@ -475,8 +476,14 @@ body {
   border-radius: 8px;
 }
 
+.admin-table-wrapper {
+  /* overflow-x: auto; */
+  width: 100%;
+}
+
 .admin-table {
   width: 100%;
+  min-width: 1000px;
   border-collapse: collapse;
   box-sizing: border-box;
 }
@@ -516,9 +523,10 @@ body {
   border-bottom: 1px solid var(--slate-200);
 }
 
-/* Standard Checkbox Column Alignment (PART 2) */
-.admin-table th:first-child,
-.admin-table td:first-child {
+/* Standard Checkbox Column Alignment */
+/* Only apply width: 60px if it is a checkbox container */
+.admin-table th.col-checkbox,
+.admin-table td.col-checkbox {
   width: 60px;
   text-align: center;
   vertical-align: middle;
@@ -526,17 +534,18 @@ body {
 
 /* Specific Column Handling */
 .admin-table td {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all; /* Phase 6: Force break for long strings like links/emails */
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.admin-table th {
+  white-space: nowrap; /* Keep headers on one line if possible */
 }
 
 .admin-table td.col-title,
 .admin-table th.col-title {
   max-width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Allow certain columns to wrap with truncation (PART 5) */
@@ -560,7 +569,6 @@ body {
 .admin-table th:last-child,
 .admin-table td:last-child {
   width: auto;
-  min-width: 200px;
   text-align: right;
   overflow: visible;
 }
@@ -592,6 +600,13 @@ td.text-left {
   text-align: left !important;
 }
 
+.image-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
 th.text-center,
 td.text-center {
   text-align: center !important;
@@ -607,12 +622,14 @@ td.col-status {
   background: #d1fae5;
   color: #065f46;
   border: 1px solid #6ee7b7;
+  white-space: nowrap;
 }
 
 .status-pending {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fcd34d;
+  white-space: nowrap;
 }
 
 .status-rejected,
@@ -620,6 +637,7 @@ td.col-status {
   background: #fee2e2;
   color: #991b1b;
   border: 1px solid #fca5a5;
+  white-space: nowrap;
 }
 
 /* ================================
@@ -630,7 +648,9 @@ td.col-status {
 }
 
 .form-group label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 1rem;
   font-weight: 600;
   color: var(--slate-700);
@@ -777,6 +797,10 @@ td.col-status {
   background: #ecfdf5;
   color: #059669;
   border: 1.5px solid #10b881;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-view:hover {
@@ -831,17 +855,21 @@ td.col-status {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center; /* Fix for vertical stretching */
   flex-direction: row; /* Ensure horizontal alignment in tables */
-  flex-wrap: nowrap; /* Prevent stacking in table view */
+  flex-wrap: wrap; /* Allow stacking to prevent horizontal overflow */
 }
 
 .action-buttons .btn-edit,
 .action-buttons .btn-delete,
 .action-buttons .btn-approve,
+.action-buttons .btn-view,
 .action-buttons .btn-reject {
-  min-height: 36px;
+  height: 36px; /* Fixed height to prevent stretching */
   padding: 6px 14px;
   font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 /* ================================
@@ -965,11 +993,119 @@ td.col-status {
 /* Metadata / Small Info labels in tables */
 .zone-details,
 .edited-indicator,
-.author-email {
+.author-email,
+.reply-indicator {
   font-size: 0.8rem;
   color: var(--slate-500);
   margin-top: 4px;
   display: block;
+}
+
+.badge-reply {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #dbeafe;
+}
+
+/* Admin Table Layout Fixes */
+.admin-table {
+  width: 100% !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-table td {
+  vertical-align: middle;
+  padding: 16px 20px !important;
+  word-wrap: break-word;
+}
+
+.admin-table th {
+  padding: 16px 20px !important;
+  white-space: nowrap;
+}
+
+/* Specific Column Weights for AdminTables */
+/* Total: 100% */
+.col-id {
+  width: 10%;
+}
+.col-name {
+  width: 20%;
+}
+.col-role {
+  width: 19%;
+}
+.col-author {
+  width: 17%;
+}
+.col-content {
+  width: 17%;
+}
+.col-post {
+  width: 15%;
+}
+.col-date {
+  width: 11%;
+}
+.col-status {
+  width: 15%;
+}
+.col-actions {
+  width: 25%;
+}
+
+/* Strict Truncation for nested elements */
+.author-name,
+.author-email {
+  display: block;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.col-post-truncate {
+  display: block;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.post-id-fallback {
+  display: block;
+  max-width: 100%;
+  font-family: monospace;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.comment-text-truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+.post-link {
+  color: var(--primary-blue);
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.post-link:hover {
+  color: var(--primary-blue-light);
+}
+
+.post-id-fallback {
+  font-family: monospace;
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 .admin-checkbox:active span {
@@ -1013,6 +1149,16 @@ td.col-status {
 /* ================================
    MODAL (DESIGN SYSTEM 5)
 ================================ */
+.modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-top: 24px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid var(--slate-200) !important;
+}
+
 .modal-footer .btn-primary,
 .modal-footer .btn-cancel,
 .modal-footer .btn-secondary {
@@ -1170,4 +1316,89 @@ td.col-status {
   gap: 20px;
   padding-top: 10px;
   border-top: 1px solid var(--slate-100);
+}
+
+/* Action Menu Styles */
+.action-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu-btn {
+  background: white;
+  border: 1px solid var(--slate-200);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--slate-600);
+  line-height: 1;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-menu-btn:hover {
+  background: var(--slate-100);
+  color: var(--slate-900);
+  border-color: var(--slate-300);
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: white;
+  min-width: 140px;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.1),
+    0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  padding: 6px 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.action-menu-dropdown button {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  text-align: left;
+  width: 100%;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--slate-700);
+  transition: background 0.15s ease;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.action-menu-dropdown button:hover {
+  background: var(--slate-50);
+  color: var(--primary-blue);
+}
+
+.action-menu-dropdown .btn-delete {
+  color: var(--error-red) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.action-menu-dropdown .btn-delete:hover {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.admin-table-container {
+  overflow: visible !important;
+}
+
+.table-responsive {
+  overflow: visible !important;
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ActionMenu from "./ActionMenu";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
 
@@ -39,7 +40,7 @@ const AdminAds = () => {
     formData.append("zone", zone);
 
     try {
-      const res = await fetch("/api/upload_ad_image.php", {
+      const res = await fetch("/api/upload-ad-image", {
         method: "POST",
         body: formData,
       });
@@ -161,7 +162,7 @@ const AdminAds = () => {
       </div>
 
       <div className="admin-card">
-        <div className="admin-table-container">
+        <div className="admin-table-wrapper">
           <table className="admin-table">
             <thead>
               <tr>
@@ -169,7 +170,7 @@ const AdminAds = () => {
                 <th className="text-left">Preview</th>
                 <th className="text-left">Link Destination</th>
                 <th className="col-status">Status</th>
-                <th>Actions</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -220,13 +221,15 @@ const AdminAds = () => {
                         {ad.active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td>
-                      <button
-                        className="btn-edit btn-sm"
-                        onClick={() => handleEdit(zone.id)}
-                      >
-                        Edit
-                      </button>
+                    <td className="text-center">
+                      <ActionMenu>
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEdit(zone.id)}
+                        >
+                          Edit
+                        </button>
+                      </ActionMenu>
                     </td>
                   </tr>
                 );

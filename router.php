@@ -6,9 +6,19 @@ $file = __DIR__ . $uri;
 
 // 1. If it's an existing file, serve it directly
 if (is_file($file)) {
-    // Return false to let PHP built-in server handle the file
-    // This allows serving CSS, JS, Images, etc.
     return false;
+}
+
+// Fallback for public/ directory (assets and uploads)
+$publicFile = __DIR__ . '/public' . $uri;
+if (is_file($publicFile)) {
+    // We need to serve the file ourselves or tell PHP server about it.
+    // However, if we return false, it only uses __DIR__ as root.
+    // So we can try to read it.
+    $mime = mime_content_type($publicFile);
+    header("Content-Type: $mime");
+    readfile($publicFile);
+    return true;
 }
 
 // 2. If it is an API request, route to api/index.php

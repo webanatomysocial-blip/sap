@@ -32,6 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $author = isset($data['author']) ? trim($data['author']) : '';
     $email = isset($data['email']) ? trim($data['email']) : '';
     $text = isset($data['text']) ? trim($data['text']) : '';
+    $parentId = isset($data['parent_id']) ? (int)$data['parent_id'] : null;
 
     if (empty($blogId) || empty($author) || empty($text) || empty($email)) {
         http_response_code(400);
@@ -39,10 +40,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
+    // Validate parent_id exists if provided
+    if ($parentId) {
+        $checkStmt = $pdo->prepare("SELECT id FROM comments WHERE id = ?");
+        $checkStmt->execute([$parentId]);
+        if (!$checkStmt->fetch()) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Parent comment not found."]);
+            exit;
+        }
+    }
+
     try {
-        $stmt = $pdo->prepare("INSERT INTO comments (post_id, user_name, email, content, status) VALUES (:post_id, :user_name, :email, :content, 'pending')");
+        $stmt = $pdo->prepare("INSERT INTO comments (post_id, parent_id, user_name, email, content, status, timestamp) VALUES (:post_id, :parent_id, :user_name, :email, :content, 'pending', NOW())");
         $stmt->execute([
             ':post_id' => $blogId,
+            ':parent_id' => $parentId,
             ':user_name' => htmlspecialchars($author),
             ':email' => htmlspecialchars($email),
             ':content' => htmlspecialchars($text)

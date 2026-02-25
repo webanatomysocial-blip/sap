@@ -24,6 +24,13 @@ try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($announcements as &$announcement) {
+            if (!empty($announcement['date'])) {
+                $announcement['date'] = date('F j, Y', strtotime($announcement['date']));
+            }
+        }
+        
         echo json_encode($announcements);
     } 
     elseif ($method === 'POST') {

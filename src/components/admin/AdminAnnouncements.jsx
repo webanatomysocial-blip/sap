@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
+// import { API_BASE_URL } from "../../config";
+import ActionMenu from "./ActionMenu";
 import useScrollLock from "../../hooks/useScrollLock";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
@@ -130,13 +132,13 @@ const AdminAnnouncements = () => {
       </div>
 
       <div className="admin-card">
-        <div className="admin-table-container">
+        <div className="admin-table-wrapper">
           <table className="admin-table">
             <thead>
               <tr>
                 <th className="text-left">Title</th>
                 <th className="text-left">Date</th>
-                <th>Actions</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -150,24 +152,31 @@ const AdminAnnouncements = () => {
                 announcements.map((item) => (
                   <tr key={item.id}>
                     <td className="text-left">{item.title}</td>
-                    <td className="text-left">{item.date}</td>
-                    <td>
-                      <div className="action-buttons">
+                    <td className="text-left">
+                      {new Date(item.date).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </td>
+                    <td className="text-center">
+                      <ActionMenu>
                         <button
-                          className="btn-edit btn-sm"
+                          className="btn-edit"
                           onClick={() => handleOpenModal(item)}
                           title="Edit"
                         >
                           Edit
                         </button>
                         <button
-                          className="btn-delete btn-sm"
+                          className="btn-delete"
                           onClick={() => handleDelete(item.id)}
                           title="Delete"
                         >
                           Delete
                         </button>
-                      </div>
+                      </ActionMenu>
                     </td>
                   </tr>
                 ))

@@ -41,6 +41,12 @@ import AdminComments from "./components/admin/AdminComments";
 import AdminAds from "./components/admin/AdminAds";
 import AdminBlogs from "./components/admin/AdminBlogs";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsConditions from "./pages/legal/TermsConditions";
+import AccessibilityStatement from "./pages/legal/AccessibilityStatement";
+import SafetyMovement from "./pages/legal/SafetyMovement";
+import SecurityCompliance from "./pages/legal/SecurityCompliance";
+import ResponsibleAi from "./pages/legal/ResponsibleAi";
 
 function App() {
   return (
@@ -120,6 +126,23 @@ function App() {
         <Route path="become-a-contributor" element={<BecomeContributor />} />
         <Route path="apply-contributor" element={<ContributorApplication />} />
         <Route path="contact-us" element={<ContactUs />} />
+
+        {/* Legal Routes */}
+        <Route path="privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="terms-conditions" element={<TermsConditions />} />
+        <Route
+          path="accessibility-statement"
+          element={<AccessibilityStatement />}
+        />
+        <Route path="safety-movement" element={<SafetyMovement />} />
+        <Route
+          path="security-compliance-overview"
+          element={<SecurityCompliance />}
+        />
+        <Route
+          path="responsible-ai-automation-statement"
+          element={<ResponsibleAi />}
+        />
       </Route>
 
       {/* React Admin Dashboard */}
