@@ -336,6 +336,7 @@ $ogTags = "
     <meta name=\"twitter:title\" content=\"" . htmlspecialchars($title) . "\">
     <meta name=\"twitter:description\" content=\"" . htmlspecialchars($description) . "\">
     <meta name=\"twitter:image\" content=\"" . htmlspecialchars($image) . "\">
+    <meta name=\"google-adsense-account\" content=\"ca-pub-5501267075758433\">
 ";
 
 // Inject before </head>
