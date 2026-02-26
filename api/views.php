@@ -38,8 +38,8 @@ $ip_address = get_client_ip();
 
 try {
     if ($method === 'GET') {
-        // Fetch view count from blog_views table
-        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM blog_views WHERE post_id = ?");
+        // Fetch view count from post_views table
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM post_views WHERE post_id = ?");
         $stmt->execute([$post_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -56,22 +56,22 @@ try {
         }
 
         // Check if this visitor has already viewed this post
-        $checkStmt = $pdo->prepare("SELECT id FROM blog_views WHERE post_id = ? AND visitor_token = ?");
+        $checkStmt = $pdo->prepare("SELECT id FROM post_views WHERE post_id = ? AND visitor_token = ?");
         $checkStmt->execute([$post_id, $visitor_token]);
         $hasViewed = $checkStmt->fetch();
 
         if (!$hasViewed) {
             // First time view: Log it
-            $logStmt = $pdo->prepare("INSERT INTO blog_views (post_id, visitor_token, ip_address) VALUES (?, ?, ?)");
+            $logStmt = $pdo->prepare("INSERT INTO post_views (post_id, visitor_token, ip_address) VALUES (?, ?, ?)");
             $logStmt->execute([$post_id, $visitor_token, $ip_address]);
 
              // Update the cache count in blogs table for performance (optional but good practice)
-            $updateStmt = $pdo->prepare("UPDATE blogs SET view_count = (SELECT COUNT(*) FROM blog_views WHERE post_id = ?) WHERE id = ? OR slug = ?");
+            $updateStmt = $pdo->prepare("UPDATE blogs SET view_count = (SELECT COUNT(*) FROM post_views WHERE post_id = ?) WHERE id = ? OR slug = ?");
             $updateStmt->execute([$post_id, $post_id, $post_id]);
         }
 
         // Return current count using the same logic as GET
-        $countStmt = $pdo->prepare("SELECT COUNT(*) as count FROM blog_views WHERE post_id = ?");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) as count FROM post_views WHERE post_id = ?");
         $countStmt->execute([$post_id]);
         $result = $countStmt->fetch(PDO::FETCH_ASSOC);
         

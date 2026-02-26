@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO comments (post_id, parent_id, user_name, email, content, status, timestamp) VALUES (:post_id, :parent_id, :user_name, :email, :content, 'pending', NOW())");
+        $stmt = $pdo->prepare("INSERT INTO comments (post_id, parent_id, user_name, email, content, status) VALUES (:post_id, :parent_id, :user_name, :email, :content, 'pending')");
         $stmt->execute([
             ':post_id' => $blogId,
             ':parent_id' => $parentId,

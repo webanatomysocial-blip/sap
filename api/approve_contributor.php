@@ -20,18 +20,18 @@ if ($id <= 0) {
 
 try {
     // 1. Update Status
-    $stmt = $pdo->prepare("UPDATE contributor_applications SET status = 'approved' WHERE id = :id");
+    $stmt = $pdo->prepare("UPDATE contributors SET status = 'approved' WHERE id = :id");
     $stmt->execute([':id' => $id]);
 
     // 2. Fetch User Details for Email
-    $stmtUser = $pdo->prepare("SELECT name, email, role FROM contributor_applications WHERE id = :id");
+    $stmtUser = $pdo->prepare("SELECT full_name, email, role FROM contributors WHERE id = :id");
     $stmtUser->execute([':id' => $id]);
     $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
         $to = $user['email'];
         $subject = "Welcome to the SAP Security Expert Community!";
-        $message = "Hello " . $user['name'] . ",\n\n" .
+        $message = "Hello " . $user['full_name'] . ",\n\n" .
                    "Congratulations! Your application to become a '" . $user['role'] . "' has been approved.\n\n" .
                    "We are thrilled to have you onboard. You can now start contributing.\n\n" .
                    "Best Regards,\nSAP Security Expert Team";

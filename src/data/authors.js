@@ -14,7 +14,7 @@ export const authors = {
     name: "Inderdeep Singh",
     // role: "SAP Security Consultant",
     bio: "Inderdeep Singh is an SAP Security Consultant specializing in S/4HANA security and authorization upgrades.",
-    image: "/assets/inderdeep-singh.jpg", // Placeholder
+    image: "/assets/placeholder.webp", // Placeholder
     socials: {
       linkedin: "https://www.linkedin.com/", 
     }
