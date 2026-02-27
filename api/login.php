@@ -21,15 +21,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
-            // Start session and set auth
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
             $_SESSION['admin_id'] = $user['id'];
             $_SESSION['admin_user'] = $user['username'];
             $_SESSION['admin_logged_in'] = true;
             
+            // Generate CSRF token
+            $csrf_token = bin2hex(random_bytes(32));
+            $_SESSION['csrf_token'] = $csrf_token;
+            
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Login successful',
+                'csrf_token' => $csrf_token,
                 'user' => [
                     'username' => $user['username'],
                     'role' => $user['role']

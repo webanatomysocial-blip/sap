@@ -35,9 +35,24 @@ if (preg_match('/^\/posts(\/([^\/]+))?/', $path, $matches)) {
     exit;
 }
 
-// 2. Auth API
+// 2. Auth & Profile API
 if ($path === '/login') {
     require __DIR__ . '/login.php';
+    exit;
+}
+
+if ($path === '/admin/profile') {
+    require __DIR__ . '/get_profile.php';
+    exit;
+}
+
+if ($path === '/admin/profile/update') {
+    require __DIR__ . '/update_profile.php';
+    exit;
+}
+
+if ($path === '/admin/reset-password') {
+    require __DIR__ . '/reset_password.php';
     exit;
 }
 

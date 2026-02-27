@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
+import "../../css/admin-profile.css";
+import { LuShieldCheck, LuKey } from "react-icons/lu";
+import ResetPasswordModal from "./ResetPasswordModal";
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -8,6 +11,8 @@ const AdminHome = () => {
     blogs: 0,
     total_views: 0,
   });
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -74,14 +79,47 @@ const AdminHome = () => {
           </div>
         </div>
 
-        <div className="dashboard-intro">
-          <h3>Welcome to the SAP Security Expert Admin Panel</h3>
-          <p>
-            Select a module from the sidebar to confirm approvals or manage
-            content.
-          </p>
+        <div
+          className="dashboard-sections"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 260px",
+            gap: "24px",
+            marginTop: "24px",
+            paddingTop: "24px",
+            borderTop: "1px solid #f1f5f9",
+          }}
+        >
+          <div
+            className="dashboard-intro"
+            style={{ margin: 0, padding: 0, borderTop: "none" }}
+          >
+            <h3>Welcome to the SAP Security Expert Admin Panel</h3>
+            <p>
+              Select a module from the sidebar to confirm approvals or manage
+              content.
+            </p>
+          </div>
+
+          <div className="security-settings-card">
+            <div className="security-title">
+              <LuShieldCheck /> Security Settings
+            </div>
+            <p>Keep your account secure by updating your password regularly.</p>
+            <button
+              className="btn-reset-pw"
+              onClick={() => setShowPasswordModal(true)}
+            >
+              <LuKey /> Reset Password
+            </button>
+          </div>
         </div>
       </div>
+
+      <ResetPasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 };

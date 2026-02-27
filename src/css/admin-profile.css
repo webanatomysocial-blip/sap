@@ -1,0 +1,464 @@
+/* ================================
+   ADMIN PROFILE - LIGHT THEME (matches AdminDashboard.css)
+================================ */
+
+/* Header User (Override to be interactive) */
+.header-user {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 8px;
+  background: #fff;
+  border-radius: 40px;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.header-user:hover {
+  border-color: var(--slate-300, #cbd5e1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.user-meta .user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--slate-800, #1e293b);
+  line-height: 1.2;
+}
+
+.user-meta .user-role {
+  font-size: 0.7rem;
+  color: var(--slate-400, #94a3b8);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chevron-icon {
+  font-size: 16px;
+  color: var(--slate-400, #94a3b8);
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.rotate {
+  transform: rotate(180deg);
+}
+
+/* Profile Dropdown */
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  background: #ffffff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.12),
+    0 4px 10px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  padding: 6px 0;
+  animation: profileDropdown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes profileDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--slate-700, #334155);
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: var(--slate-50, #f8fafc);
+  color: var(--slate-900, #0f172a);
+}
+
+.dropdown-item svg {
+  font-size: 16px;
+  color: var(--slate-500, #64748b);
+  flex-shrink: 0;
+}
+
+.dropdown-item.logout {
+  color: #dc2626;
+  border-top: 1px solid var(--slate-100, #f1f5f9);
+  margin-top: 4px;
+}
+
+.dropdown-item.logout svg {
+  color: #dc2626;
+}
+
+.dropdown-item.logout:hover {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* ================================
+   MODAL OVERLAY & CONTAINER
+================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--slate-100, #f1f5f9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--slate-800, #1e293b);
+  letter-spacing: -0.3px;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--slate-400, #94a3b8);
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--slate-700, #334155);
+  background: var(--slate-100, #f1f5f9);
+}
+
+/* Modal Form */
+.modal-form {
+  padding: 24px;
+}
+
+.modal-form .form-group {
+  margin-bottom: 18px;
+}
+
+.modal-form .form-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--slate-700, #334155);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.modal-form .form-group label svg {
+  font-size: 15px;
+  color: var(--slate-400, #94a3b8);
+}
+
+.modal-form .form-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--slate-200, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--slate-800, #1e293b);
+  background: #fff;
+  transition: all 0.2s;
+  min-height: 42px;
+}
+
+.modal-form .form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.modal-form .form-group input::placeholder {
+  color: var(--slate-300, #cbd5e1);
+}
+
+/* Form Error */
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.form-error svg {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--slate-100, #f1f5f9);
+}
+
+.modal-footer .btn-secondary {
+  padding: 10px 18px;
+  background: #fff;
+  border: 1.5px solid var(--slate-200, #e2e8f0);
+  color: var(--slate-700, #334155);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: var(--slate-50, #f8fafc);
+  border-color: var(--slate-300, #cbd5e1);
+}
+
+.modal-footer .btn-primary {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  min-height: 40px;
+}
+
+/* Loading State */
+.modal-loading {
+  padding: 48px;
+  text-align: center;
+  color: var(--slate-400, #94a3b8);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ================================
+   PROFILE IMAGE UPLOAD
+================================ */
+.profile-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--slate-100, #f1f5f9);
+}
+
+.avatar-preview {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--slate-200, #e2e8f0);
+  background: var(--slate-50, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  overflow: visible;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 36px;
+  color: var(--slate-200, #e2e8f0);
+}
+
+.upload-badge {
+  position: absolute;
+  bottom: 0;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  background: #2563eb;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.upload-badge:hover {
+  background: #1e40af;
+  transform: scale(1.1);
+}
+
+.image-help {
+  font-size: 0.75rem;
+  color: var(--slate-400, #94a3b8);
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ================================
+   SECURITY SETTINGS CARD
+================================ */
+.security-settings-card {
+  background: var(--slate-50, #f8fafc) !important;
+  border: 1px solid var(--slate-200, #e2e8f0) !important;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-settings-card .security-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--slate-800, #1e293b);
+}
+
+.security-settings-card .security-title svg {
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.security-settings-card p {
+  font-size: 0.8rem;
+  color: var(--slate-500, #64748b);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.security-settings-card .btn-reset-pw {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #fff;
+  border: 1.5px solid var(--slate-300, #cbd5e1);
+  color: var(--slate-700, #334155);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.security-settings-card .btn-reset-pw:hover {
+  background: var(--slate-100, #f1f5f9);
+  border-color: var(--slate-400, #94a3b8);
+  color: var(--slate-900, #0f172a);
+}
+
+.security-settings-card .btn-reset-pw svg {
+  font-size: 15px;
+}
