@@ -1,6 +1,9 @@
 <?php
 // api/manage_comments.php
 require_once 'db.php';
+require_once 'auth_check.php';
+require_once 'permission_check.php';
+checkPermission('can_manage_comments');
 
 header("Content-Type: application/json");
 
@@ -8,10 +11,12 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     if ($method === 'GET') {
-        // Admin view - Get all comments with blog slug for clickable links
-        $stmt = $pdo->query("SELECT c.*, c.user_name as author, c.content as text, c.timestamp as date, b.slug 
+        // Admin view - Get all comments with blog slug for clickable links and parent comment context
+        $stmt = $pdo->query("SELECT c.*, c.user_name as author, c.content as text, c.timestamp as date, b.slug,
+                                    p.user_name as parent_author, p.content as parent_text
                              FROM comments c 
-                             LEFT JOIN blogs b ON c.post_id = b.id 
+                             LEFT JOIN blogs b ON (c.post_id = b.id OR c.post_id = b.slug) 
+                             LEFT JOIN comments p ON c.parent_id = p.id
                              ORDER BY c.timestamp DESC");
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($comments);

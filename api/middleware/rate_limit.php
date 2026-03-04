@@ -23,15 +23,11 @@ function rateLimit(string $action, int $limit, int $windowSeconds): void
     }
 
     // Determine client IP
-    $ip = '0.0.0.0';
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $parts = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $ip = trim($parts[0]);
-    } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
-        $ip = $_SERVER['REMOTE_ADDR'];
-    }
+    // Use REMOTE_ADDR exclusively. HTTP_CLIENT_IP and HTTP_X_FORWARDED_FOR are
+    // user-controllable headers that can be spoofed to bypass rate limiting.
+    // If behind a trusted reverse proxy (e.g. nginx), configure REMOTE_ADDR
+    // to be set correctly at the proxy level instead.
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
     $cacheDir  = __DIR__ . '/../cache';
     $cacheFile = $cacheDir . '/rl_' . md5($action . '_' . $ip) . '.json';

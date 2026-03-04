@@ -1,33 +1,33 @@
 <?php
 // api/manage_announcements.php
 require_once 'db.php';
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    define('ALLOW_PUBLIC_API', true);
+}
+require_once 'auth_check.php';
+require_once 'permission_check.php';
+// Allow admin OR contributor with specific permission
+if ($method !== 'GET' || strpos($_SERVER['REQUEST_URI'], '/admin/') !== false) {
+    checkPermission('can_manage_announcements');
+}
+
+require_once 'services/AnnouncementService.php';
+
+$annService = new AnnouncementService($pdo);
 
 header("Content-Type: application/json");
 
 $method = $_SERVER['REQUEST_METHOD'];
-
-session_start();
-$isAdmin = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-$currentDate = date('Y-m-d');
+$currentDateTime = gmdate('Y-m-d H:i:s');
+$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 
 try {
     if ($method === 'GET') {
-        $sql = "SELECT * FROM announcements";
-        $params = [];
-        
-        if (!$isAdmin) {
-            $sql .= " WHERE status = 'active' AND (date <= ? OR date IS NULL)";
-            $params[] = $currentDate;
-        }
-        
-        $sql .= " ORDER BY date DESC";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $announcements = $annService->getAnnouncements($isAdmin, $currentDateTime);
         
         foreach ($announcements as &$announcement) {
             if (!empty($announcement['date'])) {
-                $announcement['date'] = date('F j, Y', strtotime($announcement['date']));
+                $announcement['date'] = gmdate('F j, Y', strtotime($announcement['date']));
             }
         }
         
@@ -35,38 +35,13 @@ try {
     } 
     elseif ($method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
-        
-        $id = $input['id'] ?? null;
-        $title = $input['title'];
-        $date = $input['date'];
-        $link = $input['link'] ?? '';
-        $status = $input['status'] ?? 'active';
-
-        if ($id) {
-            // Check existence
-            $check = $pdo->prepare("SELECT id FROM announcements WHERE id = ?");
-            $check->execute([$id]);
-            if ($check->fetch()) {
-                // Update
-                $stmt = $pdo->prepare("UPDATE announcements SET title=?, date=?, link=?, status=? WHERE id=?");
-                $stmt->execute([$title, $date, $link, $status, $id]);
-                echo json_encode(['status' => 'success', 'message' => 'Announcement updated']);
-                exit;
-            }
-        }
-
-        // Insert
-        $stmt = $pdo->prepare("INSERT INTO announcements (title, date, link, status, views, comments) VALUES (?, ?, ?, ?, 0, 0)");
-        $stmt->execute([$title, $date, $link, $status]);
-        
-        echo json_encode(['status' => 'success', 'message' => 'Announcement created']);
+        $result = $annService->saveAnnouncement($input, $isAdmin, $currentDateTime);
+        echo json_encode($result);
     }
     elseif ($method === 'DELETE') {
         $id = $_GET['id'] ?? null;
         if (!$id) throw new Exception("ID required");
-        
-        $stmt = $pdo->prepare("DELETE FROM announcements WHERE id = ?");
-        $stmt->execute([$id]);
+        $annService->deleteAnnouncement($id);
         echo json_encode(['status' => 'success', 'message' => 'Announcement deleted']);
     }
 

@@ -1,6 +1,14 @@
 <?php
 // api/manage_ads.php
 require_once 'db.php';
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    define('ALLOW_PUBLIC_API', true);
+}
+require_once 'auth_check.php';
+require_once 'permission_check.php';
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    checkPermission('can_manage_ads');
+}
 
 header("Content-Type: application/json");
 
@@ -55,11 +63,11 @@ try {
                  deleteImage($current['image']);
             }
 
-            $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ? WHERE zone = ?");
-            $stmt->execute([$image, $link, $active, $zone]);
+            $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ?, status = ? WHERE zone = ?");
+            $stmt->execute([$image, $link, $active, $active ? 'active' : 'inactive', $zone]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO ads (zone, image, link, active) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$zone, $image, $link, $active]);
+            $stmt = $pdo->prepare("INSERT INTO ads (zone, image, link, active, status) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$zone, $image, $link, $active, $active ? 'active' : 'inactive']);
         }
 
         echo json_encode(['status' => 'success', 'message' => 'Ad updated']);

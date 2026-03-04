@@ -1,12 +1,14 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once 'db.php';
+require_once 'auth_check.php';
+require_once 'permission_check.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+if ($_SESSION['role'] === 'contributor') {
+    checkPermission('can_manage_ads');
 }
+
+// Note: CORS is handled centrally by db.php with a proper origin whitelist.
+header('Content-Type: application/json');
 
 // Handle ad image upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -23,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $zone = $_POST['zone'] ?? 'unknown';
 
     // Use same structure as blog images
-    $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+    $isLocal = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
     $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/ads/' : __DIR__ . '/../uploads/ads/';
     
     // Create directory if it doesn't exist
@@ -77,9 +79,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'ad_' . $zone . '_' . time() . '.' . $extension;
+    // Generate safe filename: ignore user-supplied name/extension entirely.
+    // Derive extension from validated MIME type to prevent extension spoofing.
+    $mimeToExt = [
+        'image/jpeg' => 'jpg',
+        'image/jpg'  => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+    $safeExtension = $mimeToExt[$fileType] ?? 'jpg';
+    // Sanitize zone name: only allow alphanumeric + hyphens
+    $safeZone = preg_replace('/[^a-z0-9\-]/', '', strtolower($zone));
+    $filename = 'ad_' . $safeZone . '_' . bin2hex(random_bytes(8)) . '.' . $safeExtension;
     $filePath = $uploadDir . $filename;
 
     // Check if there is an old image to delete (passed from frontend)

@@ -40,6 +40,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Please enter a valid email address."]);
+        exit;
+    }
+
+    // Validate that blogId references a real, published blog
+    $blogCheck = $pdo->prepare("SELECT COUNT(*) FROM blogs WHERE slug = ? AND status IN ('approved','published')");
+    $blogCheck->execute([$blogId]);
+    if ((int)$blogCheck->fetchColumn() === 0) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Blog not found."]);
+        exit;
+    }
+
+    $created_at = gmdate('Y-m-d H:i:s');
+
     // Validate parent_id exists if provided
     if ($parentId) {
         $checkStmt = $pdo->prepare("SELECT id FROM comments WHERE id = ?");

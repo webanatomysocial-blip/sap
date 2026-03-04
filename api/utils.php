@@ -49,4 +49,134 @@ function deleteImage($imagePath) {
 
     return false;
 }
+
+/**
+ * Calculate SEO Score (0-100) based on meta tags and content
+ */
+function calculateSeoScore($blog) {
+    $score = 100;
+
+    $metaTitleLength = strlen(trim($blog['meta_title'] ?? ''));
+    $metaDescLength = strlen(trim($blog['meta_description'] ?? ''));
+    $contentLength = str_word_count(strip_tags($blog['content'] ?? ''));
+
+    if ($metaTitleLength < 50 || $metaTitleLength > 70) {
+        $score -= 15;
+    }
+
+    if ($metaDescLength < 140 || $metaDescLength > 165) {
+        $score -= 15;
+    }
+
+    if ($contentLength < 600) {
+        $score -= 20;
+    }
+
+    if (empty($blog['image'])) {
+        $score -= 10;
+    }
+
+    return max($score, 0);
+}
+
+/**
+ * Checks Plagiarism using the external API. Returns an array ['score' => int|null, 'error' => string|null].
+ * Fully deterministic: falls back to existing score on failure.
+ * Includes logging to plagiarism_logs if $pdo is provided.
+ */
+function checkPlagiarismScore($text, $blogId = null, $pdo = null) {
+    if (empty(trim($text))) {
+        return ['score' => 0, 'error' => null];
+    }
+
+    $token = getenv('PLAGIARISM_API_TOKEN');
+    if (!$token) {
+        return ['score' => -1, 'error' => 'API Token missing']; 
+    }
+
+    $cleanText = strip_tags($text);
+    $ch = curl_init('https://plagiarismcheck.org/api/v1/text');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_HTTPHEADER     => ["X-API-TOKEN: $token"],
+        CURLOPT_POSTFIELDS     => http_build_query([
+            'language' => 'en',
+            'text'     => $cleanText,
+        ]),
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $errorMsg = null;
+    if ($httpCode === 409) {
+        $errorMsg = "API Credits Exhausted (409)";
+    } elseif ($httpCode !== 200 && $httpCode !== 201) {
+        $errorMsg = "API Error (Code: $httpCode)";
+    }
+    if ($response && ($httpCode === 200 || $httpCode === 201)) {
+        $result = json_decode($response, true);
+        $id = $result['data']['text']['id'] ?? null;
+        
+        if ($id) {
+            // Polling Loop: Wait up to 15 seconds for the check to complete
+            $maxRetries = 10; 
+            for ($i = 0; $i < $maxRetries; $i++) {
+                sleep(1.5); // Wait between polls
+                
+                $ch = curl_init("https://plagiarismcheck.org/api/v1/text/$id");
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => ["X-API-TOKEN: $token"],
+                    CURLOPT_TIMEOUT        => 5,
+                ]);
+                $pollRes = curl_exec($ch);
+                $pollCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                
+                if ($pollRes && $pollCode === 200) {
+                    $pollResult = json_decode($pollRes, true);
+                    $state = $pollResult['data']['text']['state'] ?? 0;
+                    
+                    if ($state === 5) { // STATE_CHECKED
+                         // Retrieve the final report to get the similarity score
+                         $chReport = curl_init("https://plagiarismcheck.org/api/v1/text/$id/report");
+                         curl_setopt_array($chReport, [
+                             CURLOPT_RETURNTRANSFER => true,
+                             CURLOPT_HTTPHEADER     => ["X-API-TOKEN: $token"],
+                             CURLOPT_TIMEOUT        => 5,
+                         ]);
+                         $repRes = curl_exec($chReport);
+                         curl_close($chReport);
+                         
+                         if ($repRes) {
+                             $repData = json_decode($repRes, true);
+                             $percent = $repData['data']['report']['percent'] ?? null;
+                             if ($percent !== null) {
+                                 $score = max(0, 100 - (int)$percent);
+                                 if ($pdo && $blogId) {
+                                     $pdo->prepare("INSERT INTO plagiarism_logs (blog_id, score, raw_response) VALUES (?, ?, ?)")
+                                         ->execute([$blogId, $score, $repRes]);
+                                 }
+                                 return ['score' => $score, 'error' => null];
+                             }
+                         }
+                         break; // Exit if checked but report failed
+                    }
+                }
+            }
+        }
+    }
+
+    if ($pdo && $blogId) {
+        $pdo->prepare("INSERT INTO plagiarism_logs (blog_id, score, raw_response) VALUES (?, ?, ?)")
+            ->execute([$blogId, -1, $response ?: 'No response']);
+    }
+
+    return ['score' => -1, 'error' => $errorMsg ?: 'Connection failure'];
+}
 ?>

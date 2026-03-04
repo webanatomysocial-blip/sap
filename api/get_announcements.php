@@ -3,19 +3,33 @@ require_once 'db.php';
 
 header('Content-Type: application/json');
 
+$isAdmin = isset($_GET['admin']) && $_GET['admin'] == 1;
+
 try {
-    $stmt = $pdo->prepare("SELECT id, title, date, comments, link, status FROM announcements WHERE status = 'active' ORDER BY date DESC LIMIT 10");
-    $stmt->execute();
+    if ($isAdmin) {
+        // Secure admin view
+    if (!defined('ALLOW_PUBLIC_API')) {
+        define('ALLOW_PUBLIC_API', true);
+    }
+    require_once 'auth_check.php';
+        require_once 'permission_check.php';
+        checkPermission('can_manage_announcements');
+        
+        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements ORDER BY date DESC");
+        $stmt->execute();
+    } else {
+        // Public view - Enforced via status and date
+        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements WHERE status IN ('approved', 'active', 'published') AND date <= ? ORDER BY date DESC LIMIT 10");
+        $stmt->execute([date('Y-m-d H:i:s')]);
+    }
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Format dates to "February 5, 2026" style
     foreach ($announcements as &$announcement) {
         if (isset($announcement['date'])) {
             $timestamp = strtotime($announcement['date']);
-            $announcement['date'] = date('F j, Y', $timestamp); // e.g., "February 5, 2026"
+            $announcement['date'] = gmdate('F j, Y', $timestamp);
         }
-        // Remove views field from response
-        unset($announcement['views']);
     }
     
     echo json_encode($announcements);

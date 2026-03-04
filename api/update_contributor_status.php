@@ -1,6 +1,9 @@
 <?php
 // api/update_contributor_status.php
 require_once 'db.php';
+require_once 'auth_check.php';
+require_once 'permission_check.php';
+requireAdmin();
 
 header('Content-Type: application/json');
 

@@ -30,9 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imagePath = null; // Default to null if no image or upload fails
         
         if (isset($_FILES['profilePhoto']) && $_FILES['profilePhoto']['error'] === UPLOAD_ERR_OK) {
-            // FIX: Use public/assets path for web accessibility
-            $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
-            $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/contributors/' : __DIR__ . '/../uploads/contributors/';
+            // FIX: Use public/assets path for web accessibility reliably
+            $uploadDir = __DIR__ . '/../public/uploads/contributors/';
             
             // Create directory if it doesn't exist
             if (!file_exists($uploadDir)) {
@@ -52,13 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Security: Enforce size limit (e.g., 5MB)
             if ($fileSize > 5 * 1024 * 1024) {
+                 http_response_code(400);
                  echo json_encode(['status' => 'error', 'message' => 'The profile picture is too large. Please upload an image smaller than 5MB.']);
                  exit;
             }
 
-            // Validate image dimensions and squareness
+            // Validate image dimensions
             $imageInfo = getimagesize($fileTmpPath);
             if ($imageInfo === false) {
+                http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => 'Invalid image file.']);
                 exit;
             }
@@ -67,11 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $height = $imageInfo[1];
 
             if ($width < 300 || $height < 300) {
+                http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => 'Profile image must be at least 300x300 pixels.']);
                 exit;
             }
 
             if (abs($width - $height) > 5) {
+                http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => 'Profile image must be square (1:1 ratio).']);
                 exit;
             }
@@ -85,10 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Store relative path for frontend usage
                     $imagePath = '/uploads/contributors/' . $newFileName;
                 } else {
+                     http_response_code(500);
                      echo json_encode(['status' => 'error', 'message' => 'Something went wrong while saving your profile picture. Please try again.']);
                      exit;
                 }
             } else {
+                 http_response_code(400);
                  echo json_encode(['status' => 'error', 'message' => 'Please upload a valid image file (JPG, PNG, or WEBP).']);
                  exit;
             }

@@ -10,10 +10,30 @@ header("Content-Type: application/json");
 
 try {
     $adminId = $_SESSION['admin_id'];
+    $role = $_SESSION['role'] ?? 'admin';
     
-    $stmt = $pdo->prepare("SELECT id, username, full_name, email, profile_image FROM users WHERE id = ?");
+    // Check if user has a linked contributor profile
+    $stmt = $pdo->prepare("SELECT contributor_id FROM users WHERE id = ?");
     $stmt->execute([$adminId]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $contributorId = $stmt->fetchColumn();
+
+    if ($contributorId) {
+        // Fetch from contributors table via contributor_id link
+        $stmt = $pdo->prepare("
+            SELECT c.id, u.username, u.role as user_role, c.full_name, c.email, c.image as profile_image, c.short_bio as bio,
+                   c.designation, c.linkedin, c.twitter_handle, c.personal_website
+            FROM users u
+            JOIN contributors c ON u.contributor_id = c.id
+            WHERE u.id = ?
+        ");
+        $stmt->execute([$adminId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    } else {
+        // Standard fetch (no linked profile)
+        $stmt = $pdo->prepare("SELECT id, username, role as user_role, full_name, email, profile_image, bio, designation, linkedin, twitter_handle, personal_website FROM users WHERE id = ?");
+        $stmt->execute([$adminId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
     if (!$user) {
         http_response_code(404);
@@ -28,7 +48,12 @@ try {
             'username' => $user['username'],
             'full_name' => $user['full_name'],
             'email' => $user['email'],
-            'profile_image' => $user['profile_image']
+            'profile_image' => $user['profile_image'],
+            'bio' => $user['bio'] ?? null,
+            'designation' => $user['designation'] ?? null,
+            'linkedin' => $user['linkedin'] ?? null,
+            'twitter_handle' => $user['twitter_handle'] ?? null,
+            'personal_website' => $user['personal_website'] ?? null
         ]
     ]);
 } catch (Exception $e) {

@@ -4,7 +4,7 @@ require_once 'db.php';
 header('Content-Type: application/json');
 
 try {
-    $stmt = $pdo->query("SELECT COUNT(*) as active_contributors FROM contributor_applications WHERE status = 'approved'");
+    $stmt = $pdo->query("SELECT COUNT(*) as active_contributors FROM contributors WHERE status = 'approved'");
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $count = $row ? $row['active_contributors'] : 0;
     

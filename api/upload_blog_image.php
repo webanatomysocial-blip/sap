@@ -1,12 +1,14 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once 'db.php';
+require_once 'auth_check.php';
+require_once 'permission_check.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+if ($_SESSION['role'] === 'contributor') {
+    checkPermission('can_manage_blogs');
 }
+
+// Note: CORS is handled centrally by db.php with a proper origin whitelist.
+header('Content-Type: application/json');
 
 // Handle blog image upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $file = $_FILES['image'];
-    $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+    $isLocal = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
     $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/blogs/' : __DIR__ . '/../uploads/blogs/';
     
     // Create directory if it doesn't exist
@@ -84,9 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid('blog_') . '_' . time() . '.' . $extension;
+    // Generate safe filename: derive extension from validated MIME type, not user input.
+    // This prevents extension spoofing (e.g. uploading shell.php renamed to shell.jpg).
+    $mimeToExt = [
+        'image/jpeg' => 'jpg',
+        'image/jpg'  => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    ];
+    $safeExtension = $mimeToExt[$fileType] ?? 'jpg';
+    $filename = 'blog_' . bin2hex(random_bytes(8)) . '.' . $safeExtension;
     $filePath = $uploadDir . $filename;
 
     // Check if there is an old image to delete (optional, passed from frontend)

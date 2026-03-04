@@ -1,144 +1,139 @@
 <?php
-// api/manage_blogs.php
-require_once 'db.php';
+/**
+ * api/manage_blogs.php
+ * Handles all blog CRUD operations.
+ *
+ * RBAC hardening:
+ *   - Admin:       Full access, all blogs.
+ *   - Contributor: GET/UPDATE/DELETE scoped to author_id = current user.
+ *     UPDATE and DELETE use WHERE id=? AND author_id=? to prevent privilege escalation.
+ *   - Anonymous:   Read only published+approved blogs.
+ *
+ * Routes (via api/index.php):
+ *   GET    /api/posts               — list
+ *   GET    /api/posts/{id|slug}     — single
+ *   POST   /api/posts               — create/update
+ *   DELETE /api/posts/{id}          — delete
+ */
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    define('ALLOW_PUBLIC_API', true);
+}
+require_once 'auth_check.php';
+require_once 'utils.php';            // deleteImage() helper
+require_once 'services/BlogService.php';
+
+$blogService = new BlogService($pdo);
+require_once 'permission_check.php'; // defines checkPermission() and requireAdmin()
+
 
 header("Content-Type: application/json");
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-session_start();
-$isAdmin = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-$currentDate = date('Y-m-d');
+// ── Determine session context ────────────────────────────────────────────────
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$isLoggedIn    = !empty($_SESSION['admin_logged_in']);
+$role          = $_SESSION['role'] ?? 'guest';
+$isAdmin       = $isLoggedIn && $role === 'admin';
+$isContributor = $isLoggedIn && $role === 'contributor';
+$currentUserId = $_SESSION['admin_id'] ?? null;
+$currentDate   = gmdate('Y-m-d');
+$currentDateTime = gmdate('Y-m-d H:i:s');
+
+// ── Permission gate for write operations ─────────────────────────────────────
+if (in_array($method, ['POST', 'PUT', 'PATCH'])) {
+    if (!$isLoggedIn) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Authentication required']);
+        exit;
+    }
+    if ($isContributor) {
+        checkPermission('can_manage_blogs');
+    }
+}
+if ($method === 'DELETE') {
+    if (!$isLoggedIn) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Authentication required']);
+        exit;
+    }
+    if ($isContributor) {
+        checkPermission('can_manage_blogs');
+    }
+}
 
 try {
+    // ════════════════════════════════════════════════════════════════════════
+    // GET — List or Single
+    // ════════════════════════════════════════════════════════════════════════
     if ($method === 'GET') {
-        // Check if slug or id parameter is provided
-        $slug = $_GET['slug'] ?? null;
         $id = $_GET['id'] ?? null;
-        
-        if ($slug || $id) {
-            $sql = "SELECT * FROM blogs WHERE (slug = ? OR id = ?)";
-            $params = [$slug, $id];
-            
-            if (!$isAdmin) {
-                $sql .= " AND status = 'published' AND (date <= ? OR date IS NULL)";
-                $params[] = $currentDate;
-            }
-            
-            $sql .= " LIMIT 1";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            $blog = $stmt->fetch(PDO::FETCH_ASSOC);
-            echo json_encode($blog ? $blog : ['status' => 'error', 'message' => 'Blog not found']);
-            exit;
-        }
-        
-        $sql = "SELECT *, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved' AND parent_id IS NULL) entries, (SELECT COUNT(*) FROM comments WHERE comments.post_id = blogs.slug AND comments.status = 'approved' AND parent_id IS NULL) as comment_count FROM blogs";
-        $params = [];
-        
-        if (!$isAdmin) {
-            $sql .= " WHERE status = 'published' AND (date <= ? OR date IS NULL)";
-            $params[] = $currentDate;
-        }
-        
-        $sql .= " ORDER BY date DESC";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($blogs);
-    } 
-    elseif ($method === 'POST') {
-        $input = json_decode(file_get_contents('php://input'), true);
-        
-        // Check for ID to determine Update vs Insert
-        // Actually, for consistency with admin tool, let's look for 'id'
-        // If ID exists and is found in DB -> Update. Else -> Insert.
-        
-        $id = $input['id'] ?? null;
-        $title = $input['title'];
-        $slug = $input['slug'];
-        $excerpt = $input['excerpt'] ?? '';
-        $content = $input['content'] ?? '';
-        $author = $input['author'] ?? 'Admin';
-        $date = $input['date'] ?? date('Y-m-d');
-        $image = $input['image'] ?? '';
-        $category = $input['category'] ?? 'sap-security';
-        $tags = $input['tags'] ?? '';
+        $slug = $_GET['slug'] ?? null;
 
-        // SEO Fields (Strict No Fallback)
-        $meta_title = $input['meta_title'] ?? null;
-        $meta_description = $input['meta_description'] ?? null;
-        $meta_keywords = $input['meta_keywords'] ?? null;
-
-        if ($id) {
-            // Check existence and get current image
-            $check = $pdo->prepare("SELECT id, image FROM blogs WHERE id = ?");
-            $check->execute([$id]);
-            $current = $check->fetch(PDO::FETCH_ASSOC);
-            
-            if ($current) {
-                // Delete old image if it exists and is different from new image
-                if (!empty($current['image']) && $current['image'] !== $image && !empty($image)) {
-                    deleteImage($current['image']);
-                }
-
-                // Update
-                $sql = "UPDATE blogs SET title=?, slug=?, excerpt=?, content=?, author=?, date=?, image=?, category=?, tags=?, faqs=?, cta_title=?, cta_description=?, cta_button_text=?, cta_button_link=?, meta_title=?, meta_description=?, meta_keywords=?, status='published' WHERE id=?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    $title, $slug, $excerpt, $content, $author, $date, $image, $category, $tags,
-                    json_encode($input['faqs'] ?? []),
-                    $input['cta_title'] ?? null,
-                    $input['cta_description'] ?? null,
-                    $input['cta_button_text'] ?? null,
-                    $input['cta_button_link'] ?? null,
-                    $meta_title, $meta_description, $meta_keywords,
-                    $id
-                ]);
-                echo json_encode(['status' => 'success', 'message' => 'Blog updated']);
+        if ($id || $slug) {
+            $blog = $blogService->getBlog($id ?: $slug, $currentUserId, $role, $currentDateTime);
+            if (!$blog) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Blog post not found']);
                 exit;
             }
+            echo json_encode($blog);
+            exit;
         }
 
-        // Insert (if no ID or ID not found, but usually ID comes from frontend generator for new posts, let's trust frontend ID or generate one)
-        if (!$id) $id = uniqid('blog_');
-
-        $sql = "INSERT INTO blogs (id, title, slug, excerpt, content, author, date, image, category, tags, faqs, cta_title, cta_description, cta_button_text, cta_button_link, meta_title, meta_description, meta_keywords, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published')";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $id, $title, $slug, $excerpt, $content, $author, $date, $image, $category, $tags,
-            json_encode($input['faqs'] ?? []),
-            $input['cta_title'] ?? null,
-            $input['cta_description'] ?? null,
-            $input['cta_button_text'] ?? null,
-            $input['cta_button_link'] ?? null,
-            $meta_title, $meta_description, $meta_keywords
-        ]);
-        
-        echo json_encode(['status' => 'success', 'message' => 'Blog created']);
+        $blogs = $blogService->getBlogs($currentUserId, $role, $currentDateTime);
+        echo json_encode($blogs);
+        exit;
     }
-    elseif ($method === 'DELETE') {
-        // Support both query param and URL path ID
+
+    // ════════════════════════════════════════════════════════════════════════
+    // POST — Create or Update
+    // ════════════════════════════════════════════════════════════════════════
+    if ($method === 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        // Ensure publish_date formatting if present
+        if (!empty($input['publish_date']) && strlen((string)$input['publish_date']) === 10) {
+            $input['publish_date'] .= ' 00:00:00';
+        }
+        
+        $result = $blogService->saveBlog($input, $currentUserId, $role, $currentDateTime);
+        if ($result['status'] === 'error') {
+            http_response_code(400);
+        }
+        echo json_encode($result);
+        exit;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // DELETE
+    // ════════════════════════════════════════════════════════════════════════
+    if ($method === 'DELETE') {
         $id = $_GET['id'] ?? $_GET['slug'] ?? null;
-        if (!$id) throw new Exception("ID required");
-        
-        // Fetch image before deleting
-        $stmt = $pdo->prepare("SELECT image FROM blogs WHERE id = ? OR slug = ?");
-        $stmt->execute([$id, $id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($row && !empty($row['image'])) {
-             deleteImage($row['image']);
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'ID required']);
+            exit;
         }
 
-        $stmt = $pdo->prepare("DELETE FROM blogs WHERE id = ? OR slug = ?");
-        $stmt->execute([$id, $id]);
-        echo json_encode(['status' => 'success', 'message' => 'Blog deleted']);
+        $success = $blogService->deleteBlog($id, $currentUserId, $role);
+        if ($success) {
+            echo json_encode(['status' => 'success', 'message' => 'Blog deleted']);
+        } else {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Delete failed or unauthorized']);
+        }
+        exit;
     }
+
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
 
 } catch (Exception $e) {
+    error_log('[manage_blogs] Exception: ' . $e->getMessage());
     http_response_code(500);
-    // Use the actual error message to diagnose DB constraint/schema failures
-    echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'A server error occurred. Please try again.']);
 }
 ?>

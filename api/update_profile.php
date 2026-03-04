@@ -81,11 +81,11 @@ try {
             exit;
         }
 
-        // 4. Ratio Validation (0.95 to 1.05)
+        // 4. Ratio Validation (1:1 ratio within strict tolerance)
         $ratio = $width / $height;
-        if ($ratio < 0.95 || $ratio > 1.05) {
+        if (abs($width - $height) > 5) {
             http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Image must be approximately square (ratio 0.95 to 1.05)']);
+            echo json_encode(['status' => 'error', 'message' => 'Image must be exactly square (1:1 ratio)']);
             exit;
         }
 
@@ -103,7 +103,8 @@ try {
         $targetPath = $uploadDir . $filename;
 
         if (move_uploaded_file($tmpPath, $targetPath)) {
-            $profileImage = '/public/uploads/contributors/' . $filename;
+            // Store relative path for frontend usage (always /uploads/...)
+            $profileImage = '/uploads/contributors/' . $filename;
             
             // Delete old image
             $stmt = $pdo->prepare("SELECT profile_image FROM users WHERE id = ?");
@@ -119,32 +120,122 @@ try {
         }
     }
 
+    // Extract fields
+    $bio = $_POST['bio'] ?? null;
+    $designation = $_POST['designation'] ?? null;
+    $linkedin = $_POST['linkedin'] ?? null;
+    $twitter_handle = $_POST['twitter_handle'] ?? null;
+    $personal_website = $_POST['personal_website'] ?? null;
+
     // Update Database
-    $sql = "UPDATE users SET full_name = ?, email = ? ";
-    $params = [$fullName, $email];
+    $role = $_SESSION['role'] ?? 'user';
+    $isContributor = $role === 'contributor';
+    $contributorId = null;
 
+    if ($isContributor) {
+        $stmt = $pdo->prepare("SELECT contributor_id FROM users WHERE id = ?");
+        $stmt->execute([$adminId]);
+        $contributorId = $stmt->fetchColumn();
+    }
+    
+    // Prepare User Update
+    $userUpdates = [];
+    $userParams = [];
+
+    // 1. Admin/User role can update name, email, and metadata. Contributors are LOCKED for name/email.
+    if (!$isContributor) {
+        $userUpdates[] = "full_name = ?";
+        $userParams[] = $fullName;
+        $userUpdates[] = "email = ?";
+        $userParams[] = $email;
+        if ($bio !== null) {
+            $userUpdates[] = "bio = ?";
+            $userParams[] = $bio;
+        }
+        if ($designation !== null) {
+            $userUpdates[] = "designation = ?";
+            $userParams[] = $designation;
+        }
+        if ($linkedin !== null) {
+            $userUpdates[] = "linkedin = ?";
+            $userParams[] = $linkedin;
+        }
+        if ($twitter_handle !== null) {
+            $userUpdates[] = "twitter_handle = ?";
+            $userParams[] = $twitter_handle;
+        }
+        if ($personal_website !== null) {
+            $userUpdates[] = "personal_website = ?";
+            $userParams[] = $personal_website;
+        }
+    }
+
+    // 2. Profile Image Sync
     if ($profileImage) {
-        $sql .= ", profile_image = ? ";
-        $params[] = $profileImage;
+        $userUpdates[] = "profile_image = ?";
+        $userParams[] = $profileImage;
+        $userUpdates[] = "avatar = ?";
+        $userParams[] = $profileImage;
     }
 
-    // Handle timestamps for MySQL vs SQLite
-    if (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite') {
-        $sql .= ", updated_at = datetime('now') ";
+    // 3. Timestamp
+    $isSqlite = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
+    if ($isSqlite) {
+        $userUpdates[] = "updated_at = datetime('now')";
     } else {
-        $sql .= ", updated_at = NOW() ";
+        $userUpdates[] = "updated_at = NOW()";
     }
 
-    $sql .= " WHERE id = ?";
-    $params[] = $adminId;
+    // 4. Execute User Updates
+    if (!empty($userUpdates)) {
+        $sql = "UPDATE users SET " . implode(', ', $userUpdates) . " WHERE id = ?";
+        $userParams[] = $adminId;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($userParams);
+    }
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    // 5. Contributor Profile Sync (Metadata)
+    if ($isContributor && $contributorId) {
+        $contribUpdates = [];
+        $contribParams = [];
+
+        if ($profileImage) {
+            $contribUpdates[] = "image = ?";
+            $contribParams[] = $profileImage;
+        }
+        if ($bio !== null) {
+            $contribUpdates[] = "short_bio = ?";
+            $contribParams[] = $bio;
+        }
+        if ($designation !== null) {
+            $contribUpdates[] = "designation = ?";
+            $contribParams[] = $designation;
+        }
+        if ($linkedin !== null) {
+            $contribUpdates[] = "linkedin = ?";
+            $contribParams[] = $linkedin;
+        }
+        if ($twitter_handle !== null) {
+            $contribUpdates[] = "twitter_handle = ?";
+            $contribParams[] = $twitter_handle;
+        }
+        if ($personal_website !== null) {
+            $contribUpdates[] = "personal_website = ?";
+            $contribParams[] = $personal_website;
+        }
+
+        if (!empty($contribUpdates)) {
+            $sql = "UPDATE contributors SET " . implode(', ', $contribUpdates) . " WHERE id = ?";
+            $contribParams[] = $contributorId;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($contribParams);
+        }
+    }
 
     echo json_encode([
         'status' => 'success',
         'message' => 'Profile updated successfully',
-        'profile_image' => $profileImage // Return new image path if changed
+        'profile_image' => $profileImage 
     ]);
 
 } catch (Exception $e) {

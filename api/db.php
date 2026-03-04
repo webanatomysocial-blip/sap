@@ -1,18 +1,39 @@
 <?php
 // api/db.php - MySQL/MariaDB Connection for cPanel
 // Optimized for SAP Security Expert Platform
+if (php_sapi_name() === 'cli-server') {
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+}
 
 // 1. Headers for API and CORS
 if (!headers_sent()) {
-    // Allow local development
+    // ── Security Response Headers ─────────────────────────────────────────────
+    // These protect against common browser-level attacks regardless of endpoint.
+    header('X-Content-Type-Options: nosniff');                   // Prevent MIME sniffing
+    header('X-Frame-Options: SAMEORIGIN');                       // Prevent clickjacking
+    header('X-XSS-Protection: 1; mode=block');                  // Legacy XSS filter (IE/old Chrome)
+    header('Referrer-Policy: strict-origin-when-cross-origin'); // Limit referrer info leakage
+
+    // ── CORS Whitelist ────────────────────────────────────────────────────────
+    $allowedOrigins = [
+        'https://sap.kaphi.in',
+        'https://www.sap.kaphi.in',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000'
+    ];
+
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if (strpos($origin, 'localhost') !== false || strpos($origin, '127.0.0.1') !== false) {
+
+    if (in_array($origin, $allowedOrigins)) {
         header("Access-Control-Allow-Origin: $origin");
         header("Access-Control-Allow-Credentials: true");
-    } else {
-        header("Access-Control-Allow-Origin: *");
     }
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-CSRF-Token");
 
     if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -29,9 +50,16 @@ function loadEnv($path) {
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $env = [];
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
         list($name, $value) = explode('=', $line, 2);
-        $env[trim($name)] = trim($value);
+        $name = trim($name);
+        $value = trim($value);
+        $env[$name] = $value;
+        putenv("$name=$value");
+        $_ENV[$name] = $value;
+        $_SERVER[$name] = $value;
     }
     return $env;
 }
@@ -85,5 +113,35 @@ try {
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     exit;
+}
+// 4. Passive Auto-Publish Hook (flock-protected: prevents concurrent execution)
+// Automatically transitions 'scheduled' items when their publish_date arrives.
+// flock() ensures only ONE PHP process runs the UPDATE at a time.
+try {
+    $autoPublishLock = sys_get_temp_dir() . '/sap_autopublish.lock';
+    // 'c+' = create if not exists, open for read+write, do NOT truncate
+    $lockHandle = @fopen($autoPublishLock, 'c+');
+    if ($lockHandle) {
+        // Non-blocking exclusive lock — if another process is running this, skip gracefully.
+        if (flock($lockHandle, LOCK_EX | LOCK_NB)) {
+            $lastRun = @fread($lockHandle, 20); // @-suppress in case file was just created
+            $shouldRun = empty(trim($lastRun)) || (time() - (int)trim($lastRun)) >= 60;
+            if ($shouldRun) {
+                ftruncate($lockHandle, 0);
+                rewind($lockHandle);
+                fwrite($lockHandle, (string)time());
+                $now = gmdate('Y-m-d H:i:s');
+                $pdo->prepare("UPDATE blogs SET status = 'published' WHERE status = 'scheduled' AND publish_date <= ?")
+                    ->execute([$now]);
+                $pdo->prepare("UPDATE announcements SET status = 'active' WHERE status = 'scheduled' AND publish_date <= ?")
+                    ->execute([$now]);
+            }
+            flock($lockHandle, LOCK_UN);
+        }
+        fclose($lockHandle);
+    }
+} catch (Exception $e) {
+    // Fail silently — this is a background task; do not break the main request.
+    error_log("Auto-publish error: " . $e->getMessage());
 }
 ?>

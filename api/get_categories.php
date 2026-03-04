@@ -6,7 +6,8 @@ header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 
 try {
-    $stmt = $pdo->query("SELECT DISTINCT category FROM blogs WHERE status = 'published' AND category IS NOT NULL AND category != '' ORDER BY category ASC");
+    $stmt = $pdo->prepare("SELECT DISTINCT category FROM blogs WHERE status IN ('published', 'approved') AND date <= ? AND category IS NOT NULL AND category != '' ORDER BY category ASC");
+    $stmt->execute([gmdate('Y-m-d H:i:s')]);
     $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     echo json_encode(['status' => 'success', 'categories' => $categories]);
