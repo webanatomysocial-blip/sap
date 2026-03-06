@@ -27,9 +27,10 @@ try {
     $stmt = $pdo->prepare(
         "SELECT
             COUNT(*) AS total,
-            SUM(CASE WHEN status = 'draft' AND (submission_status IS NULL OR submission_status = 'rejected') THEN 1 ELSE 0 END) AS drafts,
-            SUM(CASE WHEN submission_status = 'submitted' THEN 1 ELSE 0 END) AS submitted,
+            SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) AS drafts,
+            SUM(CASE WHEN submission_status = 'submitted' OR submission_status = 'edited' THEN 1 ELSE 0 END) AS submitted,
             SUM(CASE WHEN submission_status = 'approved' THEN 1 ELSE 0 END) AS approved,
+            SUM(CASE WHEN submission_status = 'rejected' OR status = 'rejected' THEN 1 ELSE 0 END) AS rejected,
             COALESCE(SUM(view_count), 0) AS total_views
          FROM blogs
          WHERE author_id = ?"
@@ -67,11 +68,15 @@ try {
         $total_ads = (int)$stmt->fetchColumn();
     }
 
-    // 6. Pending Comments (if they can manage comments)
+    // 6. Pending & Rejected Comments (if they can manage comments)
     $pending_comments = 0;
+    $rejected_comments = 0;
     if (!empty($perms['can_manage_comments']) || (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')) {
         $stmt = $pdo->query("SELECT COUNT(*) FROM comments WHERE status = 'pending'");
         $pending_comments = (int)$stmt->fetchColumn();
+        
+        $stmt = $pdo->query("SELECT COUNT(*) FROM comments WHERE status = 'rejected'");
+        $rejected_comments = (int)$stmt->fetchColumn();
     }
 
     // 7. Total Announcements (if they can manage announcements)
@@ -87,11 +92,13 @@ try {
         'drafts'              => (int)$row['drafts'],
         'submitted'           => (int)$row['submitted'],
         'approved'            => (int)$row['approved'],
+        'rejected'            => (int)$row['rejected'],
         'total_views'         => (int)$row['total_views'],
         'total_comments'      => $comments,
         'pending_reviews'     => $pending_reviews,
         'total_ads'           => $total_ads,
         'pending_comments'    => $pending_comments,
+        'rejected_comments'   => $rejected_comments,
         'total_announcements' => $total_announcements,
     ]);
 

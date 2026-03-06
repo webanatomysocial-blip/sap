@@ -17,10 +17,11 @@ if (!$data || !isset($data['id']) || !isset($data['status'])) {
 
 $id = $data['id'];
 $status = $data['status']; // 'approved', 'rejected', 'pending'
+$reason = $data['rejection_reason'] ?? null;
 
 try {
-    $stmt = $pdo->prepare("UPDATE contributors SET status = ? WHERE id = ?");
-    $stmt->execute([$status, $id]);
+    $stmt = $pdo->prepare("UPDATE contributors SET status = ?, rejection_reason = ? WHERE id = ?");
+    $stmt->execute([$status, $reason, $id]);
 
     // Optional: Send email notification logic here based on status
 

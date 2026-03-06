@@ -607,7 +607,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         .simple-rte:focus-within {
-            border-color: #3b82f6;
+            border-color: #1e293b;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         .rte-toolbar {
@@ -662,7 +662,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
         .mode-toggle-btn {
             margin-left: auto;
             background: #f1f5f9 !important;
-            color: #2563eb !important;
+            color: #1e293b !important;
             padding: 0 16px !important;
             font-size: 13px !important;
             gap: 6px;
@@ -700,7 +700,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
         .rte-content h4 { font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-top: 1em; }
         .rte-content p { margin-bottom: 1.25em; }
         .rte-content ul, .rte-content ol { padding-left: 1.5em; margin-bottom: 1.25em; }
-        .rte-content blockquote { border-left: 4px solid #3b82f6; padding: 16px 24px; margin: 24px 0; background: #f8fafc; color: #475569; font-style: italic; border-radius: 0 8px 8px 0; }
+        .rte-content blockquote { border-left: 4px solid #1e293b; padding: 16px 24px; margin: 24px 0; background: #f8fafc; color: #475569; font-style: italic; border-radius: 0 8px 8px 0; }
         
         /* Editor Image Alignment Classes */
         .rte-content img { 
@@ -714,7 +714,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
         .rte-content img:hover { transform: scale(1.01); }
         
         .rte-content img.selected-image {
-            outline: 3px solid #3b82f6;
+            outline: 3px solid #1e293b;
             outline-offset: 4px;
         }
         
@@ -731,7 +731,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             margin: 32px auto; 
         }
         
-        .rte-content a { color: #2563eb; text-decoration: underline; font-weight: 500; }
+        .rte-content a { color: #1e293b; text-decoration: underline; font-weight: 500; }
         
         /* Clearfix for floats */
         .rte-content::after {

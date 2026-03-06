@@ -7,7 +7,7 @@
 /* Latest Blogs Grid */
 .latest-blogs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 30px;
 }
 
@@ -28,7 +28,7 @@
 .latest-blog-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  /* border-color: #3b82f6; */
+  /* border-color: #1e293b; */
 }
 
 .latest-blog-image {
@@ -53,7 +53,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #3b82f6;
+  background: #1e293b;
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 20px;

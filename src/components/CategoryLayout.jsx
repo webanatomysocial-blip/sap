@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { authors } from "../data/authors";
+// Removed static metadata import
 import BlogSidebar from "./BlogSidebar";
 import "../css/CategoryPage.css";
+import { getBlogs } from "../services/api";
 
 const CategoryLayout = ({ categorySlug, displayName }) => {
   const [blogs, setBlogs] = useState([]);
@@ -11,17 +12,15 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
 
   // Fetch blogs from API
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchBlogsData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/manage_blogs.php");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch blogs");
+        const res = await getBlogs();
+        if (Array.isArray(res.data)) {
+          setBlogs(res.data);
+        } else {
+          setBlogs([]);
         }
-
-        const data = await response.json();
-        setBlogs(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching blogs:", err);
         setError(err.message);
@@ -30,7 +29,7 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
       }
     };
 
-    fetchBlogs();
+    fetchBlogsData();
   }, []);
 
   // Filter blogs by category slug
@@ -39,6 +38,10 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
 
     return blogs
       .filter((blog) => {
+        // Date check for public scheduling
+        const isLive = new Date(blog.date || blog.created_at) <= new Date();
+        if (!isLive) return false;
+
         // Parent category logic: sap-security shows its sub-categories
         if (categorySlug === "sap-security") {
           return (
@@ -96,8 +99,10 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
               </div>
             ) : categoryBlogs.length === 0 ? (
               <div className="no-posts">
-                <p>No posts found in this category.</p>
-                <Link to="/" className="btn-primary">
+                <p className="no-posts-text">
+                  No posts found in this category.
+                </p>
+                <Link to="/" className="btn-primary go-home-btn">
                   Go Home
                 </Link>
               </div>
@@ -108,7 +113,10 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
                     <div className="blog-card-image">
                       <Link to={`/${blog.category}/${blog.slug}`}>
                         <img
-                          src={blog.image || "/placeholder-image.jpg"}
+                          src={
+                            blog.image ||
+                            "https://placehold.co/600x400?text=No+Image"
+                          }
                           alt={blog.title}
                           loading="lazy"
                         />
@@ -116,13 +124,48 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
                     </div>
                     <div className="blog-card-content">
                       <div className="blog-meta-top">
-                        <span className="blog-author">
-                          <i className="bi bi-person-circle"></i>{" "}
-                          {authors[blog.author]?.name || blog.author || "Admin"}
+                        <span
+                          className="blog-author"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          {blog.author_image ? (
+                            <img
+                              src={blog.author_image}
+                              alt={blog.author_name || blog.author}
+                              style={{
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                border: "1px solid #e2e8f0",
+                                flexShrink: 0,
+                              }}
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://placehold.co/100x100?text=Author";
+                              }}
+                            />
+                          ) : (
+                            <i className="bi bi-person-circle"></i>
+                          )}
+                          {blog.author_name || "Guest Author"}
                         </span>
                         <span className="blog-date">
                           <i className="bi bi-calendar3"></i>{" "}
-                          {new Date(blog.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          {(() => {
+                            const d = new Date(blog.date);
+                            return isNaN(d.getTime())
+                              ? blog.date
+                              : d.toLocaleDateString("en-US", {
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                });
+                          })()}
                         </span>
                       </div>
 

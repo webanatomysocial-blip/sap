@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { authors } from "../data/authors";
-import BlogSidebar from "./BlogSidebar";
+// Removed static metadata import
 import "../css/CategoryPage.css";
+import BlogSidebar from "./BlogSidebar";
+import { getBlogs } from "../services/api";
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
@@ -11,18 +12,12 @@ const Blogs = () => {
 
   // Fetch blogs from API
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchBlogsData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/manage_blogs.php");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch blogs");
-        }
-
-        const data = await response.json();
+        const res = await getBlogs();
         // Sort by date desc
-        const sorted = (Array.isArray(data) ? data : []).sort(
+        const sorted = (Array.isArray(res.data) ? res.data : []).sort(
           (a, b) => new Date(b.date) - new Date(a.date),
         );
         setBlogs(sorted);
@@ -34,7 +29,7 @@ const Blogs = () => {
       }
     };
 
-    fetchBlogs();
+    fetchBlogsData();
   }, []);
 
   return (
@@ -78,7 +73,10 @@ const Blogs = () => {
                     <div className="blog-card-image">
                       <Link to={`/${blog.category}/${blog.slug}`}>
                         <img
-                          src={blog.image || "/placeholder-image.jpg"}
+                          src={
+                            blog.image ||
+                            "https://placehold.co/600x400?text=No+Image"
+                          }
                           alt={blog.title}
                           loading="lazy"
                         />
@@ -88,11 +86,15 @@ const Blogs = () => {
                       <div className="blog-meta-top">
                         <span className="blog-author">
                           <i className="bi bi-person-circle"></i>{" "}
-                          {authors[blog.author]?.name || blog.author || "Admin"}
+                          {blog.author_name || "Raghu Boddu"}
                         </span>
                         <span className="blog-date">
                           <i className="bi bi-calendar3"></i>{" "}
-                          {new Date(blog.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          {new Date(blog.date).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </span>
                       </div>
 

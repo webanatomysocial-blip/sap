@@ -1,48 +1,34 @@
 <?php
-// router.php for local PHP server
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$file = __DIR__ . $uri;
+// Extract path for all routing decisions
+$path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
-// 1. If it's an existing file, serve it directly
-if (is_file($file)) {
-    return false;
+// If the requested file exists, serve it directly (CLI server only)
+if (php_sapi_name() === 'cli-server') {
+    $fullPath = __DIR__ . $path;
+
+    if ($path !== '/' && file_exists($fullPath) && !is_dir($fullPath)) {
+        return false; // Serve static file directly
+    }
 }
 
-// Fallback for public/ directory (assets and uploads)
-$publicFile = __DIR__ . '/public' . $uri;
-if (is_file($publicFile)) {
-    // We need to serve the file ourselves or tell PHP server about it.
-    // However, if we return false, it only uses __DIR__ as root.
-    // So we can try to read it.
-    $mime = mime_content_type($publicFile);
-    header("Content-Type: $mime");
-    readfile($publicFile);
-    return true;
-}
-
-// 2. If it is an API request, route to api/index.php
-if (strpos($uri, '/api') === 0) {
-    // Fix $_SERVER variables for api/index.php
-    $_SERVER['SCRIPT_NAME'] = '/api/index.php';
-    $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/api/index.php';
-    
-    // We need to ensure we're inside the api directory context if the script assumes it?
-    // api/index.php does "dirname($_SERVER['SCRIPT_NAME'])" which would be /api, 
-    // so basePath calculation should work.
-    
-    require __DIR__ . '/api/index.php';
+// Route API requests — direct file dispatch (e.g. /api/check_plagiarism.php)
+if (strpos($path, '/api/') === 0) {
+    $filePath = __DIR__ . $path;
+    if ($path !== '/api/' && file_exists($filePath) && !is_dir($filePath)) {
+        // Direct PHP file exists — require it
+        require $filePath;
+    } else {
+        // Delegate to central router
+        require __DIR__ . '/api/index.php';
+    }
     exit;
 }
 
-// 3. Otherwise, serve index.html for React Router
-// (Frontend Routing)
+// Otherwise serve frontend index.html (SPA fallback)
 if (file_exists(__DIR__ . '/index.html')) {
-    readfile(__DIR__ . '/index.html');
-    exit;
+    require __DIR__ . '/index.html';
 } else {
-    // Should not happen if build exists, but fallback
-    http_response_code(404);
-    echo "404 Not Found (index.html missing)";
+    echo "Frontend build missing (index.html not found)";
 }
 ?>

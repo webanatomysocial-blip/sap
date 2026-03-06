@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
-import { getPostBySlug } from "../services/api";
+import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
 import BlogLayout from "./BlogLayout";
+import {
+  getPostBySlug,
+  getCommentsByBlogId,
+  updatePostViews,
+  getAdsByZone,
+} from "../services/api";
 
 export default function DynamicBlog() {
   const { blogId } = useParams(); // Expecting slug
@@ -18,9 +22,6 @@ export default function DynamicBlog() {
 
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Corrected API base URL
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   // Check for Virtual Blog (API) + Track Views
   useEffect(() => {
@@ -49,24 +50,29 @@ export default function DynamicBlog() {
         }
 
         if (!postData || (!postData.title && !postData.id)) {
+          console.error("DEBUG: Blog postData invalid", postData);
           throw new Error("Blog not found");
         }
 
         // ROUTING VALIDATION
-        // Extract category from URL: /category/slug
         const pathSegments = location.pathname.split("/").filter(Boolean);
-        // Assuming path is /category/slug, category is index 0
         const urlCategory = pathSegments[0];
 
-        // blogs/:id is a special case (admin/preview or legacy), we might skip validation or redirect to canonical
-        // The user requirement is: "If mismatch → redirect to correct URL"
-        // We should only redirect if the current URL is NOT the correct category URL.
-        // Also ensure we don't redirect if we in a 'special' route like /blogs (if that's allowed) but user said "Blogs Page Layout Match Categories Page", probably implies structure.
-        // User said: "Blog must open at: /category/blog-slug"
+        if (postData.category && urlCategory !== "blogs") {
+          const canonicalCategory = postData.category
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+          const currentCategory = urlCategory.toLowerCase();
 
-        if (postData.category && urlCategory !== postData.category) {
-          navigate(`/${postData.category}/${postData.slug}`, { replace: true });
-          return;
+          if (canonicalCategory !== currentCategory) {
+            console.warn(
+              `DEBUG: Category mismatch. Found: ${currentCategory}, Expected: ${canonicalCategory}. Redirecting...`,
+            );
+            navigate(`/${canonicalCategory}/${postData.slug}`, {
+              replace: true,
+            });
+            return;
+          }
         }
 
         setBlog(postData);
@@ -78,13 +84,9 @@ export default function DynamicBlog() {
         // Track view for virtual blog
         if (postData.id || postData.slug) {
           const postId = postData.slug || postData.id;
-          fetch(`${API_URL}/views`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              post_id: postId,
-              visitor_token: visitorToken,
-            }),
+          updatePostViews({
+            post_id: postId,
+            visitor_token: visitorToken,
           }).catch((err) => console.error("View tracking failed:", err));
         }
       })
@@ -96,9 +98,9 @@ export default function DynamicBlog() {
       });
 
     // Fetch sidebar ad
-    fetch(`${API_URL}/ads?zone=sidebar`)
-      .then((res) => res.json())
-      .then((data) => {
+    getAdsByZone("sidebar")
+      .then((res) => {
+        const data = res.data;
         if (data && data.active) {
           setSidebarAd(data);
         }
@@ -109,9 +111,9 @@ export default function DynamicBlog() {
 
     // Fetch comments count
     if (blogId) {
-      fetch(`${API_URL}/get_comments.php?blogId=${blogId}`)
-        .then((res) => res.json())
-        .then((data) => {
+      getCommentsByBlogId(blogId)
+        .then((res) => {
+          const data = res.data;
           if (Array.isArray(data)) {
             const topLevelComments = data.filter((c) => !c.parent_id);
             setCommentsCount(topLevelComments.length);
@@ -119,7 +121,7 @@ export default function DynamicBlog() {
         })
         .catch((err) => console.error("Comments fetch failed", err));
     }
-  }, [blogId, API_URL, location.pathname, navigate]);
+  }, [blogId, location.pathname, navigate]);
 
   const handleCommentAdded = () => {
     setCommentsCount((prevCount) => prevCount + 1);
@@ -176,7 +178,13 @@ export default function DynamicBlog() {
         }
         image={blog.image || blog.featured_image}
         date={blog.date || blog.published_at || blog.created_at}
-        author={blog.author || "Admin"}
+        author_name={blog.author_name}
+        author_image={blog.author_image}
+        author_bio={blog.author_bio}
+        author_designation={blog.author_designation}
+        author_linkedin={blog.author_linkedin}
+        author_twitter={blog.author_twitter}
+        author_website={blog.author_website}
         category={blog.category}
         sidebarAd={sidebarAd}
         // Pass recent posts if needed, but BlogLayout might handle logic or we can fetch them here.
@@ -191,11 +199,16 @@ export default function DynamicBlog() {
         metaDescription={blog.meta_description}
         metaKeywords={blog.meta_keywords}
         // NEW PROPS
-        faqs={
-          typeof blog.faqs === "string"
-            ? JSON.parse(blog.faqs || "[]")
-            : blog.faqs || []
-        }
+        faqs={(() => {
+          if (!blog.faqs || blog.faqs === "null") return [];
+          if (Array.isArray(blog.faqs)) return blog.faqs;
+          try {
+            const p = JSON.parse(blog.faqs);
+            return Array.isArray(p) ? p : [];
+          } catch {
+            return [];
+          }
+        })()}
         cta={{
           title: blog.cta_title,
           description: blog.cta_description,

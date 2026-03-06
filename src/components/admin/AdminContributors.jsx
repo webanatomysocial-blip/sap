@@ -1,30 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import "../../css/AdminDashboard.css";
-// import { API_BASE_URL } from "../../config";
 import ActionMenu from "./ActionMenu";
+import ManageContributorModal from "./ManageContributorModal";
 import useScrollLock from "../../hooks/useScrollLock";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
+import {
+  getContributors,
+  updateContributorStatus,
+  deleteContributor,
+} from "../../services/api";
 
 const AdminContributors = () => {
   // Mock Data for Demo
   // No mock data needed, fetching from API
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedApp, setSelectedApp] = useState(null); // For modal details
+  const [filterStatus, setFilterStatus] = useState("approved"); // Default to approved
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [managingContributor, setManagingContributor] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
 
-  useScrollLock(!!selectedApp);
+  useScrollLock(!!selectedApp || !!rejectingId);
 
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/contributors");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setApplications(data);
+      const res = await getContributors();
+      if (res.data) {
+        setApplications(res.data);
+      }
     } catch (error) {
       console.error("Error fetching applications:", error);
       addToast("Failed to fetch applications", "error");
@@ -37,25 +47,34 @@ const AdminContributors = () => {
     fetchApplications();
   }, []);
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, rejection_reason = null) => {
     try {
-      const response = await fetch("/api/admin/contributors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, status }),
+      const res = await updateContributorStatus({
+        id,
+        status,
+        rejection_reason,
       });
-      const result = await response.json();
-      if (result.status === "success") {
+      if (res.data.status === "success") {
+        // Find the application BEFORE updating state to have the object
+        const approvedApp = applications.find((app) => app.id === id);
+
         // Optimistic update or refresh
         setApplications((prev) =>
-          prev.map((app) => (app.id === id ? { ...app, status } : app)),
+          prev.map((app) =>
+            app.id === id ? { ...app, status, rejection_reason } : app,
+          ),
         );
         setSelectedApp(null);
+        setRejectingId(null);
+        setRejectReason("");
         addToast(`Application ${status}.`, "success");
+
+        // If newly approved, trigger Manage Login modal automatically
+        if (status === "approved" && approvedApp) {
+          setManagingContributor({ ...approvedApp, status: "approved" });
+        }
       } else {
-        addToast("Failed to update status: " + result.message, "error");
+        addToast("Failed to update status: " + res.data.message, "error");
       }
     } catch (error) {
       console.error(`Error updating status to ${status}:`, error);
@@ -71,22 +90,15 @@ const AdminContributors = () => {
       isDanger: true,
       onConfirm: async () => {
         try {
-          const response = await fetch("/api/delete_contributor.php", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id }),
-          });
-          const result = await response.json();
-          if (result.status === "success") {
+          const res = await deleteContributor(id);
+          if (res.data.status === "success") {
             setApplications((prev) => prev.filter((app) => app.id !== id));
             if (selectedApp && selectedApp.id === id) {
               setSelectedApp(null);
             }
             addToast("Contributor deleted.", "success");
           } else {
-            addToast("Failed to delete: " + result.message, "error");
+            addToast("Failed to delete: " + res.data.message, "error");
           }
         } catch (error) {
           console.error("Error deleting contributor:", error);
@@ -101,27 +113,62 @@ const AdminContributors = () => {
       title: "Approve Applicant",
       message: "Are you sure you want to approve this applicant?",
       confirmText: "Approve",
-      onConfirm: () => updateStatus(id, "approved"),
+      onConfirm: () => updateStatus(id, "approved", null),
     });
   };
 
   const handleReject = (id) => {
-    openConfirm({
-      title: "Reject Applicant",
-      message: "Are you sure you want to reject this applicant?",
-      confirmText: "Reject",
-      isDanger: true,
-      onConfirm: () => updateStatus(id, "rejected"),
-    });
+    setRejectingId(id);
+    setRejectReason("");
+    setRejectError("");
+  };
+
+  const submitRejection = () => {
+    if (!rejectReason.trim()) {
+      setRejectError("A rejection reason is mandatory.");
+      return;
+    }
+    updateStatus(rejectingId, "rejected", rejectReason);
   };
 
   return (
     <div className="admin-page-wrapper">
+      <Helmet>
+        <title>Contributor Management - Admin</title>
+      </Helmet>
       <div className="page-header">
         <h3>Contributor Management</h3>
-        <button onClick={fetchApplications} className="btn-primary">
-          <i className="bi bi-arrow-clockwise"></i> Refresh
-        </button>
+        <div className="status-filter-tabs" style={{ margin: 0 }}>
+          <button
+            className={filterStatus === "approved" ? "active" : ""}
+            onClick={() => setFilterStatus("approved")}
+          >
+            Approved
+          </button>
+          <button
+            className={filterStatus === "pending" ? "active" : ""}
+            onClick={() => setFilterStatus("pending")}
+          >
+            Pending
+          </button>
+          <button
+            className={filterStatus === "rejected" ? "active" : ""}
+            onClick={() => setFilterStatus("rejected")}
+          >
+            Rejected
+          </button>
+          <button
+            className={filterStatus === "all" ? "active" : ""}
+            onClick={() => setFilterStatus("all")}
+          >
+            All
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <button onClick={fetchApplications} className="btn-primary">
+            <i className="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -140,69 +187,102 @@ const AdminContributors = () => {
                 </tr>
               </thead>
               <tbody>
-                {applications.length === 0 ? (
+                {applications.filter(
+                  (app) =>
+                    filterStatus === "all" || app.status === filterStatus,
+                ).length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center">
-                      No applications found.
+                      No {filterStatus !== "all" ? filterStatus : ""}{" "}
+                      applications found.
                     </td>
                   </tr>
                 ) : (
-                  applications.map((app) => (
-                    <tr key={app.id}>
-                      <td className="col-name text-left">
-                        <strong>{app.name}</strong>
-                        <br />
-                        <small>{app.email}</small>
-                      </td>
-                      <td className="col-role text-left">{app.role}</td>
-                      <td className="col-status">
-                        <span className={`status-badge status-${app.status}`}>
-                          {app.status}
-                        </span>
-                      </td>
-                      <td className="col-date text-left">
-                        {new Date(app.created_at).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="col-actions text-center">
-                        <ActionMenu>
-                          <button
-                            onClick={() => setSelectedApp(app)}
-                            className="btn-view"
-                          >
-                            View
-                          </button>
-
-                          {app.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(app.id)}
-                                className="btn-approve"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(app.id)}
-                                className="btn-reject"
-                              >
-                                Reject
-                              </button>
-                            </>
+                  applications
+                    .filter(
+                      (app) =>
+                        filterStatus === "all" || app.status === filterStatus,
+                    )
+                    .map((app) => (
+                      <tr key={app.id}>
+                        <td className="col-name text-left">
+                          <strong>{app.name}</strong>
+                          <br />
+                          <small>{app.email}</small>
+                        </td>
+                        <td className="col-role text-left">{app.role}</td>
+                        <td className="col-status">
+                          <span className={`status-badge status-${app.status}`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="col-date text-left">
+                          {new Date(app.created_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            },
                           )}
+                        </td>
+                        <td className="col-actions text-center">
+                          <ActionMenu>
+                            <button
+                              className="action-menu-item"
+                              onClick={() => setSelectedApp(app)}
+                            >
+                              <i className="bi bi-eye"></i> View Details
+                            </button>
 
-                          <button
-                            onClick={() => handleDelete(app.id)}
-                            className="btn-delete"
-                          >
-                            Delete
-                          </button>
-                        </ActionMenu>
-                      </td>
-                    </tr>
-                  ))
+                            {app.status === "pending" && (
+                              <button
+                                className="action-menu-item"
+                                onClick={() => handleApprove(app.id)}
+                                style={{ color: "var(--success-green)" }}
+                              >
+                                <i className="bi bi-check-circle"></i> Approve
+                                Now
+                              </button>
+                            )}
+
+                            {app.status === "approved" && (
+                              <>
+                                <div className="action-menu-separator"></div>
+                                <button
+                                  className="action-menu-item"
+                                  onClick={() => setManagingContributor(app)}
+                                >
+                                  <i className="bi bi-shield-lock"></i> Manage
+                                  Login
+                                </button>
+                              </>
+                            )}
+
+                            {app.status === "pending" && (
+                              <>
+                                <div className="action-menu-separator"></div>
+                                <button
+                                  className="action-menu-item"
+                                  onClick={() => handleReject(app.id)}
+                                  style={{ color: "var(--warning-yellow)" }}
+                                >
+                                  <i className="bi bi-x-circle"></i> Reject
+                                </button>
+                              </>
+                            )}
+
+                            <div className="action-menu-separator"></div>
+                            <button
+                              className="action-menu-item danger"
+                              onClick={() => handleDelete(app.id)}
+                            >
+                              <i className="bi bi-trash"></i> Delete
+                            </button>
+                          </ActionMenu>
+                        </td>
+                      </tr>
+                    ))
                 )}
               </tbody>
             </table>
@@ -326,7 +406,7 @@ const AdminContributors = () => {
                         target="_blank"
                         rel="noreferrer"
                         style={{
-                          color: "#2563eb",
+                          color: "#1e293b",
                           textDecoration: "underline",
                         }}
                       >
@@ -375,7 +455,7 @@ const AdminContributors = () => {
                         href={selectedApp.personal_website}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#2563eb" }}
+                        style={{ color: "#1e293b" }}
                       >
                         Visit Data
                       </a>
@@ -396,6 +476,23 @@ const AdminContributors = () => {
                     {selectedApp.contributed_elsewhere || "N/A"}
                   </div>
                 </div>
+                {selectedApp.contributed_elsewhere === "Yes" && (
+                  <div style={{ gridColumn: "span 2" }}>
+                    <strong>Previous Work Links:</strong>
+                    <div
+                      style={{
+                        color: "#475569",
+                        background: "#f8f9fa",
+                        padding: "8px",
+                        borderRadius: "4px",
+                        marginTop: "4px",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {selectedApp.previous_work_links || "N/A"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: "15px" }}>
@@ -461,6 +558,34 @@ const AdminContributors = () => {
                 </div>
               </div>
 
+              {selectedApp.status === "rejected" &&
+                selectedApp.rejection_reason && (
+                  <div
+                    style={{
+                      marginBottom: "15px",
+                      background: "#fff1f2",
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #fecaca",
+                    }}
+                  >
+                    <strong style={{ color: "#991b1b" }}>
+                      Rejection Reason:
+                    </strong>
+                    <p
+                      style={{
+                        margin: "8px 0 0",
+                        color: "#b91c1c",
+                        fontSize: "0.95rem",
+                        lineHeight: "1.5",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {selectedApp.rejection_reason}
+                    </p>
+                  </div>
+                )}
+
               <div style={{ marginBottom: "15px" }}>
                 <strong>Proposed Topics:</strong>
                 <p
@@ -513,6 +638,22 @@ const AdminContributors = () => {
                     }
                   })()}
                 </div>
+                {selectedApp.other_expertise && (
+                  <div style={{ marginTop: "10px" }}>
+                    <strong>Other Expertise:</strong>
+                    <p
+                      style={{
+                        background: "#f8f9fa",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginTop: "5px",
+                        color: "#334155",
+                      }}
+                    >
+                      {selectedApp.other_expertise}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -555,6 +696,82 @@ const AdminContributors = () => {
                 onClick={() => setSelectedApp(null)}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Manage Login Modal */}
+      {managingContributor && (
+        <ManageContributorModal
+          contributor={managingContributor}
+          onClose={() => setManagingContributor(null)}
+        />
+      )}
+      {/* Rejection Modal */}
+      {rejectingId && (
+        <div className="modal-overlay" onClick={() => setRejectingId(null)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, color: "#991b1b" }}>
+                Reject Application
+              </h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setRejectingId(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p
+                style={{
+                  color: "#64748b",
+                  fontSize: "0.9rem",
+                  marginBottom: "16px",
+                }}
+              >
+                Please provide a reason for rejecting this applicant. This
+                feedback will be stored for audit purposes.
+              </p>
+              <div className="form-group">
+                <label>Rejection Reason (Mandatory)</label>
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  value={rejectReason}
+                  onChange={(e) => {
+                    setRejectReason(e.target.value);
+                    if (e.target.value.trim()) setRejectError("");
+                  }}
+                  placeholder="e.g., Application lacks required experience or incomplete profile."
+                  style={{
+                    borderColor: rejectError ? "#ef4444" : "var(--slate-300)",
+                  }}
+                />
+                {rejectError && (
+                  <small
+                    style={{
+                      color: "#ef4444",
+                      fontWeight: 600,
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    {rejectError}
+                  </small>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-cancel"
+                onClick={() => setRejectingId(null)}
+              >
+                Cancel
+              </button>
+              <button className="btn-danger" onClick={submitRejection}>
+                Confirm Rejection
               </button>
             </div>
           </div>

@@ -2,11 +2,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 :root {
-  /* Color Palette - Modern & Professional */
-  --primary-blue: #2563eb;
-  --primary-blue-dark: #1e40af;
-  --primary-blue-light: #60a5fa;
-  --accent-cyan: #06b6d4;
+  /* Color Palette - Modern & Professional (Neutralized) */
+  --primary-blue: #1e293b;
+  --primary-blue-dark: #0f172a;
+  --primary-blue-light: #334155;
+  --accent-cyan: #475569;
   --success-green: #10b981;
   --warning-yellow: #f59e0b;
   --error-red: #ef4444;
@@ -133,13 +133,29 @@ body {
     var(--primary-blue-dark) 100%
   );
   color: #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .nav-item1 i {
   font-size: 1.25rem;
   width: 24px;
   text-align: center;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.3s ease-out;
+  pointer-events: auto;
 }
 
 .sidebar-footer {
@@ -213,6 +229,15 @@ body {
   margin: 0;
 }
 
+.modal-content.profile-modal {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  border-radius: 12px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
 .header-user {
   display: flex;
   align-items: center;
@@ -227,11 +252,7 @@ body {
 .user-avatar {
   width: 42px;
   height: 42px;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--primary-blue-dark) 100%
-  );
+  background: var(--slate-800);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -239,7 +260,7 @@ body {
   color: #fff;
   font-weight: 700;
   font-size: 1.1rem;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .user-info {
@@ -344,6 +365,48 @@ body {
   margin-bottom: 40px;
 }
 
+/* Tab Navigation Styles */
+.tab-container-navigation {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid var(--slate-200);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+}
+
+.tab-nav-item {
+  background: none;
+  border: none;
+  padding: 8px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.tab-nav-item:hover {
+  color: var(--primary-blue);
+  background: var(--slate-100);
+}
+
+.tab-nav-item.active {
+  color: var(--primary-blue);
+}
+
+.tab-nav-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--primary-blue);
+  border-radius: 3px 3px 0 0;
+}
+
 @media (max-width: 1200px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -397,6 +460,20 @@ body {
   }
 }
 
+.modal-content {
+  background: #fff;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .stat-card {
   background: #fff;
   border: 1px solid var(--slate-200);
@@ -420,12 +497,12 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: var(--slate-50);
+  background: var(--slate-100);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
-  color: var(--primary-blue);
+  color: var(--slate-800);
   flex-shrink: 0;
 }
 
@@ -489,7 +566,7 @@ body {
 }
 
 .admin-table th {
-  padding: 12px 16px;
+  padding: 16px 20px;
   text-align: left;
   font-weight: 700;
   color: var(--slate-700);
@@ -516,7 +593,7 @@ body {
 }
 
 .admin-table tbody td {
-  padding: 12px 16px;
+  padding: 16px 20px;
   color: var(--slate-700);
   font-size: 0.95rem;
   vertical-align: middle !important;
@@ -1318,7 +1395,7 @@ td.col-status {
   border-top: 1px solid var(--slate-100);
 }
 
-/* Action Menu Styles */
+/* Action Menu Styles (Refined) */
 .action-menu-container {
   position: relative;
   display: inline-block;
@@ -1326,73 +1403,100 @@ td.col-status {
 
 .action-menu-btn {
   background: white;
-  border: 1px solid var(--slate-200);
-  font-size: 20px;
+  border: 1.5px solid var(--slate-200);
+  font-size: 1.25rem;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
   color: var(--slate-600);
   line-height: 1;
   transition: all 0.2s ease;
-  min-width: 32px;
+  min-width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .action-menu-btn:hover {
-  background: var(--slate-100);
-  color: var(--slate-900);
+  background: var(--slate-50);
+  color: var(--primary-blue);
   border-color: var(--slate-300);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .action-menu-dropdown {
   position: absolute;
   right: 0;
-  top: calc(100% + 4px);
+  top: calc(100% + 8px);
   background: white;
-  min-width: 140px;
+  min-width: 180px;
   box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.1),
-    0 4px 6px rgba(0, 0, 0, 0.05);
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--slate-200);
-  border-radius: 8px;
-  padding: 6px 0;
-  z-index: 9999;
+  border-radius: 16px; /* Match user request for rounded corners */
+  padding: 8px;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
+  animation: modalSlideUp 0.2s ease-out;
 }
 
-.action-menu-dropdown button {
+.action-menu-item {
   background: none;
   border: none;
-  padding: 10px 16px;
+  padding: 12px 16px;
   text-align: left;
   width: 100%;
-  font-size: 14px;
+  font-size: 0.95rem;
   cursor: pointer;
   color: var(--slate-700);
-  transition: background 0.15s ease;
+  transition: all 0.2s ease;
   font-family: inherit;
   font-weight: 500;
-  border-radius: 0 !important;
-  margin: 0 !important;
+  border-radius: 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.action-menu-dropdown button:hover {
+.action-menu-item i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  color: var(--slate-500);
+  transition: color 0.2s;
+}
+
+.action-menu-item:hover {
   background: var(--slate-50);
   color: var(--primary-blue);
 }
 
-.action-menu-dropdown .btn-delete {
-  color: var(--error-red) !important;
-  background: transparent !important;
-  box-shadow: none !important;
+.action-menu-item:hover i {
+  color: var(--primary-blue);
 }
 
-.action-menu-dropdown .btn-delete:hover {
-  background: #fee2e2 !important;
-  color: #b91c1c !important;
+.action-menu-item.danger {
+  color: var(--error-red);
+}
+
+.action-menu-item.danger i {
+  color: var(--error-red);
+}
+
+.action-menu-item.danger:hover {
+  background: #fff5f5;
+  color: #b91c1c;
+}
+
+.action-menu-separator {
+  height: 1px;
+  background: var(--slate-100);
+  margin: 6px 8px;
 }
 
 .admin-table-container {
@@ -1401,4 +1505,36 @@ td.col-status {
 
 .table-responsive {
   overflow: visible !important;
+}
+/* Status Filter Tabs */
+.status-filter-tabs {
+  display: flex;
+  background: var(--slate-100);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+  border: 1px solid var(--slate-200);
+}
+
+.status-filter-tabs button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--slate-600);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.status-filter-tabs button:hover {
+  color: var(--slate-900);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.status-filter-tabs button.active {
+  background: #fff;
+  color: var(--slate-900);
+  box-shadow: var(--shadow-sm);
 }

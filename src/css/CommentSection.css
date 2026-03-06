@@ -42,7 +42,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #3b82f6;
+  background: #1e293b;
   opacity: 0.3;
 }
 
@@ -53,7 +53,7 @@
 .btn-view-replies {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: #1e293b;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -65,7 +65,7 @@
 }
 
 .btn-view-replies:hover {
-  color: #2563eb;
+  color: #1e293b;
   text-decoration: underline;
 }
 
@@ -112,7 +112,7 @@
 .btn-reply-link {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: #1e293b;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -124,7 +124,7 @@
 
 .btn-reply-link:hover {
   text-decoration: underline;
-  color: #2563eb;
+  color: #1e293b;
 }
 
 .comment-form {
@@ -157,7 +157,7 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #1e293b;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 

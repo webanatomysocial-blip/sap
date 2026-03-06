@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 // Removed static metadata import
-import { authors } from "../data/authors";
+// Removed static metadata import
 import "../css/CommunitySection.css";
 import ads1 from "../assets/promotions/promo-1.png";
 import ads2 from "../assets/promotions/promo-2.png";
+import {
+  getHomepageData,
+  getPublicAnnouncements,
+  getPublicAds,
+  getCommunityStats,
+} from "../services/api";
 
 export default function CommunitySection() {
   /* eslint-disable no-unused-vars */
@@ -28,9 +34,6 @@ export default function CommunitySection() {
     community_right: { active: false, image: "", link: "" },
   });
 
-  // Corrected API base URL
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
-
   // Dynamic Data State
   const [featuredArticle, setFeaturedArticle] = useState({});
   const [recentActivity, setRecentActivity] = useState([]);
@@ -39,12 +42,18 @@ export default function CommunitySection() {
   useEffect(() => {
     setLoading(true);
     // Fetch consolidated homepage data
-    fetch(`${API_URL}/get_homepage_data.php`)
-      .then((res) => res.json())
-      .then((data) => {
+    getHomepageData()
+      .then((res) => {
+        const data = res.data;
         if (data.status === "success") {
           setFeaturedArticle(data.featured || {});
-          setRecentActivity(data.recent || []);
+          setRecentActivity(
+            (data.recent || []).filter(
+              (post) =>
+                new Date(post.date || post.created_at).setHours(0, 0, 0, 0) <=
+                new Date().setHours(0, 0, 0, 0),
+            ),
+          );
           setContributors(data.contributors || []);
           setContributorCount(data.contributors ? data.contributors.length : 0);
         }
@@ -57,13 +66,9 @@ export default function CommunitySection() {
 
     // Keep Announcements & Ads separate as they might have different caching/logic
     // Fetch Announcements
-    fetch(`${API_URL}/announcements`)
+    getPublicAnnouncements()
       .then((res) => {
-        if (!res.ok) throw new Error("API Error");
-        return res.json();
-      })
-      .then((data) => {
-        setAnnouncements(data);
+        setAnnouncements(res.data);
         setLoadingAnnouncements(false);
       })
       .catch((err) => {
@@ -72,9 +77,9 @@ export default function CommunitySection() {
       });
 
     // Fetch Ads
-    fetch(`${API_URL}/ads`)
-      .then((res) => res.json())
-      .then((data) => {
+    getPublicAds()
+      .then((res) => {
+        const data = res.data;
         // API returns object keyed by zone
         const leftAd = data.community_left || data["community_left"];
         const rightAd = data.community_right || data["community_right"];
@@ -94,15 +99,15 @@ export default function CommunitySection() {
     // or rely on the length of the list if that's what was intended.
     // The user asked for "Latest 3 approved contributors" in list, but maybe total count in stats.
     // Let's keep the specific stats call for the big number if it exists, otherwise fallback.
-    fetch(`${API_URL}/stats/community`)
-      .then((res) => res.json())
-      .then((data) => {
+    getCommunityStats()
+      .then((res) => {
+        const data = res.data;
         if (data && data.active_contributors) {
           setContributorCount(parseInt(data.active_contributors));
         }
       })
       .catch((err) => console.warn("Stats failed", err));
-  }, [API_URL]);
+  }, []);
 
   // Format date
   const formatDate = (dateString) => {
@@ -152,11 +157,35 @@ export default function CommunitySection() {
                     }
                     className="topic-item"
                   >
-                    <span className="topic-label">R</span>
+                    {/* Author Avatar */}
+                    {post.author_image ? (
+                      <img
+                        src={post.author_image}
+                        alt={post.author_name || post.author}
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                          border: "2px solid #e2e8f0",
+                        }}
+                        onError={(e) => {
+                          e.target.src =
+                            "https://placehold.co/100x100?text=Author";
+                        }}
+                      />
+                    ) : (
+                      <span className="topic-label">
+                        {(post.author_name || post.author || "G")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    )}
                     <div className="topic-info">
                       <span className="topic-title">{post.title}</span>
                       <span className="topic-meta">
-                        By {authors[post.author]?.name || post.author}
+                        By {post.author_name || "Guest Author"}
                       </span>
                     </div>
                   </Link>
@@ -196,9 +225,14 @@ export default function CommunitySection() {
                 <div className="widget-header">
                   <h3>Our Contributors</h3>
                 </div>
-                <div className="contributors-list-left">
+                <div className="contributors-list-left" data-lenis-prevent>
                   {contributors.map((contributor, index) => (
-                    <div key={index} className="contributor-card-new">
+                    <Link
+                      key={index}
+                      to={`/contributor/${contributor.id}`}
+                      className="contributor-card-new"
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
                       <div className="contributor-avatar">
                         {contributor.profile_image ? (
                           <img
@@ -211,7 +245,6 @@ export default function CommunitySection() {
                             }}
                           />
                         ) : null}
-                        {/* Fallback Avatar if image fails or is missing */}
                         <div
                           className="avatar-fallback"
                           style={{
@@ -232,7 +265,7 @@ export default function CommunitySection() {
                           {formatDate(contributor.created_at || new Date())}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -310,9 +343,33 @@ export default function CommunitySection() {
                           ...
                         </p>
                         <div className="activity-meta">
-                          <span>
-                            <i className="bi bi-person-circle"></i>{" "}
-                            {authors[activity.author]?.name || activity.author}
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            {activity.author_image ? (
+                              <img
+                                src={activity.author_image}
+                                alt={activity.author_name || activity.author}
+                                style={{
+                                  width: "22px",
+                                  height: "22px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  border: "1px solid #e2e8f0",
+                                }}
+                                onError={(e) => {
+                                  e.target.src =
+                                    "https://placehold.co/100x100?text=Author";
+                                }}
+                              />
+                            ) : (
+                              <i className="bi bi-person-circle"></i>
+                            )}
+                            {activity.author_name || "Guest Author"}
                           </span>
                           <span>{formatDate(activity.date)}</span>
                         </div>
@@ -341,8 +398,8 @@ export default function CommunitySection() {
               <div className="widget-header">
                 <h3>Announcements</h3>
               </div>
-              <div className="announcements-list">
-                {announcements.length === 0 ? (
+              <div className="announcements-list" data-lenis-prevent>
+                {!Array.isArray(announcements) || announcements.length === 0 ? (
                   <p style={{ fontSize: "0.9rem", color: "#666" }}>
                     No announcements yet.
                   </p>

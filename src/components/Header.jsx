@@ -86,7 +86,7 @@ const Header = () => {
               <Link to="/product-reviews">Product Reviews</Link>
               <Link to="/podcasts">Podcasts</Link>
               <Link to="/videos">Videos</Link>
-              <Link to="/other-tools">Useful Tools</Link>
+              <Link to="/other-tools">Expert Recommendations</Link>
             </div>
           </div>
 
@@ -233,7 +233,7 @@ const Header = () => {
                   Videos
                 </Link>
                 <Link to="/other-tools" onClick={closeMenu}>
-                  Useful Tools
+                  Expert Recommendations
                 </Link>
               </div>
             )}

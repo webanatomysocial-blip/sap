@@ -3,11 +3,23 @@ import "../../css/AdminDashboard.css";
 import "../../css/admin-profile.css";
 import { LuShieldCheck, LuKey } from "react-icons/lu";
 import ResetPasswordModal from "./ResetPasswordModal";
+import { useAuth } from "../../context/AuthContext";
+import { getAdminStats } from "../../services/api";
+
+import ContributorDashboard from "./ContributorDashboard";
 
 const AdminHome = () => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+
+  if (!isAdmin) {
+    return <ContributorDashboard />;
+  }
+
   const [stats, setStats] = useState({
     contributors: 0,
     pending_reviews: 0,
+    pending_comments: 0,
     blogs: 0,
     total_views: 0,
   });
@@ -15,111 +27,110 @@ const AdminHome = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
+    if (!isAdmin) return;
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/admin/stats");
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
+        const res = await getAdminStats();
+        if (res.data) {
+          setStats(res.data);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard stats", err);
       }
     };
     fetchStats();
-  }, []);
+  }, [isAdmin]);
+
+  const formatNum = (n) => (n > 9999 ? (n / 1000).toFixed(1) + "k" : n);
+
+  const statCards = [
+    {
+      icon: "bi-people",
+      value: stats.contributors,
+      label: "Contributors",
+      color: "#1e293b",
+    },
+    {
+      icon: "bi-hourglass-split",
+      value: stats.pending_reviews,
+      label: "Blog Reviews",
+      color: "#1e293b",
+    },
+    {
+      icon: "bi-chat-left-text",
+      value: stats.pending_comments,
+      label: "Pending Comments",
+      color: "#1e293b",
+    },
+    {
+      icon: "bi-file-earmark-text",
+      value: stats.blogs,
+      label: "Total Blogs",
+      color: "#1e293b",
+    },
+  ];
 
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
-        <h2>Dashboard</h2>
+        <h3>Dashboard Overview</h3>
       </div>
 
       <div className="admin-card">
         <div className="dashboard-grid">
-          <div className="stat-card">
-            <div className="stat-icon">
-              <i className="bi bi-people"></i>
+          {statCards.map((card) => (
+            <div className="stat-card" key={card.label}>
+              <div className="stat-icon" style={{ color: card.color }}>
+                <i className={`bi ${card.icon}`}></i>
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">{card.value}</span>
+                <span className="stat-label">{card.label}</span>
+              </div>
             </div>
-            <div className="stat-info">
-              <span className="stat-value">{stats.contributors}</span>
-              <span className="stat-label">Contributors</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">
-              <i className="bi bi-hourglass-split"></i>
-            </div>
-            <div className="stat-info">
-              <span className="stat-value">{stats.pending_reviews}</span>
-              <span className="stat-label">Pending Reviews</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">
-              <i className="bi bi-file-earmark-text"></i>
-            </div>
-            <div className="stat-info">
-              <span className="stat-value">{stats.blogs}</span>
-              <span className="stat-label">Blog Posts</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">
-              <i className="bi bi-eye"></i>
-            </div>
-            <div className="stat-info">
-              <span className="stat-value">
-                {stats.total_views > 999
-                  ? (stats.total_views / 1000).toFixed(1) + "k"
-                  : stats.total_views}
-              </span>
-              <span className="stat-label">Total Views</span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="dashboard-sections"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 260px",
-            gap: "24px",
-            marginTop: "24px",
-            paddingTop: "24px",
-            borderTop: "1px solid #f1f5f9",
-          }}
-        >
-          <div
-            className="dashboard-intro"
-            style={{ margin: 0, padding: 0, borderTop: "none" }}
-          >
-            <h3>Welcome to the SAP Security Expert Admin Panel</h3>
-            <p>
-              Select a module from the sidebar to confirm approvals or manage
-              content.
-            </p>
-          </div>
-
-          <div className="security-settings-card">
-            <div className="security-title">
-              <LuShieldCheck /> Security Settings
-            </div>
-            <p>Keep your account secure by updating your password regularly.</p>
-            <button
-              className="btn-reset-pw"
-              onClick={() => setShowPasswordModal(true)}
-            >
-              <LuKey /> Reset Password
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
-      <ResetPasswordModal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-      />
+      <div
+        className="dashboard-grid"
+        style={{
+          gridTemplateColumns: "1fr auto",
+          gap: 20,
+          alignItems: "start",
+        }}
+      >
+        <div className="admin-card" style={{ padding: "24px" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: "1rem", color: "#1e293b" }}>
+            Welcome to the SAP Security Expert Admin Panel
+          </h3>
+          <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem" }}>
+            Select a module from the sidebar to confirm approvals or manage
+            content.
+          </p>
+        </div>
+
+        <div className="security-settings-card" style={{ minWidth: 240 }}>
+          <div className="security-title">
+            <LuShieldCheck />
+            Security Settings
+          </div>
+          <p>Keep your account secure by updating your password regularly.</p>
+          <button
+            className="btn-reset-pw"
+            onClick={() => setShowPasswordModal(true)}
+          >
+            <LuKey /> Reset Password
+          </button>
+        </div>
+      </div>
+
+      {showPasswordModal && (
+        <ResetPasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -46,8 +46,8 @@
 }
 
 .tab-btn:hover {
-  /* border-color: #3b82f6; */
-  color: #3b82f6;
+  /* border-color: #1e293b; */
+  color: #1e293b;
   transform: translateY(-2px);
 }
 
@@ -106,7 +106,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #3b82f6;
+  background: #1e293b;
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 20px;

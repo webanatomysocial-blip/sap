@@ -132,8 +132,9 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
 
 } catch (Exception $e) {
-    error_log('[manage_blogs] Exception: ' . $e->getMessage());
+    error_log('[manage_blogs] Exception in ' . $_SERVER['REQUEST_METHOD'] . ' at ' . date('H:i:s') . ': ' . $e->getMessage());
+    error_log($e->getTraceAsString());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'A server error occurred. Please try again.']);
+    echo json_encode(['status' => 'error', 'message' => 'Server Error: ' . $e->getMessage()]);
 }
 ?>

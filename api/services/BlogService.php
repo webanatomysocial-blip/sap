@@ -52,9 +52,10 @@ class BlogService {
         $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($blogs as &$b) {
-            // Defensive author checks
-            if ($b['author_role'] === 'admin' || !$b['author_id']) {
-                $b['author_name'] = "Raghu Boddu";
+            // Defensive author checks - fallback if no user/contributor found
+            if (!$b['author_name']) {
+                $b['author_name'] = "Guest Author";
+                $b['author_image'] = "https://placehold.co/100x100?text=Author";
             }
         }
 
@@ -96,8 +97,9 @@ class BlogService {
         $blog = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($blog) {
-            if ($blog['author_role'] === 'admin' || !$blog['author_id']) {
-                $blog['author_name'] = "Raghu Boddu";
+            if (!$blog['author_name']) {
+                $blog['author_name'] = "Guest Author";
+                $blog['author_image'] = "https://placehold.co/100x100?text=Author";
             }
         }
 
@@ -126,7 +128,7 @@ class BlogService {
         $content = $data['content'] ?? '';
         $date = $data['date'] ?? gmdate('Y-m-d');
         $image = $data['image'] ?? '';
-        $category = $data['category'] ?? 'sap-security';
+        $category = $data['category'] ?? '';
         $tags = $data['tags'] ?? '';
         $meta_title = $data['meta_title'] ?? '';
         $meta_description = $data['meta_description'] ?? '';
@@ -136,6 +138,11 @@ class BlogService {
         $cta_description = $data['cta_description'] ?? null;
         $cta_button_text = $data['cta_button_text'] ?? null;
         $cta_button_link = $data['cta_button_link'] ?? null;
+
+        // Validation
+        if (empty($category) || $category === 'Select Category' || $category === 'none') {
+            return ['status' => 'error', 'message' => 'Please select a valid blog category'];
+        }
  
         // Calculate SEO Score
         require_once __DIR__ . '/../utils.php';
@@ -157,14 +164,16 @@ class BlogService {
                 return ['status' => 'error', 'message' => 'Unauthorized'];
             }
 
-            // Edit Preservation: If blog is already approved AND NOT ADMIN, use draft columns
-            if ($existing['submission_status'] === 'approved' && $existing['status'] === 'approved' && !$isAdmin) {
+            // Edit Preservation: If blog is already approved/published AND NOT ADMIN, use draft columns
+            if (in_array($existing['status'], ['approved', 'published']) && !$isAdmin) {
                 $sql = "UPDATE blogs SET 
                         draft_title = ?, draft_excerpt = ?, draft_content = ?, 
                         draft_meta_title = ?, draft_meta_description = ?, draft_meta_keywords = ?,
                         draft_image = ?, draft_category = ?, draft_faqs = ?,
                         draft_cta_title = ?, draft_cta_description = ?, 
                         draft_cta_button_text = ?, draft_cta_button_link = ?,
+                        seo_score = ?, plagiarism_score = ?,
+                        submission_status = 'edited', updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?";
                 $plagRes = checkPlagiarismScore($content, $id, $this->pdo);
                 $plagScore = $plagRes['score'];
@@ -184,7 +193,7 @@ class BlogService {
                 if ($plagScore === -1) $msg .= ' (Warning: Plagiarism check failed)';
                 return ['status' => 'success', 'message' => $msg, 'plagiarism_score' => $finalPlag];
             } else {
-                // Traditional Update (for drafts or initial admin creation)
+                // Traditional Update (for drafts or initial admin creation/approval)
                 $targetStatus = $isAdmin ? 'approved' : 'draft';
                 $subStatus = $isAdmin ? 'approved' : 'submitted';
 
@@ -192,9 +201,12 @@ class BlogService {
                         title=?, slug=?, excerpt=?, content=?, date=?, image=?, category=?, tags=?, faqs=?,
                         cta_title=?, cta_description=?, cta_button_text=?, cta_button_link=?,
                         meta_title=?, meta_description=?, meta_keywords=?,
-                        status=?, submission_status=?,
+                        status=?, submission_status=?, rejection_feedback = NULL,
                         author_id = ?, author = ?, seo_score = ?, plagiarism_score = ?, plagiarism_status = 'completed',
-                        draft_title=NULL, draft_content=NULL, draft_excerpt=NULL -- Reset drafts
+                        draft_title=NULL, draft_content=NULL, draft_excerpt=NULL, draft_image=NULL, 
+                        draft_category=NULL, draft_faqs=NULL, draft_meta_title=NULL, draft_meta_description=NULL,
+                        draft_meta_keywords=NULL, draft_cta_title=NULL, draft_cta_description=NULL,
+                        draft_cta_button_text=NULL, draft_cta_button_link=NULL
                         WHERE id=?";
                 $plagRes = checkPlagiarismScore($content, $id, $this->pdo);
                 $plagScore = $plagRes['score'];

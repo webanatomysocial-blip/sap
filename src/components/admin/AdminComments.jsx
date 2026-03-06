@@ -5,24 +5,28 @@ import useScrollLock from "../../hooks/useScrollLock";
 import ActionMenu from "./ActionMenu";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
+import { getComments, updateComment } from "../../services/api";
+import api from "../../services/api";
 
 const AdminComments = () => {
   const [comments, setComments] = useState([]);
   const [filter, setFilter] = useState("pending");
   const [editingComment, setEditingComment] = useState(null);
   const [viewingComment, setViewingComment] = useState(null);
+  const [rejectingComment, setRejectingComment] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
   const [editText, setEditText] = useState("");
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
 
   useScrollLock(!!editingComment);
 
-  const fetchComments = async () => {
+  const fetchCommentsData = async () => {
     try {
-      const res = await fetch("/api/admin/comments");
-      if (res.ok) {
-        const data = await res.json();
-        setComments(data);
+      const res = await getComments();
+      if (res.data) {
+        setComments(res.data);
       }
     } catch (error) {
       console.error("Fetch comments failed", error);
@@ -31,18 +35,20 @@ const AdminComments = () => {
   };
 
   useEffect(() => {
-    fetchComments();
+    fetchCommentsData();
   }, []);
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus, rejection_reason = null) => {
     try {
-      const res = await fetch("/api/admin/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: newStatus }),
+      const res = await updateComment({
+        id,
+        status: newStatus,
+        rejection_reason,
       });
-      if (res.ok) {
-        fetchComments();
+      if (res.data.status === "success") {
+        fetchCommentsData();
+        setRejectingComment(null);
+        setRejectReason("");
         addToast(`Comment ${newStatus} successfully`, "success");
       } else {
         addToast("Failed to update status", "error");
@@ -64,19 +70,15 @@ const AdminComments = () => {
 
   const handleSaveEdit = async () => {
     try {
-      const res = await fetch("/api/admin/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editingComment.id,
-          action: "edit",
-          content: editText,
-        }),
+      const res = await updateComment({
+        id: editingComment.id,
+        action: "edit",
+        content: editText,
       });
-      if (res.ok) {
+      if (res.data.status === "success") {
         setEditingComment(null);
         setEditText("");
-        fetchComments();
+        fetchCommentsData();
         addToast("Comment updated successfully", "success");
       } else {
         addToast("Failed to update comment", "error");
@@ -95,11 +97,9 @@ const AdminComments = () => {
       isDanger: true,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/admin/comments?id=${id}`, {
-            method: "DELETE",
-          });
-          if (res.ok) {
-            fetchComments();
+          const res = await api.delete(`/admin/comments?id=${id}`);
+          if (res.data.status === "success") {
+            fetchCommentsData();
             addToast("Comment deleted successfully", "success");
           } else {
             addToast("Failed to delete comment", "error");
@@ -117,16 +117,19 @@ const AdminComments = () => {
     return c.status === filter;
   });
 
+  const submitRejection = () => {
+    if (!rejectReason.trim()) {
+      setRejectError("Rejection reason is mandatory.");
+      return;
+    }
+    handleStatusChange(rejectingComment.id, "rejected", rejectReason);
+  };
+
   return (
-    <div className="admin-content">
-      <div className="admin-header-actions">
-        <div className="admin-title-group">
-          <h2>Comments</h2>
-          <button className="btn-primary" onClick={fetchComments}>
-            <i className="bi bi-arrow-clockwise"></i> Refresh
-          </button>
-        </div>
-        <div className="filter-group">
+    <div className="admin-page-wrapper">
+      <div className="page-header">
+        <h3>Comments</h3>
+        <div className="status-filter-tabs" style={{ margin: 0 }}>
           <button
             className={`btn-filter ${filter === "pending" ? "active" : ""}`}
             onClick={() => setFilter("pending")}
@@ -150,6 +153,11 @@ const AdminComments = () => {
             onClick={() => setFilter("all")}
           >
             All
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <button className="btn-primary" onClick={fetchCommentsData}>
+            <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
         </div>
       </div>
@@ -189,9 +197,38 @@ const AdminComments = () => {
                     </td>
                     <td className="text-left col-content">
                       {comment.parent_id && (
-                        <div className="reply-indicator">
-                          <span className="badge-reply">
-                            Reply to #{comment.parent_id}
+                        <div
+                          className="reply-context"
+                          style={{
+                            marginBottom: "8px",
+                            padding: "6px 10px",
+                            background: "var(--slate-50)",
+                            borderLeft: "3px solid var(--slate-300)",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            color: "var(--slate-500)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--slate-700)",
+                            }}
+                          >
+                            Reply to{" "}
+                            {comment.parent_author ||
+                              `Comment #${comment.parent_id}`}
+                            :{" "}
+                          </span>
+                          <span
+                            title={comment.parent_text}
+                            style={{ fontStyle: "italic" }}
+                          >
+                            {comment.parent_text
+                              ? comment.parent_text.length > 50
+                                ? comment.parent_text.substring(0, 50) + "..."
+                                : comment.parent_text
+                              : "Original comment not found"}
                           </span>
                         </div>
                       )}
@@ -214,17 +251,15 @@ const AdminComments = () => {
                     </td>
                     <td className="text-left col-post">
                       {comment.slug ? (
-                        <span className="col-post-truncate">
-                          <a
-                            href={`/blogs/${comment.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="post-link"
-                            title={comment.slug}
-                          >
-                            View Post
-                          </a>
-                        </span>
+                        <a
+                          href={`/blogs/${comment.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="post-link"
+                          title={comment.slug}
+                        >
+                          View Post
+                        </a>
                       ) : (
                         <span className="post-id-fallback">
                           ID: {comment.post_id}
@@ -251,41 +286,47 @@ const AdminComments = () => {
                       <ActionMenu>
                         {comment.status !== "approved" && (
                           <button
-                            className="btn-approve"
+                            className="action-menu-item"
                             onClick={() =>
                               handleStatusChange(comment.id, "approved")
                             }
+                            style={{ color: "var(--success-green)" }}
                           >
-                            Approve
+                            <i className="bi bi-check-circle"></i> Approve
                           </button>
                         )}
 
-                        {/* Show Reject button only if not approved and not rejected */}
                         {comment.status !== "approved" &&
                           comment.status !== "rejected" && (
                             <button
-                              className="btn-reject"
-                              onClick={() =>
-                                handleStatusChange(comment.id, "rejected")
-                              }
+                              className="action-menu-item"
+                              onClick={() => {
+                                setRejectingComment(comment);
+                                setRejectReason("");
+                                setRejectError("");
+                              }}
+                              style={{ color: "var(--warning-yellow)" }}
                             >
-                              Reject
+                              <i className="bi bi-x-circle"></i> Reject
                             </button>
                           )}
 
-                        {/* Always show View/Edit regardless of tab */}
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleEdit(comment)}
-                        >
-                          View/Edit
-                        </button>
+                        <div className="action-menu-separator"></div>
 
                         <button
-                          className="btn-delete"
+                          className="action-menu-item"
+                          onClick={() => handleEdit(comment)}
+                        >
+                          <i className="bi bi-pencil-square"></i> View/Edit
+                        </button>
+
+                        <div className="action-menu-separator"></div>
+
+                        <button
+                          className="action-menu-item danger"
                           onClick={() => handleDelete(comment.id)}
                         >
-                          Delete
+                          <i className="bi bi-trash"></i> Delete
                         </button>
                       </ActionMenu>
                     </td>
@@ -359,6 +400,32 @@ const AdminComments = () => {
                   </p>
                 </div>
               )}
+
+              {editingComment.status === "rejected" &&
+                editingComment.rejection_reason && (
+                  <div
+                    className="form-group"
+                    style={{
+                      background: "#fff1f2",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid #fecaca",
+                    }}
+                  >
+                    <label className="form-label" style={{ color: "#991b1b" }}>
+                      Rejection Reason
+                    </label>
+                    <p
+                      style={{
+                        margin: "4px 0 0",
+                        color: "#b91c1c",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {editingComment.rejection_reason}
+                    </p>
+                  </div>
+                )}
             </div>
             <div className="modal-footer">
               <button
@@ -429,6 +496,27 @@ const AdminComments = () => {
                     </span>
                   </div>
                 </div>
+
+                {viewingComment.status === "rejected" &&
+                  viewingComment.rejection_reason && (
+                    <div
+                      className="view-group"
+                      style={{
+                        background: "#fff1f2",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        border: "1px solid #fecaca",
+                        marginTop: "16px",
+                      }}
+                    >
+                      <label style={{ color: "#991b1b" }}>
+                        Rejection Reason
+                      </label>
+                      <p style={{ margin: "4px 0 0", color: "#b91c1c" }}>
+                        {viewingComment.rejection_reason}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
             <div className="modal-footer">
@@ -437,6 +525,76 @@ const AdminComments = () => {
                 onClick={() => setViewingComment(null)}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Rejection Modal */}
+      {rejectingComment && (
+        <div
+          className="modal-overlay"
+          onClick={() => setRejectingComment(null)}
+        >
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, color: "#991b1b" }}>Reject Comment</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setRejectingComment(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p
+                style={{
+                  color: "#64748b",
+                  fontSize: "0.9rem",
+                  marginBottom: "16px",
+                }}
+              >
+                Provide a reason for rejecting this comment. Feedback helps
+                maintain community standards.
+              </p>
+              <div className="form-group">
+                <label>Rejection Reason (Mandatory)</label>
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  value={rejectReason}
+                  onChange={(e) => {
+                    setRejectReason(e.target.value);
+                    if (e.target.value.trim()) setRejectError("");
+                  }}
+                  placeholder="e.g., Spam, offensive language, or irrelevant."
+                  style={{
+                    borderColor: rejectError ? "#ef4444" : "var(--slate-300)",
+                  }}
+                />
+                {rejectError && (
+                  <small
+                    style={{
+                      color: "#ef4444",
+                      fontWeight: 600,
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    {rejectError}
+                  </small>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-cancel"
+                onClick={() => setRejectingComment(null)}
+              >
+                Cancel
+              </button>
+              <button className="btn-danger" onClick={submitRejection}>
+                Confirm Rejection
               </button>
             </div>
           </div>

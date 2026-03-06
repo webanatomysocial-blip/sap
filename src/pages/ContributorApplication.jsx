@@ -50,19 +50,26 @@ const ContributorApplication = () => {
     shortBio: "",
 
     // Section 3
-    contentTypes: {
+    contributionTypes: {
       technicalArticle: false,
       opinionPiece: false,
       news: false,
       tools: false,
     },
     proposedTopics: "",
-    contributedElsewhere: "No",
+    contributedElsewhere: "", // Remove default "No"
     previousWorkLinks: "",
 
     // Section 4
-    preferredFrequency: "One-time",
-    primaryMotivation: "",
+    preferredFrequency: "", // Remove default "One-time"
+    primaryMotivation: {
+      knowledgeSharing: false,
+      professionalVisibility: false,
+      networkingWithExperts: false,
+      communityImpact: false,
+      personalBrandBuilding: false,
+      contributingToEcosystem: false,
+    },
 
     // New Fields
     weeklyTime: "",
@@ -82,8 +89,17 @@ const ContributorApplication = () => {
   });
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type } = e.target;
+
+    // Prevent negative numbers for experience
+    if (type === "number" && value < 0) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleCheckboxGroupChange = (section, key, checked) => {
@@ -114,6 +130,17 @@ const ContributorApplication = () => {
     Object.keys(formData).forEach((key) => {
       if (key === "expertise" || key === "contributionTypes") {
         payload.append(key, JSON.stringify(formData[key]));
+      } else if (key === "primaryMotivation") {
+        // Convert object of booleans to comma separated string for backward compatibility with backend
+        const selectedMotivations = Object.keys(formData.primaryMotivation)
+          .filter((k) => formData.primaryMotivation[k] === true)
+          .map((k) =>
+            k
+              .replace(/([A-Z])/g, " $1")
+              .replace(/^./, (str) => str.toUpperCase()),
+          ) // format camelCase to Title Case
+          .join(", ");
+        payload.append(key, selectedMotivations || "");
       } else if (key === "profilePhoto") {
         if (formData.profilePhoto instanceof File) {
           payload.append("profilePhoto", formData.profilePhoto);
@@ -124,24 +151,18 @@ const ContributorApplication = () => {
     });
 
     try {
-      // Use fetch to allow multipart/form-data
-      const API_URL = import.meta.env.VITE_API_URL || "/api";
-      const response = await fetch(`${API_URL}/contributors/apply`, {
-        method: "POST",
-        body: payload,
-      });
+      // Use standardized API service
+      const res = await applyContributor(payload);
 
-      const result = await response.json();
-
-      if (response.ok && result.status === "success") {
+      if (res.data?.status === "success") {
         setSubmitStatus("success");
         addToast("Application Submitted Successfully!", "success");
         window.scrollTo(0, 0);
       } else {
-        console.error("Server error:", result.message);
+        console.error("Server error:", res.data?.message);
         setSubmitStatus("error");
         addToast(
-          result.message ||
+          res.data?.message ||
             "Something went wrong while submitting your application. Please try again.",
           "error",
         );
@@ -149,10 +170,10 @@ const ContributorApplication = () => {
     } catch (error) {
       console.error("Network error submitting application:", error);
       setSubmitStatus("error");
-      addToast(
-        "We're having trouble connecting to the system. Please check your internet connection and try again.",
-        "error",
-      );
+      const errorMsg =
+        error.response?.data?.message ||
+        "We're having trouble connecting to the system. Please check your internet connection and try again.";
+      addToast(errorMsg, "error");
     } finally {
       setIsSubmitting(false);
       if (submitStatus === "success") {
@@ -262,9 +283,11 @@ const ContributorApplication = () => {
                       name="designation"
                       value={formData.designation}
                       onChange={handleInputChange}
+                      placeholder="e.g. SAP Security Consultant"
                     />
                   </div>
                 </div>
+
                 <div className="form-row">
                   <div className="form-group full">
                     <label className="form-label">Applying for Role</label>
@@ -305,6 +328,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>SAP Security (ABAP/Java)</span>
                     </label>
                     <label className="checkbox-item">
@@ -319,6 +343,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>SAP GRC (Access Control, Process Control, RM)</span>
                     </label>
                     <label className="checkbox-item">
@@ -333,6 +358,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Audit & Compliance</span>
                     </label>
                     <label className="checkbox-item">
@@ -347,6 +373,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Cybersecurity</span>
                     </label>
                     <label className="checkbox-item">
@@ -361,6 +388,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>IAM / Cloud Security</span>
                     </label>
                     <label className="checkbox-item">
@@ -375,6 +403,7 @@ const ContributorApplication = () => {
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Data Security & Privacy</span>
                     </label>
                   </div>
@@ -422,34 +451,62 @@ const ContributorApplication = () => {
 
                 <div className="form-group">
                   <label className="form-label">
-                    Are you open to volunteer for physical events? (Yes/No)
+                    Are you open to volunteer for physical events?
                   </label>
-                  <select
-                    className="form-control"
-                    name="volunteerEvents"
-                    value={formData.volunteerEvents}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
+                  <div className="checkbox-group">
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="volunteerEvents"
+                        value="Yes"
+                        checked={formData.volunteerEvents === "Yes"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Yes</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="volunteerEvents"
+                        value="No"
+                        checked={formData.volunteerEvents === "No"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>No</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">
-                    Are you open for specific product evaluations? (Yes/No)
+                    Are you open for specific product evaluations?
                   </label>
-                  <select
-                    className="form-control"
-                    name="productEvaluation"
-                    value={formData.productEvaluation}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
+                  <div className="checkbox-group">
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="productEvaluation"
+                        value="Yes"
+                        checked={formData.productEvaluation === "Yes"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Yes</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="productEvaluation"
+                        value="No"
+                        checked={formData.productEvaluation === "No"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>No</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="form-group">
@@ -475,57 +532,61 @@ const ContributorApplication = () => {
                     <label className="checkbox-item">
                       <input
                         type="checkbox"
-                        checked={formData.contentTypes.technicalArticle}
+                        checked={formData.contributionTypes.technicalArticle}
                         onChange={(e) =>
                           handleCheckboxGroupChange(
-                            "contentTypes",
+                            "contributionTypes",
                             "technicalArticle",
                             e.target.checked,
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Technical Article / Tutorial</span>
                     </label>
                     <label className="checkbox-item">
                       <input
                         type="checkbox"
-                        checked={formData.contentTypes.opinionPiece}
+                        checked={formData.contributionTypes.opinionPiece}
                         onChange={(e) =>
                           handleCheckboxGroupChange(
-                            "contentTypes",
+                            "contributionTypes",
                             "opinionPiece",
                             e.target.checked,
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Opinion Piece / Thought Leadership</span>
                     </label>
                     <label className="checkbox-item">
                       <input
                         type="checkbox"
-                        checked={formData.contentTypes.news}
+                        checked={formData.contributionTypes.news}
                         onChange={(e) =>
                           handleCheckboxGroupChange(
-                            "contentTypes",
+                            "contributionTypes",
                             "news",
                             e.target.checked,
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>News / Industry Updates</span>
                     </label>
                     <label className="checkbox-item">
                       <input
                         type="checkbox"
-                        checked={formData.contentTypes.tools}
+                        checked={formData.contributionTypes.tools}
                         onChange={(e) =>
                           handleCheckboxGroupChange(
-                            "contentTypes",
+                            "contributionTypes",
                             "tools",
                             e.target.checked,
                           )
                         }
                       />
+                      <div className="box-indicator"></div>
                       <span>Tools, Scripts, or Resources</span>
                     </label>
                   </div>
@@ -549,15 +610,30 @@ const ContributorApplication = () => {
                   <label className="form-label">
                     Have you contributed elsewhere?
                   </label>
-                  <select
-                    className="form-control"
-                    name="contributedElsewhere"
-                    value={formData.contributedElsewhere}
-                    onChange={handleInputChange}
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </select>
+                  <div className="checkbox-group">
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="contributedElsewhere"
+                        value="Yes"
+                        checked={formData.contributedElsewhere === "Yes"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Yes</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="radio"
+                        name="contributedElsewhere"
+                        value="No"
+                        checked={formData.contributedElsewhere === "No"}
+                        onChange={handleInputChange}
+                      />
+                      <div className="box-indicator"></div>
+                      <span>No</span>
+                    </label>
+                  </div>
                 </div>
 
                 {formData.contributedElsewhere === "Yes" && (
@@ -583,30 +659,128 @@ const ContributorApplication = () => {
                   <label className="form-label">
                     Preferred Contribution Frequency
                   </label>
-                  <select
-                    className="form-control"
-                    name="preferredFrequency"
-                    value={formData.preferredFrequency}
-                    onChange={handleInputChange}
-                  >
-                    <option value="One-time">One-time</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Ad-hoc">Ad-hoc</option>
-                  </select>
+                  <div className="checkbox-grid">
+                    {["One-time", "Monthly", "Quarterly", "Ad-hoc"].map(
+                      (freq) => (
+                        <label key={freq} className="checkbox-item">
+                          <input
+                            type="radio"
+                            name="preferredFrequency"
+                            value={freq}
+                            checked={formData.preferredFrequency === freq}
+                            onChange={handleInputChange}
+                          />
+                          <div className="box-indicator"></div>
+                          <span>{freq}</span>
+                        </label>
+                      ),
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">
                     Primary Motivation for Contributing
                   </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="primaryMotivation"
-                    placeholder="Knowledge sharing, visibility, community impact, etc."
-                    value={formData.primaryMotivation}
-                    onChange={handleInputChange}
-                  />
+                  <div className="checkbox-grid">
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={formData.primaryMotivation.knowledgeSharing}
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "knowledgeSharing",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Knowledge Sharing</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={
+                          formData.primaryMotivation.professionalVisibility
+                        }
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "professionalVisibility",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Professional Visibility</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={
+                          formData.primaryMotivation.networkingWithExperts
+                        }
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "networkingWithExperts",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Networking with Experts</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={formData.primaryMotivation.communityImpact}
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "communityImpact",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Community Impact</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={
+                          formData.primaryMotivation.personalBrandBuilding
+                        }
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "personalBrandBuilding",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Personal Brand Building</span>
+                    </label>
+                    <label className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={
+                          formData.primaryMotivation.contributingToEcosystem
+                        }
+                        onChange={(e) =>
+                          handleCheckboxGroupChange(
+                            "primaryMotivation",
+                            "contributingToEcosystem",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      <div className="box-indicator"></div>
+                      <span>Contributing to the SAP Ecosystem</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -919,10 +1093,12 @@ const ContributorApplication = () => {
                 <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
+                    checked={formData.agree1}
                     onChange={(e) =>
                       setFormData({ ...formData, agree1: e.target.checked })
                     }
                   />
+                  <div className="box-indicator"></div>
                   <span>
                     I confirm that the submitted content will be original and
                     not infringe on copyrights.
@@ -931,10 +1107,12 @@ const ContributorApplication = () => {
                 <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
+                    checked={formData.agree2}
                     onChange={(e) =>
                       setFormData({ ...formData, agree2: e.target.checked })
                     }
                   />
+                  <div className="box-indicator"></div>
                   <span>
                     I agree that the editorial team may review, edit, or suggest
                     changes before publishing.
@@ -943,10 +1121,12 @@ const ContributorApplication = () => {
                 <label className="checkbox-item full-width">
                   <input
                     type="checkbox"
+                    checked={formData.agree3}
                     onChange={(e) =>
                       setFormData({ ...formData, agree3: e.target.checked })
                     }
                   />
+                  <div className="box-indicator"></div>
                   <span>
                     I agree to the Terms &amp; Conditions and Community
                     Guidelines.

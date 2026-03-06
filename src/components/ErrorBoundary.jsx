@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component {
           >
             Reload Page
           </button>
-          {process.env.NODE_ENV === "development" && (
+          {import.meta.env.DEV && (
             <details
               style={{
                 whiteSpace: "pre-wrap",

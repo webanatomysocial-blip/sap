@@ -15,6 +15,13 @@ $isContributor = isset($_SESSION['role']) && $_SESSION['role'] === 'contributor'
 $currentUserId = $_SESSION['admin_id'] ?? null;
 
 try {
+    $status = $_GET['status'] ?? 'pending';
+    
+    $whereClause = "WHERE b.submission_status IN ('submitted', 'edited')";
+    if ($status === 'rejected') {
+        $whereClause = "WHERE b.submission_status = 'rejected'";
+    }
+
     $sql = "SELECT b.*, 
                    u.id as author_id, u.username as author_username, u.role as author_role,
                    COALESCE(c.full_name, u.full_name, u.username) as author_name,
@@ -23,7 +30,7 @@ try {
             FROM blogs b
             LEFT JOIN users u ON u.id = b.author_id
             LEFT JOIN contributors c ON c.id = u.contributor_id
-            WHERE b.submission_status IN ('submitted', 'edited')";
+            $whereClause";
 
     $params = [];
     if ($isContributor && $currentUserId) {

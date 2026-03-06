@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import ActionMenu from "./ActionMenu";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
+import { getAds, saveAd } from "../../services/api";
+import api from "../../services/api";
 
 const AdminAds = () => {
   const [ads, setAds] = useState({
@@ -13,24 +15,18 @@ const AdminAds = () => {
   const [uploading, setUploading] = useState(null);
   const [message, setMessage] = useState("");
 
-  // editingZone is declared later, so we should move useScrollLock there or move state up.
-  // BETTER: Move useScrollLock to after the existing state declaration or move state up.
-  // Since I can't easily see where the other declaration is without reading full file again,
-  // I will just remove this block and add useScrollLock where editingZone IS declared.
-
   useEffect(() => {
-    const fetchAds = async () => {
+    const fetchAdsData = async () => {
       try {
-        const res = await fetch("/api/admin/ads");
-        if (res.ok) {
-          const data = await res.json();
-          setAds((prev) => ({ ...prev, ...data }));
+        const res = await getAds();
+        if (res.data) {
+          setAds((prev) => ({ ...prev, ...res.data }));
         }
       } catch (error) {
         console.error("Failed to fetch ads", error);
       }
     };
-    fetchAds();
+    fetchAdsData();
   }, []);
 
   const handleImageUpload = async (zone, file) => {
@@ -40,25 +36,22 @@ const AdminAds = () => {
     formData.append("zone", zone);
 
     try {
-      const res = await fetch("/api/upload-ad-image", {
-        method: "POST",
-        body: formData,
+      const res = await api.post("/upload-ad-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const result = await res.json();
-
-      if (result.status === "success") {
+      if (res.data.status === "success") {
         setAds((prev) => ({
           ...prev,
           [zone]: {
             ...prev[zone],
-            image: result.path,
+            image: res.data.path,
           },
         }));
         setMessage(`Image uploaded for ${zone}`);
         setTimeout(() => setMessage(""), 3000);
       } else {
-        setMessage(`Upload failed: ${result.message}`);
+        setMessage(`Upload failed: ${res.data.message}`);
       }
     } catch (error) {
       console.error("Upload failed", error);
@@ -82,11 +75,7 @@ const AdminAds = () => {
     try {
       const promises = Object.keys(ads).map((zone) => {
         const adData = { ...ads[zone], zone };
-        return fetch("/api/admin/ads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(adData),
-        });
+        return saveAd(adData);
       });
 
       await Promise.all(promises);
@@ -135,13 +124,9 @@ const AdminAds = () => {
 
     try {
       const zoneData = { ...ads[editingZone], zone: editingZone };
-      const res = await fetch("/api/admin/ads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(zoneData),
-      });
+      const res = await saveAd(zoneData);
 
-      if (res.ok) {
+      if (res.data.status === "success") {
         setMessage("Changes saved successfully!");
         setTimeout(() => {
           handleCloseModal();
@@ -158,7 +143,7 @@ const AdminAds = () => {
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
-        <h2>Ads & Promotions</h2>
+        <h3>Ads & Promotions</h3>
       </div>
 
       <div className="admin-card">
@@ -202,7 +187,7 @@ const AdminAds = () => {
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            color: "#2563eb",
+                            color: "#1e293b",
                             textDecoration: "underline",
                           }}
                         >
@@ -224,10 +209,10 @@ const AdminAds = () => {
                     <td className="text-center">
                       <ActionMenu>
                         <button
-                          className="btn-edit"
+                          className="action-menu-item"
                           onClick={() => handleEdit(zone.id)}
                         >
-                          Edit
+                          <i className="bi bi-pencil-square"></i> Edit
                         </button>
                       </ActionMenu>
                     </td>
@@ -323,7 +308,7 @@ const AdminAds = () => {
                         style={{ marginBottom: "8px" }}
                       />
                       {uploading === editingZone && (
-                        <p style={{ color: "#2563eb", fontSize: "0.85rem" }}>
+                        <p style={{ color: "#1e293b", fontSize: "0.85rem" }}>
                           Uploading...
                         </p>
                       )}
@@ -337,7 +322,7 @@ const AdminAds = () => {
                     type="url"
                     value={ads[editingZone].link}
                     onChange={(e) =>
-                      handleChange(editingZone, "link", e.target.value)
+                      handleChange(editingZone, "link", e.target.value.trim())
                     }
                     placeholder="https://..."
                     className="form-control"

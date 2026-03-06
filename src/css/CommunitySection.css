@@ -404,6 +404,34 @@
 /* Announcements */
 .announcements-list {
   margin-bottom: 16px;
+  max-height: 300px; /* Precise height for 4-5 items */
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.announcements-list:hover {
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* For Webkit browsers */
+.announcements-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.announcements-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.announcements-list::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.announcements-list:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
 }
 
 .announcement-item {
@@ -643,6 +671,37 @@
 }
 
 /* New Contributor Card Styles */
+.contributors-list-left {
+  max-height: 250px; /* Precise height for ~3 items */
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: transparent transparent; /* Hide by default */
+  transition: scrollbar-color 0.3s ease;
+}
+
+.contributors-list-left:hover {
+  scrollbar-color: #cbd5e1 transparent; /* Show on hover */
+}
+
+/* For Webkit browsers (Chrome, Safari, Edge) */
+.contributors-list-left::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contributors-list-left::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.contributors-list-left::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.contributors-list-left:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
 /* .contributor-card styles */
 .contributor-card-new {
   display: flex;
@@ -650,6 +709,13 @@
   gap: 15px;
   padding: 10px;
   border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.contributor-card-new:hover {
+  background-color: #f8fafc;
+  transform: translateX(4px);
 }
 
 .contributor-card-new:last-child {
@@ -667,7 +733,7 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background-color: #3b82f6;
+  background-color: #1e293b;
   color: white;
   display: flex;
   align-items: center;

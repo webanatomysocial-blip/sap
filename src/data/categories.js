@@ -39,7 +39,7 @@ export const categories = [
       { name: "Product Reviews", slug: "product-reviews" },
       { name: "Podcasts", slug: "podcasts" },
       { name: "Videos", slug: "videos" },
-      { name: "Useful Tools", slug: "other-tools" },
+      { name: "Expert Recommendations", slug: "other-tools" },
     ],
   },
 ];

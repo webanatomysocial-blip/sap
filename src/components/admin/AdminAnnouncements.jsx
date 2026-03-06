@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "../../css/AdminDashboard.css";
-// import { API_BASE_URL } from "../../config";
-import ActionMenu from "./ActionMenu";
 import useScrollLock from "../../hooks/useScrollLock";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
+import { getAnnouncements, saveAnnouncement } from "../../services/api";
+import api from "../../services/api";
+
+import AnnouncementList from "./announcements/AnnouncementList";
+import AnnouncementModal from "./announcements/AnnouncementModal";
 
 const AdminAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -20,23 +23,20 @@ const AdminAnnouncements = () => {
     link: "",
     status: "active",
     comments: 0,
+    publish_date: "",
   });
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncementsData = async () => {
     try {
-      const res = await fetch("/api/admin/announcements");
-      if (res.ok) {
-        const data = await res.json();
-        setAnnouncements(data);
-      }
+      const res = await getAnnouncements(true);
+      if (res.data) setAnnouncements(res.data);
     } catch (error) {
-      console.error("Error fetching announcements:", error);
       addToast("Failed to fetch announcements", "error");
     }
   };
 
   useEffect(() => {
-    fetchAnnouncements();
+    fetchAnnouncementsData();
   }, []);
 
   const handleOpenModal = (announcement = null) => {
@@ -51,6 +51,7 @@ const AdminAnnouncements = () => {
         link: "",
         status: "active",
         comments: 0,
+        publish_date: "",
       });
     }
     setIsModalOpen(true);
@@ -68,31 +69,21 @@ const AdminAnnouncements = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const payload = { ...formData };
       if (editingId) payload.id = editingId;
-
-      const res = await fetch("/api/admin/announcements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        fetchAnnouncements();
+      const res = await saveAnnouncement(payload);
+      if (res.data.status === "success") {
+        fetchAnnouncementsData();
         handleCloseModal();
         addToast(
-          editingId
-            ? "Announcement updated successfully"
-            : "Announcement created successfully",
+          editingId ? "Updated successfully" : "Created successfully",
           "success",
         );
       } else {
-        addToast("Failed to save announcement.", "error");
+        addToast("Failed to save.", "error");
       }
     } catch (error) {
-      console.error("Error saving:", error);
       addToast("Error saving announcement", "error");
     }
   };
@@ -100,163 +91,80 @@ const AdminAnnouncements = () => {
   const handleDelete = (id) => {
     openConfirm({
       title: "Delete Announcement?",
-      message: "Are you sure you want to delete this announcement?",
+      message: "Are you sure?",
       confirmText: "Delete",
       isDanger: true,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/admin/announcements?id=${id}`, {
-            method: "DELETE",
-          });
-          if (res.ok) {
-            fetchAnnouncements();
-            addToast("Announcement deleted successfully", "success");
-          } else {
-            addToast("Failed to delete announcement", "error");
+          const res = await api.delete(`/admin/announcements?id=${id}`);
+          if (res.data.status === "success") {
+            fetchAnnouncementsData();
+            addToast("Deleted successfully", "success");
           }
         } catch (error) {
-          console.error("Error deleting:", error);
           addToast("Error deleting announcement", "error");
         }
       },
     });
   };
 
+  const handleReview = async (id, action) => {
+    try {
+      const res = await api.post(`/admin/announcements/${id}/review`, {
+        action,
+      });
+      if (res.data.status === "success") {
+        fetchAnnouncementsData();
+        addToast(`Announcement ${action}ed successfully`, "success");
+      } else {
+        addToast(res.data.message || "Action failed", "error");
+      }
+    } catch (error) {
+      addToast(`Error ${action}ing announcement`, "error");
+    }
+  };
+
+  const formatDateLabel = (dateString) => {
+    if (!dateString) return "No Date";
+    const d = new Date(
+      dateString.includes(" ")
+        ? dateString.replace(" ", "T") + "Z"
+        : dateString + "T00:00:00Z",
+    );
+    return isNaN(d.getTime())
+      ? dateString
+      : d.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+  };
+
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
-        <h2>Announcements</h2>
+        <h3>Announcements</h3>
         <button className="btn-primary" onClick={() => handleOpenModal()}>
           <i className="bi bi-plus-lg"></i> New Announcement
         </button>
       </div>
 
-      <div className="admin-card">
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th className="text-left">Title</th>
-                <th className="text-left">Date</th>
-                <th className="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {announcements.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="text-center">
-                    No announcements found.
-                  </td>
-                </tr>
-              ) : (
-                announcements.map((item) => (
-                  <tr key={item.id}>
-                    <td className="text-left">{item.title}</td>
-                    <td className="text-left">
-                      {new Date(item.date).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                        timeZone: "UTC",
-                      })}
-                    </td>
-                    <td className="text-center">
-                      <ActionMenu>
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleOpenModal(item)}
-                          title="Edit"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(item.id)}
-                          title="Delete"
-                        >
-                          Delete
-                        </button>
-                      </ActionMenu>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <AnnouncementList
+        announcements={announcements}
+        onEdit={handleOpenModal}
+        onDelete={handleDelete}
+        onReview={handleReview}
+        formatDate={formatDateLabel}
+      />
 
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h3>{editingId ? "Edit Announcement" : "New Announcement"}</h3>
-              <button className="modal-close-btn" onClick={handleCloseModal}>
-                ×
-              </button>
-            </div>
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-                overflow: "hidden",
-                minHeight: 0, // Fix for scrolling
-              }}
-            >
-              <div className="modal-body" data-lenis-prevent>
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                    maxLength={100}
-                    className="form-control"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                    className="form-control"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Link (Optional)</label>
-                  <input
-                    type="url"
-                    name="link"
-                    value={formData.link}
-                    onChange={handleChange}
-                    placeholder="https://..."
-                    className="form-control"
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={handleCloseModal}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingId ? "Update" : "Create"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AnnouncementModal
+        isOpen={isModalOpen}
+        editingId={editingId}
+        formData={formData}
+        handleChange={handleChange}
+        handleClose={handleCloseModal}
+        handleSubmit={handleSubmit}
+      />
     </div>
   );
 };

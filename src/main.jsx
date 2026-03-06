@@ -23,6 +23,7 @@ const lenis = new Lenis({
   infinite: false,
 });
 window.lenis = lenis;
+window.__lenis = lenis;
 
 // FORCE CLEANUP on load (Aggressive)
 const removeScrollLock = () => {
@@ -48,6 +49,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
+import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -55,10 +57,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <HelmetProvider>
         <BrowserRouter>
           <ToastProvider>
-            <ConfirmationProvider>
-              <ScrollToTop />
-              <App />
-            </ConfirmationProvider>
+            <AuthProvider>
+              <ConfirmationProvider>
+                <ScrollToTop />
+                <App />
+              </ConfirmationProvider>
+            </AuthProvider>
           </ToastProvider>
         </BrowserRouter>
       </HelmetProvider>

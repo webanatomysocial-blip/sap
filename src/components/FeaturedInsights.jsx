@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 // blogMetadata import removed
-import { authors } from "../data/authors";
+// Removed static metadata import
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import "../css/FeaturedInsights.css";
 import "../css/LatestBlogs.css"; // Import LatestBlogs styling
+import { api } from "../services/api"; // Added API import
 
 // Category mapping for tabs
 const categoryMapping = {
@@ -21,28 +22,37 @@ export default function FeaturedInsights({ id }) {
   const [allBlogs, setAllBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
-
   useEffect(() => {
     // Fetch latest blogs from API
-    fetch(`${API_URL}/posts`)
-      .then((res) => res.json())
-      .then((data) => {
+    api
+      .get("/posts")
+      .then((response) => {
+        const data = response.data;
         const blogData = Array.isArray(data) ? data : data.data || [];
 
-        const mappedBlogs = blogData.map((b) => ({
-          ...b,
-          image:
-            b.image ||
-            b.featured_image ||
-            "https://placehold.co/600x400?text=No+Image",
-          date:
-            b.date ||
-            b.published_at ||
-            b.created_at ||
-            new Date().toISOString(),
-          slug: b.slug || b.id,
-        }));
+        const mappedBlogs = blogData
+          .filter(
+            (b) =>
+              (b.status === "published" ||
+                b.status === "active" ||
+                b.status === "approved") &&
+              // Use local date for better user-facing responsiveness
+              new Date(b.date || b.created_at).setHours(0, 0, 0, 0) <=
+                new Date().setHours(0, 0, 0, 0),
+          )
+          .map((b) => ({
+            ...b,
+            image:
+              b.image ||
+              b.featured_image ||
+              "https://placehold.co/600x400?text=No+Image",
+            date:
+              b.date ||
+              b.published_at ||
+              b.created_at ||
+              new Date().toISOString(),
+            slug: b.slug || b.id,
+          }));
 
         setAllBlogs(mappedBlogs);
         setLoading(false);
@@ -51,7 +61,7 @@ export default function FeaturedInsights({ id }) {
         console.error("Error fetching blogs:", err);
         setLoading(false);
       });
-  }, [API_URL]);
+  }, []);
 
   // Filter blogs based on active tab
   const getFilteredBlogs = () => {
@@ -89,16 +99,33 @@ export default function FeaturedInsights({ id }) {
         }
         return false;
       })
-      .slice(0, 3); // Limit to 3
+      .slice(0, 3); // Limit to 3 (was 6)
   };
 
   const filteredBlogs = getFilteredBlogs();
 
   // Format date
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = { month: "long", day: "numeric", year: "numeric" };
-    return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    if (!dateString) return "";
+    const date = new Date(
+      dateString.includes("T")
+        ? dateString
+        : dateString.replace(" ", "T") + "Z",
+    );
+    if (isNaN(date.getTime())) {
+      const d2 = new Date(dateString + "T00:00:00Z");
+      if (isNaN(d2.getTime())) return dateString;
+      return d2.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   // Get category badge label - Reused from LatestBlogs
@@ -111,7 +138,7 @@ export default function FeaturedInsights({ id }) {
       "sap-iag": "IAG",
       "sap-licensing": "Licensing",
       "sap-public-cloud": "Cloud",
-      "sap-btp-security": "Cybersecurity",
+      "sap-btp-security": "SAP BTP",
       "sap-cybersecurity": "Cybersecurity",
       podcasts: "Podcast",
       "other-tools": "Tools",
@@ -176,9 +203,35 @@ export default function FeaturedInsights({ id }) {
                 <h3>{blog.title}</h3>
                 <p className="latest-blog-excerpt">{blog.excerpt}</p>
                 <div className="latest-blog-meta">
-                  <span className="latest-blog-author">
-                    <i className="bi bi-person-circle"></i>{" "}
-                    {authors[blog.author]?.name || blog.author}
+                  <span
+                    className="latest-blog-author"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    {blog.author_image ? (
+                      <img
+                        src={blog.author_image}
+                        alt={blog.author_name || blog.author}
+                        style={{
+                          width: "26px",
+                          height: "26px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "1px solid #e2e8f0",
+                          flexShrink: 0,
+                        }}
+                        onError={(e) => {
+                          e.target.src =
+                            "https://placehold.co/100x100?text=Author";
+                        }}
+                      />
+                    ) : (
+                      <i className="bi bi-person-circle"></i>
+                    )}
+                    {blog.author_name || "Guest Author"}
                   </span>
                   <div className="latest-blog-stats">
                     <span>

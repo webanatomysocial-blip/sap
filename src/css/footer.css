@@ -118,7 +118,8 @@
   font-size: 11px !important;
   line-height: 1.6;
   margin-bottom: 25px;
-  width: 800px !important;
+  width: 100% !important;
+  max-width: 800px !important;
   margin-left: auto;
   margin-right: auto;
   text-align: center;
@@ -126,8 +127,8 @@
   opacity: 0.75;
   padding: 0 20px;
 }
-.footer-disclaimer a{
-  color:white !important;
+.footer-disclaimer a {
+  color: white !important;
 }
 
 /* Responsive */
@@ -168,4 +169,17 @@
   .footer-links-grid {
     grid-template-columns: 1fr;
   }
+  .footer-disclaimer {
+  font-size: 11px !important;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  width: 100% !important;
+  max-width: 400px !important;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  color: #64748b;
+  opacity: 0.75;
+  padding: 0 20px;
+}
 }

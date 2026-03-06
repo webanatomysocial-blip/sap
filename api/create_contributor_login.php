@@ -55,12 +55,25 @@ try {
         exit;
     }
 
-    // Ensure username is unique
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    if ($stmt->fetch()) {
+    // Ensure username is unique (auto-append random numbers if taken)
+    $maxTries = 5;
+    $baseUsername = $username;
+    $usernameTaken = true;
+
+    for ($i = 0; $i < $maxTries; $i++) {
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if (!$stmt->fetch()) {
+            $usernameTaken = false;
+            break;
+        }
+        // Append random 4-digit number
+        $username = $baseUsername . '_' . rand(1000, 9999);
+    }
+
+    if ($usernameTaken) {
         http_response_code(409);
-        echo json_encode(['status' => 'error', 'message' => 'Username is already taken']);
+        echo json_encode(['status' => 'error', 'message' => 'Username is already taken and could not be auto-generated uniquely']);
         exit;
     }
 

@@ -2,23 +2,34 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
+import ContributorDashboard from "./ContributorDashboard";
 import "../../css/AdminDashboard.css";
 import "../../css/admin-profile.css";
 
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 import { LuChevronDown, LuUser, LuKey, LuLogOut } from "react-icons/lu";
 import ProfileEditModal from "./ProfileEditModal";
 import ResetPasswordModal from "./ResetPasswordModal";
-import { getAdminProfile } from "../../services/api";
+import {
+  getAdminProfile,
+  getAdminStats,
+  getContributorStats,
+} from "../../services/api";
 
 const AdminLayout = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, role, permissions, setAuth, clearAuth } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [adminData, setAdminData] = useState({
     full_name: "",
     username: "",
     profile_image: "",
+  });
+  const [badges, setBadges] = useState({
+    pendingContributors: 0,
+    pendingReviews: 0,
+    pendingComments: 0,
   });
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -30,14 +41,7 @@ const AdminLayout = () => {
   const location = useLocation();
   const { addToast } = useToast();
 
-  useEffect(() => {
-    const auth = localStorage.getItem("adminAuth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-      fetchProfile();
-    }
-  }, []);
-
+  // Click outside dropdown closes it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,6 +51,36 @@ const AdminLayout = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch profile and stats when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProfile();
+      fetchBadges();
+    }
+  }, [isAuthenticated, location.pathname]);
+
+  const fetchBadges = async () => {
+    try {
+      if (role === "admin") {
+        const res = await getAdminStats();
+        setBadges({
+          pendingContributors: res.data.pending_contributors || 0,
+          pendingReviews: res.data.pending_reviews || 0,
+          pendingComments: res.data.pending_comments || 0,
+        });
+      } else if (role === "contributor") {
+        const res = await getContributorStats();
+        setBadges({
+          pendingContributors: 0,
+          pendingReviews: res.data.pending_reviews || 0,
+          pendingComments: res.data.pending_comments || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch dashboard badges", err);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -61,26 +95,19 @@ const AdminLayout = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await axios.post("/api/login", {
-        username,
-        password,
-      });
-
+      const response = await axios.post("/api/login", { username, password });
       if (response.data.status === "success") {
         addToast("Login successful! Redirecting...", "success");
-        localStorage.setItem("adminAuth", "true");
-        localStorage.setItem("adminUser", JSON.stringify(response.data.user));
-        if (response.data.csrf_token) {
-          localStorage.setItem("csrf_token", response.data.csrf_token);
-        }
-
-        // Small delay to show success message
+        setAuth({
+          user: response.data.user,
+          role: response.data.role || "admin",
+          permissions: response.data.permissions || {},
+          csrf_token: response.data.csrf_token,
+        });
         setTimeout(() => {
-          setIsAuthenticated(true);
           fetchProfile();
-        }, 800);
+        }, 400);
       }
     } catch (error) {
       addToast(
@@ -91,19 +118,11 @@ const AdminLayout = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    localStorage.removeItem("adminUser");
-    localStorage.removeItem("csrf_token");
-    setIsAuthenticated(false);
+    clearAuth();
     navigate("/");
     addToast("Logged out successfully", "success");
   };
 
-  const handleProfileUpdate = (newImage) => {
-    fetchProfile();
-  };
-
-  // Map routes to titles
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === "/admin-dashboard" || path === "/admin")
@@ -116,7 +135,11 @@ const AdminLayout = () => {
     return "Admin Dashboard";
   };
 
-  if (!isAuthenticated) {
+  // ── Login Screen ────────────────────────────────────────────────────────────
+  if (
+    !isAuthenticated &&
+    (location.pathname === "/admin" || location.pathname === "/admin/")
+  ) {
     return (
       <div className="admin-login-wrapper">
         <div className="admin-login-box">
@@ -157,9 +180,17 @@ const AdminLayout = () => {
     );
   }
 
+  // ── Authenticated layout ────────────────────────────────────────────────────
+  const isContributor = role === "contributor";
+
   return (
     <div className="admin-container">
-      <AdminSidebar onLogout={handleLogout} />
+      <AdminSidebar
+        onLogout={handleLogout}
+        role={role}
+        permissions={permissions}
+        badges={badges}
+      />
       <main className="admin-main">
         <header className="admin-header">
           <div className="header-title">
@@ -182,9 +213,11 @@ const AdminLayout = () => {
             </div>
             <div className="user-meta">
               <span className="user-name">
-                {adminData.full_name || adminData.username || "Admin User"}
+                {adminData.full_name || adminData.username || "User"}
               </span>
-              <span className="user-role">Super Admin</span>
+              <span className="user-role">
+                {isContributor ? "Contributor" : "Super Admin"}
+              </span>
             </div>
             <LuChevronDown
               className={`chevron-icon ${showDropdown ? "rotate" : ""}`}
@@ -195,16 +228,32 @@ const AdminLayout = () => {
                 className="profile-dropdown-menu"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDropdown(false);
-                    setShowProfileModal(true);
-                  }}
-                >
-                  <LuUser /> Profile
-                </button>
+                {isAuthenticated && (
+                  <button
+                    className="dropdown-item"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDropdown(false);
+                      setShowProfileModal(true);
+                    }}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      padding: "10px 16px",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontFamily: "inherit",
+                      fontSize: "0.875rem",
+                      color: "#475569",
+                    }}
+                  >
+                    <LuUser /> Profile
+                  </button>
+                )}
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -230,6 +279,7 @@ const AdminLayout = () => {
         </header>
 
         <div className="admin-content">
+          {/* Route through Outlet for both admin and contributor */}
           <Outlet />
         </div>
       </main>
@@ -237,7 +287,7 @@ const AdminLayout = () => {
       <ProfileEditModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-        onUpdate={handleProfileUpdate}
+        onUpdate={fetchProfile}
       />
       <ResetPasswordModal
         isOpen={showPasswordModal}

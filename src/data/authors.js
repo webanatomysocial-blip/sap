@@ -1,4 +1,14 @@
 export const authors = {
+  admin: {
+    name: "Raghu Boddu",
+    bio: "Raghu Boddu is a technology leader and cybersecurity professional with extensive experience in SAP Security, GRC, data protection, and enterprise risk management, and is the author of books on SAP Access Control, SAP Process Control, and SAP Identity Access Governance (IAG).",
+    image: "/assets/raghu_boddu.png",
+    socials: {
+      linkedin: "https://www.linkedin.com/in/bodduraghu/",
+      twitter: "https://x.com/GRCwithRaghu",
+      website: "https://raghuboddu.com/"
+    }
+  },
   raghu_boddu: {
     name: "Raghu Boddu",
     // role: "SAP Security Architect & Founder",

@@ -70,7 +70,11 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="modal-content password-modal">
+      <div
+        className="modal-content password-modal"
+        data-lenis-prevent
+        style={{ maxHeight: "90vh", overflowY: "auto" }}
+      >
         <div className="modal-header">
           <h3>Reset Password</h3>
           <button

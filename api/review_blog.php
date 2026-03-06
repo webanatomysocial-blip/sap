@@ -95,17 +95,18 @@ try {
         }
 
         if ($blog['submission_status'] === 'edited') {
+            // If they reject an edit, we move the whole blog to rejected so they can fix the rejected edit
             $stmt = $pdo->prepare(
-                "UPDATE blogs SET submission_status = 'approved', rejection_feedback = ? WHERE id = ?"
+                "UPDATE blogs SET submission_status = 'rejected', rejection_feedback = ? WHERE id = ?"
             );
             $stmt->execute([$rejection_reason, $id]);
-            echo json_encode(['status' => 'success', 'message' => 'Blog edit rejected, live version retained']);
+            echo json_encode(['status' => 'success', 'message' => 'Blog edit rejected. Contributor can now fix and resubmit.']);
         } else {
             $stmt = $pdo->prepare(
-                "UPDATE blogs SET submission_status = 'rejected', status = 'draft', rejection_feedback = ? WHERE id = ?"
+                "UPDATE blogs SET submission_status = 'rejected', status = 'rejected', rejection_feedback = ? WHERE id = ?"
             );
             $stmt->execute([$rejection_reason, $id]);
-            echo json_encode(['status' => 'success', 'message' => 'Blog rejected']);
+            echo json_encode(['status' => 'success', 'message' => 'Blog rejected.']);
         }
 
         $audit->log($_SESSION['admin_id'], 'blog_reject', 'blog', $id, "Reason: " . $rejection_reason);

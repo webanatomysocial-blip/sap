@@ -9,11 +9,11 @@ const SEO = ({
   type = "website",
   keywords,
   author,
+  schemaData,
 }) => {
   const siteTitle = "SAP Security Expert";
   const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
-  // Ensure absolute URL for image
-  const domain = "https://sapsecurityexpert.com/";
+  const domain = "https://sap.kaphi.in"; // Updated to actual domain
 
   const getAbsoluteUrl = (path) => {
     if (!path) return `${domain}/assets/fav.png`;
@@ -50,6 +50,7 @@ const SEO = ({
       <meta name="description" content={meta.description} />
       <meta name="keywords" content={meta.keywords} />
       <meta name="author" content={meta.author} />
+      <link rel="canonical" href={meta.url} />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={meta.type} />
@@ -64,6 +65,11 @@ const SEO = ({
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
       <meta name="twitter:image" content={meta.image} />
+
+      {/* JSON-LD Structured Data */}
+      {schemaData && (
+        <script type="application/ld+json">{JSON.stringify(schemaData)}</script>
+      )}
     </Helmet>
   );
 };

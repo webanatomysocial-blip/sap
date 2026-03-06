@@ -54,10 +54,11 @@ try {
         } else {
             // Status update (approve/reject)
             $status = $input['status'] ?? null;
+            $reason = $input['rejection_reason'] ?? null;
             if (!$status) throw new Exception("Status required");
 
-            $stmt = $pdo->prepare("UPDATE comments SET status = ? WHERE id = ?");
-            $stmt->execute([$status, $id]);
+            $stmt = $pdo->prepare("UPDATE comments SET status = ?, rejection_reason = ? WHERE id = ?");
+            $stmt->execute([$status, $reason, $id]);
             
             echo json_encode(['status' => 'success', 'message' => 'Comment status updated']);
         }

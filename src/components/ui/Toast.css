@@ -11,8 +11,9 @@
 
 .toast {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: start; /* Center icon and text vertically */
+  justify-content: flex-start;
+  gap: 16px; /* Maintain 16px gap */
   min-width: 300px;
   max-width: 400px;
   padding: 16px 20px;
@@ -28,6 +29,7 @@
   position: relative;
   animation: slideIn 0.3s ease-out forwards;
   border-left: 4px solid transparent;
+  line-height: 1.5;
 }
 
 .toast.removing {
@@ -64,10 +66,8 @@
 }
 
 .toast-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   flex: 1;
+  display: block; /* Standard text display */
 }
 
 .toast-close {

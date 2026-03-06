@@ -2,16 +2,28 @@ import React, { useState, useEffect, useRef } from "react";
 import { LuUser, LuMail, LuUpload, LuX, LuTriangleAlert } from "react-icons/lu";
 import { getAdminProfile, updateAdminProfile } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 
 const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({ full_name: "", email: "" });
+  const [formData, setFormData] = useState({
+    full_name: "",
+    username: "",
+    email: "",
+    bio: "",
+    designation: "",
+    linkedin: "",
+    twitter_handle: "",
+    personal_website: "",
+  });
   const [preview, setPreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const fileInputRef = useRef(null);
   const { addToast } = useToast();
+  const { role } = useAuth();
+  const isContributor = role === "contributor";
 
   useEffect(() => {
     if (isOpen) {
@@ -26,8 +38,27 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
     try {
       const res = await getAdminProfile();
       if (res.data.status === "success") {
-        const { full_name, email, profile_image } = res.data.user;
-        setFormData({ full_name: full_name || "", email: email || "" });
+        const {
+          full_name,
+          username,
+          email,
+          profile_image,
+          bio,
+          designation,
+          linkedin,
+          twitter_handle,
+          personal_website,
+        } = res.data.user;
+        setFormData({
+          full_name: full_name || "",
+          username: username || "",
+          email: email || "",
+          bio: bio || "",
+          designation: designation || "",
+          linkedin: linkedin || "",
+          twitter_handle: twitter_handle || "",
+          personal_website: personal_website || "",
+        });
         setPreview(profile_image || null);
       }
     } catch (err) {
@@ -52,7 +83,13 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
 
     const data = new FormData();
     data.append("full_name", formData.full_name);
+    data.append("username", formData.username);
     data.append("email", formData.email);
+    data.append("bio", formData.bio);
+    data.append("designation", formData.designation);
+    data.append("linkedin", formData.linkedin);
+    data.append("twitter_handle", formData.twitter_handle);
+    data.append("personal_website", formData.personal_website);
     if (imageFile) data.append("profile_image", imageFile);
 
     try {
@@ -79,7 +116,11 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="modal-content profile-modal">
+      <div
+        className="modal-content profile-modal"
+        data-lenis-prevent
+        style={{ maxHeight: "90vh", overflowY: "auto" }}
+      >
         <div className="modal-header">
           <h3>Edit Profile</h3>
           <button className="close-btn" onClick={onClose} aria-label="Close">
@@ -124,6 +165,21 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
 
             <div className="form-group">
               <label>
+                <LuUser /> Username
+              </label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                placeholder="Username"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>
                 <LuUser /> Full Name
               </label>
               <input
@@ -134,6 +190,11 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
                 }
                 placeholder="Your full name"
                 required
+                disabled={isContributor}
+                className={isContributor ? "disabled-input" : ""}
+                style={
+                  isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
+                }
               />
             </div>
 
@@ -149,6 +210,71 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
                 }
                 placeholder="your@email.com"
                 required
+                disabled={isContributor}
+                className={isContributor ? "disabled-input" : ""}
+                style={
+                  isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
+                }
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Short Bio</label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) =>
+                  setFormData({ ...formData, bio: e.target.value })
+                }
+                placeholder="A brief introduction about yourself..."
+                rows="3"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Designation</label>
+              <input
+                type="text"
+                value={formData.designation}
+                onChange={(e) =>
+                  setFormData({ ...formData, designation: e.target.value })
+                }
+                placeholder="e.g. SAP Security Consultant"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>LinkedIn Profile URL</label>
+              <input
+                type="url"
+                value={formData.linkedin}
+                onChange={(e) =>
+                  setFormData({ ...formData, linkedin: e.target.value })
+                }
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Twitter/X Handle</label>
+              <input
+                type="text"
+                value={formData.twitter_handle}
+                onChange={(e) =>
+                  setFormData({ ...formData, twitter_handle: e.target.value })
+                }
+                placeholder="@username"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Personal Website / Blog</label>
+              <input
+                type="url"
+                value={formData.personal_website}
+                onChange={(e) =>
+                  setFormData({ ...formData, personal_website: e.target.value })
+                }
+                placeholder="https://yourwebsite.com"
               />
             </div>
 

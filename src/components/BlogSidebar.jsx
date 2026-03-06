@@ -4,6 +4,8 @@ import { BsSearch } from "react-icons/bs";
 // Removed static categories import
 import "../css/BlogSidebar.css";
 
+import { getCategories, getBlogs, getAdsByZone } from "../services/api";
+
 const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarAd, setSidebarAd] = useState({
@@ -17,8 +19,6 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
   // Dynamic Categories State
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
-
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   // Helper to format slug to name
   const formatCategoryName = (slug) => {
@@ -50,9 +50,9 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
 
   // Fetch Categories
   useEffect(() => {
-    fetch(`${API_URL}/get_categories.php`)
-      .then((res) => res.json())
-      .then((data) => {
+    getCategories()
+      .then((res) => {
+        const data = res.data;
         if (data.status === "success") {
           setCategories(data.categories || []);
         }
@@ -62,13 +62,13 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         console.error("Error fetching categories:", err);
         setLoadingCategories(false);
       });
-  }, [API_URL]);
+  }, []);
 
   // Fetch Posts for Search & Latest
   useEffect(() => {
-    fetch(`${API_URL}/posts`)
-      .then((res) => res.json())
-      .then((data) => {
+    getBlogs()
+      .then((res) => {
+        const data = res.data;
         const posts = Array.isArray(data) ? data : data.data || [];
         const mapped = posts.map((b) => ({
           ...b,
@@ -82,7 +82,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         console.error("Error fetching posts for sidebar:", err);
         setLoading(false);
       });
-  }, [API_URL]);
+  }, []);
 
   // Fetch Ads (or use prop)
   useEffect(() => {
@@ -90,9 +90,9 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
     if (propSidebarAd && propSidebarAd.active) {
       setSidebarAd(propSidebarAd);
     } else {
-      fetch(`${API_URL}/ads?zone=blog_sidebar`)
-        .then((res) => res.json())
-        .then((data) => {
+      getAdsByZone("blog_sidebar")
+        .then((res) => {
+          const data = res.data;
           // Laravel returns an array of ads or single object depending on endpoint implementation
           // Assuming array from previous code
           if (Array.isArray(data) && data.length > 0) {
@@ -110,14 +110,21 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         })
         .catch((err) => console.error("Error fetching ads:", err));
     }
-  }, [propSidebarAd, API_URL]);
+  }, [propSidebarAd]);
 
   const filteredPosts = allPosts
-    .filter((post) =>
-      post.title
+    .filter((post) => {
+      const isLive =
+        (post.status === "published" ||
+          post.status === "active" ||
+          post.status === "approved") &&
+        new Date(post.date || post.created_at) <= new Date();
+      if (!isLive) return false;
+
+      return post.title
         ? post.title.toLowerCase().includes(searchTerm.toLowerCase())
-        : false,
-    )
+        : false;
+    })
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 

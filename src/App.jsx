@@ -33,6 +33,7 @@ import Contact from "./pages/Contact";
 import ContactUs from "./pages/ContactUs";
 import BecomeContributor from "./components/BecomeContributor";
 import ContributorApplication from "./pages/ContributorApplication";
+import ContributorProfile from "./pages/ContributorProfile";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminHome from "./components/admin/AdminHome";
 import AdminContributors from "./components/admin/AdminContributors";
@@ -40,7 +41,9 @@ import AdminAnnouncements from "./components/admin/AdminAnnouncements";
 import AdminComments from "./components/admin/AdminComments";
 import AdminAds from "./components/admin/AdminAds";
 import AdminBlogs from "./components/admin/AdminBlogs";
+import AdminBlogReview from "./components/admin/AdminBlogReview";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsConditions from "./pages/legal/TermsConditions";
 import AccessibilityStatement from "./pages/legal/AccessibilityStatement";
@@ -125,6 +128,7 @@ function App() {
 
         <Route path="become-a-contributor" element={<BecomeContributor />} />
         <Route path="apply-contributor" element={<ContributorApplication />} />
+        <Route path="contributor/:id" element={<ContributorProfile />} />
         <Route path="contact-us" element={<ContactUs />} />
 
         {/* Legal Routes */}
@@ -145,14 +149,73 @@ function App() {
         />
       </Route>
 
-      {/* React Admin Dashboard */}
+      {/* React Admin Dashboard with ProtectedRoute removed from parent to avoid loop */}
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminHome />} />
-        <Route path="blogs" element={<AdminBlogs />} />
-        <Route path="contributors" element={<AdminContributors />} />
-        <Route path="announcements" element={<AdminAnnouncements />} />
-        <Route path="comments" element={<AdminComments />} />
-        <Route path="ads" element={<AdminAds />} />
+        <Route
+          index
+          element={
+            <ProtectedRoute>
+              <AdminHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="dashboard" element={<Navigate to="/admin" replace />} />
+        <Route
+          path="blogs"
+          element={
+            <ProtectedRoute>
+              <AdminBlogs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="blogs/pending"
+          element={
+            <ProtectedRoute>
+              <AdminBlogReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="blog-review"
+          element={
+            <ProtectedRoute>
+              <AdminBlogReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="contributors"
+          element={
+            <ProtectedRoute>
+              <AdminContributors />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="announcements"
+          element={
+            <ProtectedRoute>
+              <AdminAnnouncements />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="comments"
+          element={
+            <ProtectedRoute>
+              <AdminComments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ads"
+          element={
+            <ProtectedRoute>
+              <AdminAds />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route

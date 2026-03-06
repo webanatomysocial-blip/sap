@@ -1,31 +1,45 @@
-import React, { useState, useEffect, useMemo } from "react";
-import SEO from "../SEO";
-import ActionMenu from "./ActionMenu";
-import SimpleRTE from "./SimpleRTE";
+import React, { useState, useEffect } from "react";
+import ActionMenu from "./ActionMenu"; // Keeping for non-list uses if any, but List uses it too
 import "../../css/AdminDashboard.css";
-import { authors } from "../../data/authors";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
+import { useAuth } from "../../context/AuthContext";
+import {
+  getBlogs,
+  saveBlog,
+  deleteBlog,
+  uploadBlogImage,
+  getAuthors,
+  bulkRecalculatePlagiarism,
+} from "../../services/api";
+
+// Refactored Sub-components
+import BlogList from "./blogs/BlogList";
+import BlogEditor from "./blogs/BlogEditor";
+import SeoSettings from "./blogs/SeoSettings";
+import CtaSettings from "./blogs/CtaSettings";
+import FaqSettings from "./blogs/FaqSettings";
 
 const AdminBlogs = () => {
   const [blogs, setBlogs] = useState([]);
-  const [view, setView] = useState("list"); // 'list' or 'editor'
+  const [view, setView] = useState("list"); // 'list' | 'editor'
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
+  const { role, user } = useAuth();
+  const isAdmin = role === "admin";
 
-  // Initial State
   const initialFormState = {
     id: "",
     title: "",
     slug: "",
     excerpt: "",
     content: "",
-    author: "raghu_boddu", // Default to main author ID
     date: new Date().toISOString().split("T")[0],
     image: "",
-    category: "sap-security",
+    category: "",
+    subCategory: "",
     tags: "",
-    faqs: [], // Array of { question: "", answer: "" }
+    faqs: [],
     cta_title: "",
     cta_description: "",
     cta_button_text: "",
@@ -35,50 +49,65 @@ const AdminBlogs = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [uploading, setUploading] = useState(false);
   const [imageVersion, setImageVersion] = useState(Date.now());
+  const [authorsList, setAuthorsList] = useState([]);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState("active"); // "active" | "rejected"
 
   useEffect(() => {
     fetchBlogs();
   }, []);
 
+  const safeJsonParse = (val, fallback = []) => {
+    if (!val || val === "null") return fallback;
+    if (Array.isArray(val)) return val;
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const fetchBlogs = async () => {
     try {
-      const res = await fetch("/api/posts", {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        // Parse FAQs if string
-        const parsedData = data.map((blog) => ({
+      const res = await getBlogs();
+      if (res.data) {
+        const parsedData = res.data.map((blog) => ({
           ...blog,
-          faqs:
-            typeof blog.faqs === "string"
-              ? JSON.parse(blog.faqs || "[]")
-              : blog.faqs || [],
+          faqs: safeJsonParse(blog.faqs),
+          draft_faqs: safeJsonParse(blog.draft_faqs),
         }));
         setBlogs(parsedData);
       }
     } catch (err) {
       console.error(err);
-      addToast(
-        "We couldn't load the blogs right now. Please try again later.",
-        "error",
-      );
+      addToast("We couldn't load the blogs right now.", "error");
     }
   };
 
-  const formatDateForm = (dateString) => {
-    if (!dateString) return "No Date";
-    try {
-      const d = new Date(dateString);
-      if (isNaN(d.getTime())) return dateString;
-      return d.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
+  const getSeoScore = (data) => {
+    let score = 100;
+    const title = data.meta_title || "";
+    const desc = data.meta_description || "";
+    const content = data.content || "";
+
+    if (title.length < 50 || title.length > 70) score -= 15;
+    if (desc.length < 140 || desc.length > 165) score -= 15;
+
+    const text = content.replace(/<[^>]*>/g, "");
+    const wordCount = text
+      .split(/\s+/)
+      .filter((w) => w.trim().length > 0).length;
+    if (wordCount < 600) score -= 20;
+
+    if (!data.image) score -= 10;
+    return Math.max(0, score);
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return { bg: "#dcfce7", text: "#166534" };
+    if (score >= 60) return { bg: "#fef9c3", text: "#ca8a04" };
+    return { bg: "#fee2e2", text: "#991b1b" };
   };
 
   const generateSlug = (title) => {
@@ -94,63 +123,41 @@ const AdminBlogs = () => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
-      if (name === "title" && !prev.id) {
-        newData.slug = generateSlug(value);
-      }
+      if (name === "title" && !prev.id) newData.slug = generateSlug(value);
       return newData;
     });
   };
 
-  // Content Change Handler
-  const handleContentChange = (content) => {
+  const handleContentChange = (content) =>
     setFormData((prev) => ({ ...prev, content }));
-  };
 
-  // FAQ Handlers
   const handleFAQChange = (index, field, value) => {
     const newFAQs = [...formData.faqs];
     newFAQs[index][field] = value;
     setFormData((prev) => ({ ...prev, faqs: newFAQs }));
   };
 
-  const addFAQ = () => {
+  const addFAQ = () =>
     setFormData((prev) => ({
       ...prev,
       faqs: [...prev.faqs, { question: "", answer: "" }],
     }));
-  };
+  const removeFAQ = (index) =>
+    setFormData((prev) => ({
+      ...prev,
+      faqs: prev.faqs.filter((_, i) => i !== index),
+    }));
 
-  const removeFAQ = (index) => {
-    const newFAQs = formData.faqs.filter((_, i) => i !== index);
-    setFormData((prev) => ({ ...prev, faqs: newFAQs }));
-  };
-
-  // Helper for RTE Image Upload
   const rteImageUpload = async (file) => {
     const body = new FormData();
     body.append("image", file);
     body.append("type", "content");
     try {
-      const res = await fetch("/api/upload-blog-image", {
-        method: "POST",
-        credentials: "include",
-        body: body,
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        return data.path;
-      } else {
-        addToast(
-          data.message || "Something went wrong while uploading your image.",
-          "error",
-        );
-      }
+      const res = await uploadBlogImage(body);
+      if (res.data.status === "success") return res.data.path;
+      addToast(res.data.message || "Upload failed", "error");
     } catch (err) {
-      console.error(err);
-      addToast(
-        "Something went wrong while connecting to the system. Please try again.",
-        "error",
-      );
+      addToast("Connection error", "error");
     }
     return null;
   };
@@ -160,53 +167,42 @@ const AdminBlogs = () => {
     const body = new FormData();
     body.append("image", file);
     body.append("type", "featured");
-
     try {
-      const res = await fetch("/api/upload-blog-image", {
-        method: "POST",
-        credentials: "include",
-        body: body,
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        setFormData((prev) => ({ ...prev, image: data.path }));
+      const res = await uploadBlogImage(body);
+      if (res.data.status === "success") {
+        setFormData((prev) => ({ ...prev, image: res.data.path }));
         setImageVersion(Date.now());
-        addToast("Image uploaded successfully", "success");
+        addToast("Image uploaded", "success");
       } else {
-        addToast(
-          data.message || "Something went wrong while uploading your image.",
-          "error",
-        );
+        addToast(res.data.message || "Upload failed", "error");
       }
     } catch (err) {
-      console.error(err);
-      addToast(
-        "Something went wrong while connecting to the system. Please try again.",
-        "error",
-      );
+      addToast("Connection error", "error");
     } finally {
       setUploading(false);
     }
   };
 
   const handleEdit = (blog) => {
-    // Ensure nested structures are initialized
+    const isEdited = blog.submission_status === "edited";
+    const faqsSource =
+      isEdited && blog.draft_faqs ? blog.draft_faqs : blog.faqs;
+
     setFormData({
-      ...initialFormState, // defaults
+      ...initialFormState,
       ...blog,
-      faqs:
-        typeof blog.faqs === "string"
-          ? JSON.parse(blog.faqs || "[]")
-          : blog.faqs || [],
-      // Fix date format string slicing for input[type="date"]
+      title: isEdited ? blog.draft_title || blog.title : blog.title,
+      content: isEdited ? blog.draft_content || blog.content : blog.content,
+      excerpt: isEdited ? blog.draft_excerpt || blog.excerpt : blog.excerpt,
+      image: isEdited ? blog.draft_image || blog.image : blog.image,
+      category: isEdited ? blog.draft_category || blog.category : blog.category,
       date: blog.date
         ? blog.date.split(" ")[0].substring(0, 10)
         : new Date().toISOString().split("T")[0],
-      // Ensure nulls become empty strings for inputs
-      cta_title: blog.cta_title || "",
-      cta_description: blog.cta_description || "",
-      cta_button_text: blog.cta_button_text || "",
-      cta_button_link: blog.cta_button_link || "",
+      faqs:
+        typeof faqsSource === "string"
+          ? JSON.parse(faqsSource || "[]")
+          : faqsSource || [],
     });
     setView("editor");
   };
@@ -214,482 +210,193 @@ const AdminBlogs = () => {
   const handleDelete = (id) => {
     openConfirm({
       title: "Delete Blog?",
-      message:
-        "Are you sure you want to delete this blog? This action cannot be undone.",
+      message: "Are you sure? This cannot be undone.",
       confirmText: "Delete",
       isDanger: true,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/posts/${id}`, {
-            method: "DELETE",
-            credentials: "include",
-          });
-          if (res.ok) {
+          const res = await deleteBlog(id);
+          if (res.status === 200 || res.status === 204) {
             fetchBlogs();
-            addToast("Blog deleted successfully", "success");
-          } else {
-            addToast(
-              "Something went wrong while deleting the blog post. Please try again.",
-              "error",
-            );
+            addToast("Deleted successfully", "success");
           }
         } catch (err) {
-          console.error(err);
-          addToast(
-            "We're having trouble connecting to the system. Please try again.",
-            "error",
-          );
+          addToast("Delete failed", "error");
         }
       },
     });
   };
 
   const handleSave = async () => {
-    // Date validation
-    const selectedDate = new Date(formData.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate > new Date()) {
-      addToast("Date cannot be in the future.", "error");
-      return;
-    }
-
-    // Basic validation
-    if (!formData.title || !formData.slug) {
-      addToast("Title and Slug are required.", "error");
-      return;
-    }
-
-    // CTA Link Validation (Phase 5)
     if (
-      formData.cta_button_link &&
-      !/^https?:\/\//.test(formData.cta_button_link)
+      !formData.title ||
+      !formData.category ||
+      formData.category === "Select Category"
     ) {
       addToast(
-        "CTA Button Link must be a valid URL starting with http:// or https://",
+        !formData.title ? "Title is required" : "Please select a category",
         "error",
       );
       return;
     }
+    const payload = { ...formData };
+    delete payload.author;
+    // author_id is now explicitly part of the form state
 
     try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
+      const res = await saveBlog(payload);
+      if (res.data.status === "success") {
         fetchBlogs();
         setView("list");
-        resetForm();
-        addToast("Blog saved successfully", "success");
-      } else {
-        addToast(
-          "Something went wrong while saving the blog post. Please try again.",
-          "error",
-        );
+        setFormData(initialFormState);
+        addToast("Saved successfully", "success");
       }
     } catch (err) {
-      console.error(err);
-      addToast(
-        "We're having trouble connecting to the system. Please try again.",
-        "error",
-      );
+      addToast(err.response?.data?.message || "Save failed", "error");
     }
   };
 
-  const resetForm = () => {
-    setFormData(initialFormState);
+  const handleBulkRecalculate = () => {
+    openConfirm({
+      title: "Recalculate All Missing Scores?",
+      message:
+        "This will process all blogs with 0% or 'Check Failed' status. It may take some time. Proceed?",
+      confirmText: "Recalculate All",
+      onConfirm: async () => {
+        setIsBulkProcessing(true);
+        try {
+          const res = await bulkRecalculatePlagiarism();
+          if (res.data.status === "success") {
+            addToast(res.data.message, "success");
+            fetchBlogs(); // Refresh entire list after bulk update
+          } else {
+            addToast(res.data.message || "Bulk update failed.", "error");
+          }
+        } catch (err) {
+          addToast("Error during bulk recalculation.", "error");
+        } finally {
+          setIsBulkProcessing(false);
+        }
+      },
+    });
   };
 
-  const authorOptions = Object.entries(authors).map(([id, author]) => ({
-    id,
-    name: author.name,
-  }));
+  const formatDateLabel = (dateString) => {
+    if (!dateString) return "No Date";
+    const d = new Date(
+      dateString.includes(" ")
+        ? dateString.replace(" ", "T") + "Z"
+        : dateString + "T00:00:00Z",
+    );
+    return isNaN(d.getTime())
+      ? dateString
+      : d.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+  };
 
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
-        <h2>Blog Management</h2>
+        <h3>Blog Management</h3>
         {view === "list" && (
-          <button
-            className="btn-approve"
-            onClick={() => {
-              resetForm();
-              setView("editor");
-            }}
-          >
-            + New Blog Post
-          </button>
+          <div className="status-filter-tabs" style={{ margin: 0 }}>
+            <button
+              className={activeTab === "active" ? "active" : ""}
+              onClick={() => setActiveTab("active")}
+            >
+              All Blogs
+            </button>
+            <button
+              className={activeTab === "rejected" ? "active" : ""}
+              onClick={() => setActiveTab("rejected")}
+            >
+              Rejected Content
+            </button>
+          </div>
         )}
-        {view === "editor" && (
-          <button className="btn-reject" onClick={() => setView("list")}>
-            Cancel
-          </button>
-        )}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          {view === "list" ? (
+            <button
+              className="btn-approve"
+              onClick={() => {
+                setFormData(initialFormState);
+                setView("editor");
+              }}
+            >
+              + New Blog Post
+            </button>
+          ) : (
+            <button className="btn-reject" onClick={() => setView("list")}>
+              Cancel
+            </button>
+          )}
+
+          {view === "list" && isAdmin && (
+            <button
+              className="btn-secondary"
+              onClick={handleBulkRecalculate}
+              disabled={isBulkProcessing}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <i
+                className={`bi ${isBulkProcessing ? "bi-hourglass-split" : "bi-arrow-repeat"}`}
+              ></i>
+              {isBulkProcessing
+                ? "Processing..."
+                : "Recalculate All Plagiarism"}
+            </button>
+          )}
+        </div>
       </div>
 
       {view === "list" ? (
-        <div className="admin-card">
-          <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th className="text-left col-title">Title</th>
-                  <th className="text-left">Author</th>
-                  <th className="text-left">Date</th>
-                  <th className="text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {blogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="4">No custom blogs found.</td>
-                  </tr>
-                ) : (
-                  blogs.map((blog) => (
-                    <tr key={blog.id}>
-                      <td className="text-left col-title" title={blog.title}>
-                        {blog.title}
-                      </td>
-                      <td className="text-left">
-                        {authors[blog.author]?.name || blog.author}
-                      </td>
-                      <td className="text-left">{formatDateForm(blog.date)}</td>
-                      <td className="text-center">
-                        <ActionMenu>
-                          <button
-                            className="btn-edit"
-                            onClick={() => handleEdit(blog)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(blog.id)}
-                          >
-                            Delete
-                          </button>
-                        </ActionMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <BlogList
+          blogs={blogs.filter((b) =>
+            activeTab === "rejected"
+              ? b.submission_status === "rejected"
+              : b.submission_status !== "rejected",
+          )}
+          setBlogs={setBlogs}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          formatDate={formatDateLabel}
+          getScoreColor={getScoreColor}
+          isAdmin={isAdmin}
+          fetchBlogs={fetchBlogs}
+        />
       ) : (
-        <div className="admin-card">
-          <div className="form-group">
-            <label className="form-label">Title</label>
-            <input
-              className="form-control"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="Enter blog title"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Slug (URL)</label>
-            <input
-              className="form-control"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              placeholder="blog-url-slug"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Excerpt (Short Summary)</label>
-            <textarea
-              className="form-control"
-              name="excerpt"
-              value={formData.excerpt}
-              onChange={handleInputChange}
-              rows="3"
-              placeholder="Short summary for cards..."
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Content (Rich Text)</label>
-            <SimpleRTE
-              value={formData.content}
-              onChange={handleContentChange}
-              onImageUpload={rteImageUpload}
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group half">
-              <label className="form-label">Author</label>
-              <select
-                name="author"
-                value={formData.author}
-                onChange={handleInputChange}
-                className="form-control"
-              >
-                {authorOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.name}
-                  </option>
-                ))}
-                <option value="Admin">Admin (Legacy)</option>
-              </select>
-            </div>
-            <div className="form-group half">
-              <label className="form-label">Date</label>
-              <input
-                className="form-control"
-                type="date"
-                name="date"
-                value={formData.date}
-                max={new Date().toISOString().split("T")[0]}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Blog Featured Image</label>
-            <div
-              className="upload-container"
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files[0]) {
-                    handleImageUpload(e.target.files[0]);
-                  }
-                }}
-                className="form-control"
-                style={{ padding: "8px" }}
-              />
-              <span className="image-hint">Required: 1920x1080 (16:9)</span>
-              {uploading && (
-                <p style={{ fontSize: "0.8rem", color: "#2563eb" }}>
-                  Uploading image...
-                </p>
-              )}
-              {formData.image && (
-                <div className="image-preview">
-                  <img
-                    src={`${formData.image}?v=${imageVersion}`}
-                    alt="Blog preview"
-                  />
-                  <p className="image-path-text">URL: {formData.image}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="form-control"
-            >
-              <option value="sap-security">SAP Security</option>
-              {/* ... other options same as before ... */}
-              <option value="sap-s4hana-security">SAP S/4HANA Security</option>
-              <option value="sap-fiori-security">SAP Fiori Security</option>
-              <option value="sap-btp-security">SAP BTP Security</option>
-              <option value="sap-public-cloud">SAP Public Cloud</option>
-              <option value="sap-sac-security">SAP SAC Security</option>
-              <option value="sap-cis">SAP CIS</option>
-              <option value="sap-successfactors-security">
-                SuccessFactors
-              </option>
-              <option value="sap-security-other">Other SAP Security</option>
-              <option value="sap-access-control">Access Control</option>
-              <option value="sap-process-control">Process Control</option>
-              <option value="sap-iag">SAP IAG</option>
-              <option value="sap-grc">SAP GRC</option>
-              <option value="sap-cybersecurity">Cybersecurity</option>
-              <option value="sap-licensing">SAP Licensing</option>
-              <option value="product-reviews">Product Reviews</option>
-              <option value="podcasts">Podcasts</option>
-              <option value="videos">Videos</option>
-              <option value="other-tools">Other Tools</option>
-            </select>
-          </div>
-
-          <div className="editor-section">
-            <h3>SEO Settings</h3>
-            <div className="form-group">
-              <label className="form-label">Meta Title</label>
-              <input
-                name="meta_title"
-                value={formData.meta_title || ""}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="Custom SEO Title"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Meta Description</label>
-              <textarea
-                name="meta_description"
-                value={formData.meta_description || ""}
-                onChange={handleInputChange}
-                className="form-control"
-                rows="3"
-                placeholder="Custom SEO Description"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Meta Keywords</label>
-              <input
-                name="meta_keywords"
-                value={formData.meta_keywords || ""}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="keyword1, keyword2, keyword3"
-              />
-            </div>
-          </div>
-
-          <div className="editor-section">
-            <h3>FAQs</h3>
-            {formData.faqs.map((faq, index) => (
-              <div key={index} className="faq-editor-item">
-                <input
-                  placeholder="Question"
-                  value={faq.question}
-                  onChange={(e) =>
-                    handleFAQChange(index, "question", e.target.value)
-                  }
-                  className="form-control"
-                  style={{ marginBottom: "8px" }}
-                />
-                <div
-                  style={{
-                    marginTop: "8px",
-                    border: "1px solid #ccc",
-                    padding: "10px",
-                    borderRadius: "5px",
-                  }}
-                >
-                  <label className="form-label">Answer (Rich Text)</label>
-                  <SimpleRTE
-                    value={faq.answer}
-                    onChange={(content) =>
-                      handleFAQChange(index, "answer", content)
-                    }
-                    onImageUpload={rteImageUpload}
-                  />
-                </div>
-                <button
-                  className="btn-delete"
-                  onClick={() => removeFAQ(index)}
-                  style={{ marginTop: "8px" }}
-                >
-                  Remove FAQ
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn-edit"
-              onClick={addFAQ}
-              style={{ marginTop: "12px" }}
-            >
-              + Add FAQ
-            </button>
-          </div>
-
-          <div className="editor-section">
-            <h3>Call to Action (CTA)</h3>
-            <div className="form-group">
-              <label className="form-label">CTA Title</label>
-              <input
-                name="cta_title"
-                value={formData.cta_title}
-                onChange={handleInputChange}
-                className="form-control"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">CTA Description</label>
-              <textarea
-                name="cta_description"
-                value={formData.cta_description}
-                onChange={handleInputChange}
-                className="form-control"
-                rows="2"
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group half">
-                <label className="form-label">Button Text</label>
-                <input
-                  name="cta_button_text"
-                  value={formData.cta_button_text}
-                  onChange={handleInputChange}
-                  className="form-control"
-                />
-              </div>
-              <div className="form-group half">
-                <label className="form-label">Button Link</label>
-                <input
-                  type="url"
-                  name="cta_button_link"
-                  value={formData.cta_button_link}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-          </div>
-
-          <button className="btn-approve btn-full mt-4" onClick={handleSave}>
-            Save Blog Post
-          </button>
-        </div>
+        <BlogEditor
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleContentChange={handleContentChange}
+          rteImageUpload={rteImageUpload}
+          handleImageUpload={handleImageUpload}
+          uploading={uploading}
+          imageVersion={imageVersion}
+          onSave={handleSave}
+        >
+          <SeoSettings
+            formData={formData}
+            handleInputChange={handleInputChange}
+            getSeoScore={getSeoScore}
+            getScoreColor={getScoreColor}
+          />
+          <FaqSettings
+            faqs={formData.faqs}
+            handleFAQChange={handleFAQChange}
+            addFAQ={addFAQ}
+            removeFAQ={removeFAQ}
+            rteImageUpload={rteImageUpload}
+          />
+          <CtaSettings
+            formData={formData}
+            handleInputChange={handleInputChange}
+          />
+        </BlogEditor>
       )}
-      <style>{`
-            .form-row {
-                display: flex;
-                gap: 20px;
-                margin-bottom: 20px;
-            }
-            .form-group.half {
-                flex: 1;
-                margin-bottom: 0;
-            }
-            .editor-section {
-                margin-top: 32px;
-                padding-top: 24px;
-                border-top: 1px solid #e2e8f0;
-            }
-            .editor-section h3 {
-                font-size: 1.1rem;
-                margin-bottom: 16px;
-                color: var(--slate-800);
-            }
-            .faq-editor-item {
-                background: #f8fafc;
-                padding: 16px;
-                border-radius: 8px;
-                margin-bottom: 12px;
-                border: 1px solid #e2e8f0;
-            }
-            .image-hint {
-                font-size: 13px;
-                color: #64748b;
-                margin-top: 4px;
-                display: block;
-            }
-        `}</style>
     </div>
   );
 };

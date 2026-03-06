@@ -1,7 +1,6 @@
-// src/components/CommentSection.jsx
 import React, { useState, useEffect } from "react";
 import "../css/CommentSection.css";
-import { submitComment } from "../services/api";
+import { submitComment, getCommentsByBlogId } from "../services/api";
 import { useToast } from "../context/ToastContext";
 
 const CommentItem = ({ comment, depth = 0, replyMap, onReply }) => {
@@ -18,7 +17,11 @@ const CommentItem = ({ comment, depth = 0, replyMap, onReply }) => {
         <div className="comment-header">
           <span className="comment-author">{comment.author}</span>
           <span className="comment-date">
-            {new Date(comment.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            {new Date(comment.date).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
           </span>
         </div>
         <p className="comment-text">{comment.text}</p>
@@ -87,20 +90,19 @@ const CommentSection = ({ blogId, onCommentAdded }) => {
   const [visibleCount, setVisibleCount] = useState(3);
   const [totalComments, setTotalComments] = useState(0);
 
-  const fetchComments = () => {
+  const fetchComments = async () => {
     if (!blogId) return;
-    const API_URL = import.meta.env.VITE_API_URL || "/api";
-    fetch(`${API_URL}/get_comments.php?blogId=${blogId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setComments(data);
-          // Only count top-level comments (exclude replies)
-          const topLevelCount = data.filter((c) => !c.parent_id).length;
-          setTotalComments(topLevelCount);
-        }
-      })
-      .catch((err) => console.error("Failed to load comments", err));
+    try {
+      const res = await getCommentsByBlogId(blogId);
+      if (Array.isArray(res.data)) {
+        setComments(res.data);
+        // Only count top-level comments (exclude replies)
+        const topLevelCount = res.data.filter((c) => !c.parent_id).length;
+        setTotalComments(topLevelCount);
+      }
+    } catch (err) {
+      console.error("Failed to load comments", err);
+    }
   };
 
   useEffect(() => {

@@ -1,38 +1,47 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 // Removed static metadata import
-import { authors } from "../data/authors";
+// Removed static metadata import
 import { LuEye, LuMessageSquare } from "react-icons/lu";
+import { api } from "../services/api"; // Added API import
 import "../css/LatestBlogs.css";
 
 export default function LatestBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [stats, setStats] = useState({ views: {}, comments: {} });
-  // Corrected API base URL
-  const API_URL = import.meta.env.VITE_API_URL || "/api";
 
   useEffect(() => {
     // Fetch latest blogs from API
-    fetch(`${API_URL}/posts`)
-      .then((data) => {
+    api
+      .get("/posts")
+      .then((response) => {
+        const data = response.data;
         // Ensure data is an array
         const blogData = Array.isArray(data) ? data : data.data || [];
 
         // Map and validate data to prevent crashes
-        const mappedData = blogData.map((b) => ({
-          ...b,
-          // Ensure valid date or fallback to now
-          date:
-            b.date ||
-            b.published_at ||
-            b.created_at ||
-            new Date().toISOString(),
-          image:
-            b.image ||
-            b.featured_image ||
-            "https://placehold.co/600x400?text=No+Image",
-          slug: b.slug || b.id,
-        }));
+        const mappedData = blogData
+          .filter(
+            (b) =>
+              (b.status === "published" ||
+                b.status === "active" ||
+                b.status === "approved") &&
+              new Date(b.date || b.created_at) <= new Date(),
+          ) // Ensure only live blogs/announcements show
+          .map((b) => ({
+            ...b,
+            // Ensure valid date or fallback to now
+            date:
+              b.date ||
+              b.published_at ||
+              b.created_at ||
+              new Date().toISOString(),
+            image:
+              b.image ||
+              b.featured_image ||
+              "https://placehold.co/600x400?text=No+Image",
+            slug: b.slug || b.id,
+          }));
 
         // Sort by date descending and take latest 6
         const sorted = mappedData
@@ -48,9 +57,26 @@ export default function LatestBlogs() {
 
   // Format date
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = { month: "long", day: "numeric", year: "numeric" };
-    return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    if (!dateString) return "";
+    const date = new Date(
+      dateString.includes("T")
+        ? dateString
+        : dateString.replace(" ", "T") + "Z",
+    );
+    if (isNaN(date.getTime())) {
+      const d2 = new Date(dateString + "T00:00:00Z");
+      if (isNaN(d2.getTime())) return dateString;
+      return d2.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   // Get category badge label
@@ -102,7 +128,7 @@ export default function LatestBlogs() {
                 <div className="latest-blog-meta">
                   <span className="latest-blog-author">
                     <i className="bi bi-person-circle"></i>{" "}
-                    {authors[blog.author]?.name || blog.author}
+                    {blog.author_name || "Raghu Boddu"}
                   </span>
                   <div className="latest-blog-stats">
                     <span>
