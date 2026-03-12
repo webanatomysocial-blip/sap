@@ -50,6 +50,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
 import { AuthProvider } from "./context/AuthContext";
+import { MemberAuthProvider } from "./context/MemberAuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -58,10 +59,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <BrowserRouter>
           <ToastProvider>
             <AuthProvider>
-              <ConfirmationProvider>
-                <ScrollToTop />
-                <App />
-              </ConfirmationProvider>
+              <MemberAuthProvider>
+                <ConfirmationProvider>
+                  <ScrollToTop />
+                  <App />
+                </ConfirmationProvider>
+              </MemberAuthProvider>
             </AuthProvider>
           </ToastProvider>
         </BrowserRouter>

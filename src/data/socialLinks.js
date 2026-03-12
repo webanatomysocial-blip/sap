@@ -1,7 +1,7 @@
 export const socialLinks = {
   linkedIn: "https://www.linkedin.com/in/raghu-boddu-cisa-cfe-cams-pmp-cciso-06977218", // Based on user images/context
   twitter: "https://x.com/sapsecurityexp", // Placeholder based on 'X' icon
-  website: "https://sapsecurityexpert.com",
+  website: import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com",
 };
 
 export const shareUrls = {

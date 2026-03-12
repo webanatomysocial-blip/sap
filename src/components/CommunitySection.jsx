@@ -21,6 +21,7 @@ export default function CommunitySection() {
 
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [contributorCount, setContributorCount] = useState(0);
+  const [memberCount, setMemberCount] = useState(0);
   const [contributors, setContributors] = useState([]);
   const [stats, setStats] = useState({ views: {}, comments: {} });
 
@@ -50,8 +51,9 @@ export default function CommunitySection() {
           setRecentActivity(
             (data.recent || []).filter(
               (post) =>
-                new Date(post.date || post.created_at).setHours(0, 0, 0, 0) <=
-                new Date().setHours(0, 0, 0, 0),
+                new Date(
+                  (post.date || post.created_at || "").replace(" ", "T"),
+                ) <= new Date(),
             ),
           );
           setContributors(data.contributors || []);
@@ -105,6 +107,9 @@ export default function CommunitySection() {
         if (data && data.active_contributors) {
           setContributorCount(parseInt(data.active_contributors));
         }
+        if (data && data.total_members) {
+          setMemberCount(parseInt(data.total_members));
+        }
       })
       .catch((err) => console.warn("Stats failed", err));
   }, []);
@@ -149,11 +154,11 @@ export default function CommunitySection() {
               <div className="topics-list">
                 {recentActivity.map((post) => (
                   <Link
-                    key={post.slug}
+                    key={post.slug || post.id}
                     to={
                       post.category
-                        ? `/${post.category}/${post.slug}`
-                        : `/blogs/${post.slug}`
+                        ? `/${post.category.toLowerCase().replace(/\s+/g, "-")}/${post.slug || post.id}`
+                        : `/blogs/${post.slug || post.id}`
                     }
                     className="topic-item"
                   >
@@ -183,7 +188,14 @@ export default function CommunitySection() {
                       </span>
                     )}
                     <div className="topic-info">
-                      <span className="topic-title">{post.title}</span>
+                      <span className="topic-title">
+                        {post.title}
+                        {post.is_members_only === 1 && (
+                          <span className="exclusive-mini-badge">
+                            <i className="bi bi-lock-fill"></i> Exclusive
+                          </span>
+                        )}
+                      </span>
                       <span className="topic-meta">
                         By {post.author_name || "Guest Author"}
                       </span>
@@ -296,8 +308,8 @@ export default function CommunitySection() {
                 <Link
                   to={
                     featuredArticle.category
-                      ? `/${featuredArticle.category}/${featuredArticle.slug}`
-                      : `/blogs/${featuredArticle.slug}`
+                      ? `/${featuredArticle.category.toLowerCase().replace(/\s+/g, "-")}/${featuredArticle.slug || featuredArticle.id}`
+                      : `/blogs/${featuredArticle.slug || featuredArticle.id}`
                   }
                   className="btn-read-insight"
                 >
@@ -315,11 +327,11 @@ export default function CommunitySection() {
                 <div className="activity-list">
                   {recentActivity.map((activity) => (
                     <Link
-                      key={activity.slug}
+                      key={activity.slug || activity.id}
                       to={
                         activity.category
-                          ? `/${activity.category}/${activity.slug}`
-                          : `/blogs/${activity.slug}`
+                          ? `/${activity.category.toLowerCase().replace(/\s+/g, "-")}/${activity.slug || activity.id}`
+                          : `/blogs/${activity.slug || activity.id}`
                       }
                       className="activity-item"
                     >
@@ -335,7 +347,14 @@ export default function CommunitySection() {
                                 .toUpperCase()
                             : "BLOG"}
                         </span>
-                        <h4>{activity.title}</h4>
+                        <h4>
+                          {activity.title}
+                          {activity.is_members_only === 1 && (
+                            <span className="exclusive-mini-badge" style={{ marginLeft: '8px' }}>
+                              <i className="bi bi-lock-fill"></i> Exclusive
+                            </span>
+                          )}
+                        </h4>
                         <p>
                           {activity.excerpt
                             ? activity.excerpt.substring(0, 100)
@@ -491,15 +510,17 @@ export default function CommunitySection() {
                       color: "#2563eb",
                     }}
                   >
-                    {contributorCount}
+                    {contributorCount + memberCount}
                   </div>
                   <div style={{ fontSize: "0.9rem", color: "#64748b" }}>
-                    Active Contributors &<br />
-                    Industry Experts
+                    Total Community Members &<br />
+                    Experts
                   </div>
                 </div>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                  Join the network of SAP Security professionals.
+                <p style={{ fontSize: "0.85rem", color: "#475569", lineHeight: "1.5" }}>
+                  Join <strong>{memberCount} members</strong> and{" "}
+                  <strong>{contributorCount} contributors</strong> who are
+                  actively securing the SAP ecosystem.
                 </p>
               </div>
             </div>

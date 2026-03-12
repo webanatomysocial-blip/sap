@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { LuKey, LuLock, LuX, LuTriangleAlert } from "react-icons/lu";
 import { resetAdminPassword } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
+import useScrollLock from "../../hooks/useScrollLock";
 
 const ResetPasswordModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,8 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
   });
   const [error, setError] = useState("");
   const { addToast } = useToast();
+
+  useScrollLock(isOpen);
 
   const resetForm = () => {
     setFormData({
@@ -70,11 +73,7 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div
-        className="modal-content password-modal"
-        data-lenis-prevent
-        style={{ maxHeight: "90vh", overflowY: "auto" }}
-      >
+      <div className="modal-container">
         <div className="modal-header">
           <h3>Reset Password</h3>
           <button
@@ -86,78 +85,77 @@ const ResetPasswordModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {error && (
-            <div className="form-error">
-              <LuTriangleAlert /> {error}
+        <div className="modal-body" data-lenis-prevent="true">
+          <form id="reset-password-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="form-error">
+                <LuTriangleAlert /> {error}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>
+                <LuLock /> Current Password
+              </label>
+              <input
+                type="password"
+                value={formData.current_password}
+                onChange={(e) =>
+                  setFormData({ ...formData, current_password: e.target.value })
+                }
+                placeholder="Enter your current password"
+                required
+                autoComplete="current-password"
+              />
             </div>
-          )}
 
-          <div className="form-group">
-            <label>
-              <LuLock /> Current Password
-            </label>
-            <input
-              type="password"
-              value={formData.current_password}
-              onChange={(e) =>
-                setFormData({ ...formData, current_password: e.target.value })
-              }
-              placeholder="Enter your current password"
-              required
-              autoComplete="current-password"
-            />
-          </div>
+            <div className="form-group">
+              <label>
+                <LuKey /> New Password
+              </label>
+              <input
+                type="password"
+                value={formData.new_password}
+                onChange={(e) =>
+                  setFormData({ ...formData, new_password: e.target.value })
+                }
+                placeholder="Minimum 8 characters"
+                required
+                autoComplete="new-password"
+              />
+            </div>
 
-          <div className="form-group">
-            <label>
-              <LuKey /> New Password
-            </label>
-            <input
-              type="password"
-              value={formData.new_password}
-              onChange={(e) =>
-                setFormData({ ...formData, new_password: e.target.value })
-              }
-              placeholder="Minimum 8 characters"
-              required
-              autoComplete="new-password"
-            />
-          </div>
+            <div className="form-group">
+              <label>
+                <LuKey /> Confirm New Password
+              </label>
+              <input
+                type="password"
+                value={formData.confirm_password}
+                onChange={(e) =>
+                  setFormData({ ...formData, confirm_password: e.target.value })
+                }
+                placeholder="Re-enter your new password"
+                required
+                autoComplete="new-password"
+              />
+            </div>
+          </form>
+        </div>
 
-          <div className="form-group">
-            <label>
-              <LuKey /> Confirm New Password
-            </label>
-            <input
-              type="password"
-              value={formData.confirm_password}
-              onChange={(e) =>
-                setFormData({ ...formData, confirm_password: e.target.value })
-              }
-              placeholder="Re-enter your new password"
-              required
-              autoComplete="new-password"
-            />
-          </div>
-
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleClose}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary btn-md"
-              disabled={loading}
-            >
-              {loading ? "Updating..." : "Update Password"}
-            </button>
-          </div>
-        </form>
+        <div className="modal-footer">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="reset-password-form"
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? "Updating..." : "Update Password"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -40,9 +40,13 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) AS c FROM blogs");
     $total_blogs = (int)$stmt->fetchColumn();
 
-    // Total views across all blogs
-    $stmt = $pdo->query("SELECT COALESCE(SUM(view_count), 0) AS v FROM blogs");
-    $total_views = (int)$stmt->fetchColumn();
+    // Total Approved Members (Accepted ones)
+    $stmt = $pdo->query("SELECT COUNT(*) AS c FROM members WHERE status = 'approved'");
+    $approved_members = (int)$stmt->fetchColumn();
+
+    // Pending Members (For badges)
+    $stmt = $pdo->query("SELECT COUNT(*) AS c FROM members WHERE status = 'pending'");
+    $pending_members = (int)$stmt->fetchColumn();
 
     echo json_encode([
         'contributors'         => $contributors,
@@ -51,6 +55,8 @@ try {
         'pending_comments'     => $pending_comments,
         'blogs'                => $total_blogs,
         'total_views'          => $total_views,
+        'approved_members'     => $approved_members,
+        'pending_members'      => $pending_members,
     ]);
 
 } catch (Exception $e) {

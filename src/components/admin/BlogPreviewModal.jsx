@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LuX, LuCalendar, LuTag, LuUser } from "react-icons/lu";
 
 /**
@@ -15,6 +15,15 @@ const BlogPreviewModal = ({
   const [rejectMode, setRejectMode] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
+
+  useEffect(() => {
+    document.body.classList.add("modal-open");
+    if (window.lenis) window.lenis.stop();
+    return () => {
+      document.body.classList.remove("modal-open");
+      if (window.lenis) window.lenis.start();
+    };
+  }, []);
 
   if (!blog) return null;
 
@@ -97,70 +106,50 @@ const BlogPreviewModal = ({
   const plagCol = getPlagColor(plagScore);
 
   const authorName = previewData.author_name || "Guest Author";
-  const authorImage = previewData.author_image
-    ? previewData.author_image.startsWith("http")
-      ? previewData.author_image
-      : `${import.meta.env.VITE_API_URL || ""}${previewData.author_image}`
-    : "https://placehold.co/100x100?text=Author";
+  const authorImageSrc = previewData.author_image || previewData.profile_image;
+  // Make the author image rendering more robust
+  let finalAuthorImage = "https://placehold.co/100x100?text=Author";
+  if (authorImageSrc) {
+    if (authorImageSrc.startsWith("http")) {
+      finalAuthorImage = authorImageSrc;
+    } else if (authorImageSrc.includes("assets/")) {
+      // Handle both /assets/ and ../assets/ cases
+      const assetPath = authorImageSrc.replace(/^.*assets\//, "/assets/");
+      finalAuthorImage = `${import.meta.env.VITE_SITE_URL || ""}${assetPath}`;
+    } else if (authorImageSrc.includes("uploads/")) {
+      // Handle uploads which are served from the site root
+      const uploadPath = authorImageSrc.replace(/^.*uploads\//, "/uploads/");
+      finalAuthorImage = `${import.meta.env.VITE_SITE_URL || ""}${uploadPath}`;
+    } else {
+      finalAuthorImage = `${import.meta.env.VITE_API_URL || ""}${authorImageSrc.startsWith("/") ? "" : "/"}${authorImageSrc}`;
+    }
+  }
+  const authorImage = finalAuthorImage;
   const authorBio =
-    previewData.author_bio || "Expert SAP Security contributor.";
+    previewData.author_bio || "Expert SAP Security Contributor.";
 
   return (
     <div
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div
-        className="modal-content"
-        data-lenis-prevent
-        style={{
-          width: "95%",
-          maxWidth: "1400px",
-          padding: 0,
-          maxHeight: "95vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <div className="modal-container xlarge">
         {/* Header */}
-        <div
-          className="modal-header"
-          style={{
-            background: "#fff",
-            zIndex: 10,
-            padding: "16px 24px",
-            borderBottom: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div className="modal-header">
           <div>
-            <h3 style={{ margin: 0 }}>
-              Review Submission: {previewData.title}
-            </h3>
+            <h3>Review Submission: {previewData.title}</h3>
             <p
               style={{
-                margin: "2px 0 0",
+                margin: "4px 0 0",
                 fontSize: "0.85rem",
-                color: "#64748b",
+                color: "var(--slate-500)",
               }}
             >
               Please review the content, formatting, and SEO details before
               approving.
             </p>
           </div>
-          <button
-            className="close-btn"
-            onClick={onClose}
-            style={{
-              fontSize: "1.5rem",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#64748b",
-            }}
-          >
+          <button className="modal-close-btn" onClick={onClose}>
             <LuX />
           </button>
         </div>
@@ -168,585 +157,650 @@ const BlogPreviewModal = ({
         {/* Two-Column Body */}
         <div
           className="modal-body"
-          onWheel={(e) => e.stopPropagation()}
           style={{
             display: "flex",
-            flex: 1,
-            overflow: "hidden", // Let inner columns scroll
+            padding: 0,
+            overflow: "hidden", // Outer body doesn't scroll, inner columns do
           }}
         >
-          {/* Left Column - 75% */}
           <div
-            style={{
-              flex: "0 0 75%",
-              padding: "24px",
-              overflowY: "auto",
-              borderRight: "1px solid #e2e8f0",
-              background: "#fafafa",
-            }}
+            className="review-modal-content"
+            style={{ width: "100%", padding: "32px", overflowY: "auto" }}
+            data-lenis-prevent
           >
-            {/* Metadata / SEO Section */}
             <div
+              className="review-modal-grid"
               style={{
-                background: "#fff",
-                padding: "20px 24px",
-                borderRadius: "12px",
-                border: "1px solid #f1f5f9",
-                marginBottom: "24px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr",
+                gap: "32px",
               }}
             >
-              <h4
-                style={{
-                  margin: "0 0 16px",
-                  color: "#1e293b",
-                  fontSize: "1.1rem",
-                }}
-              >
-                SEO & Meta Information
-              </h4>
-              <div style={{ display: "grid", gap: "12px", fontSize: "0.9rem" }}>
-                <div>
-                  <strong style={{ color: "#475569" }}>SEO Title:</strong>
-                  <div
-                    style={{
-                      padding: "8px",
-                      background: "#f8fafc",
-                      borderRadius: "4px",
-                      border: "1px solid #f1f5f9",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {previewData.meta_title || "Not provided"}
-                  </div>
-                </div>
-                <div>
-                  <strong style={{ color: "#475569" }}>
-                    Meta Description:
-                  </strong>
-                  <div
-                    style={{
-                      padding: "8px",
-                      background: "#f8fafc",
-                      borderRadius: "4px",
-                      border: "1px solid #f1f5f9",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {previewData.meta_description || "Not provided"}
-                  </div>
-                </div>
-                <div>
-                  <strong style={{ color: "#475569" }}>Focus Keywords:</strong>
-                  <div
-                    style={{
-                      padding: "8px",
-                      background: "#f8fafc",
-                      borderRadius: "4px",
-                      border: "1px solid #f1f5f9",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {previewData.meta_keywords || "Not provided"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Frontend Preview Match Section */}
-            <div
-              style={{
-                background: "#fff",
-                padding: "32px",
-                borderRadius: "12px",
-                border: "1px solid #f1f5f9",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-              }}
-            >
-              <div
-                style={{
-                  borderBottom: "1px dashed #cbd5e1",
-                  paddingBottom: "12px",
-                  marginBottom: "24px",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.8rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "1px",
-                    color: "#94a3b8",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Frontend Content Preview
-                </span>
-              </div>
-
-              <div
-                style={{
-                  width: "100%",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  marginBottom: 24,
-                  background: "#f8fafc",
-                  aspectRatio: "16/9",
-                }}
-              >
-                <img
-                  src={
-                    previewData.image ||
-                    "https://placehold.co/600x400?text=No+Image"
-                  }
-                  alt={previewData.title}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <h1
-                  style={{
-                    fontSize: "2.2rem",
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    marginBottom: 16,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {previewData.title}
-                </h1>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 16,
-                    color: "#64748b",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <LuUser style={{ fontSize: 16 }} />
-                    <span>{authorName}</span>
-                  </div>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <LuCalendar style={{ fontSize: 16 }} />
-                    <span>
-                      {new Date(blog.date).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <LuTag style={{ fontSize: 16 }} />
-                    <span style={{ textTransform: "capitalize" }}>
-                      {previewData.category?.replace("-", " ")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="blog-preview-body ql-editor"
-                style={{
-                  fontSize: "1.125rem",
-                  lineHeight: 1.8,
-                  color: "#334155",
-                  padding: 0,
-                }}
-                dangerouslySetInnerHTML={{ __html: previewData.content }}
-              />
-
-              {/* Call to Action */}
-              {(previewData.cta_title || previewData.cta_button_text) && (
-                <div
-                  style={{
-                    marginTop: "40px",
-                    padding: "30px",
-                    background:
-                      "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-                    borderRadius: "12px",
-                    textAlign: "center",
-                    color: "#fff",
-                  }}
-                >
-                  {previewData.cta_title && (
-                    <h3
-                      style={{
-                        fontSize: "1.5rem",
-                        marginBottom: "12px",
-                        color: "#fff",
-                      }}
-                    >
-                      {previewData.cta_title}
-                    </h3>
-                  )}
-                  {previewData.cta_description && (
-                    <p style={{ color: "#cbd5e1", marginBottom: "24px" }}>
-                      {previewData.cta_description}
-                    </p>
-                  )}
-                  {previewData.cta_button_text &&
-                    previewData.cta_button_link && (
-                      <a
-                        href={previewData.cta_button_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-approve"
-                        style={{
-                          display: "inline-block",
-                          padding: "12px 28px",
-                          textDecoration: "none",
-                          borderRadius: "8px",
-                          fontWeight: "bold",
-                          background: "#3b82f6",
-                          color: "#fff",
-                        }}
-                      >
-                        {previewData.cta_button_text}
-                      </a>
-                    )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Fixed Width for Readability */}
-          <div
-            style={{
-              flex: "0 0 320px",
-              padding: "24px",
-              background: "#fff",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px",
-            }}
-          >
-            {/* Author Details Block */}
-            <div
-              style={{
-                background: "#f8fafc",
-                borderRadius: "16px",
-                padding: "24px",
-                border: "1px solid #f1f5f9",
-              }}
-            >
-              <h4
-                style={{
-                  margin: "0 0 16px",
-                  color: "#1e293b",
-                  fontSize: "1rem",
-                }}
-              >
-                Author Profile
-              </h4>
+              {/* Left Column */}
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
-                  gap: "12px",
+                  gap: "32px",
                 }}
               >
+                {/* Metadata / SEO Section */}
                 <div
                   style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    background: "#e2e8f0",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    background: "#fff",
+                    padding: "24px",
+                    borderRadius: "16px",
+                    border: "1px solid var(--slate-200)",
+                    boxShadow: "var(--shadow-sm)",
                   }}
                 >
-                  {authorImage ? (
+                  <h4
+                    style={{
+                      margin: "0 0 20px",
+                      color: "var(--slate-900)",
+                      fontSize: "1.1rem",
+                      fontWeight: "700",
+                    }}
+                  >
+                    SEO & Meta Information
+                  </h4>
+                  <div
+                    style={{ display: "grid", gap: "20px", fontSize: "0.9rem" }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "0.75rem",
+                          fontWeight: "700",
+                          color: "var(--slate-500)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        SEO Title
+                      </label>
+                      <div
+                        style={{
+                          padding: "12px",
+                          background: "var(--slate-50)",
+                          borderRadius: "8px",
+                          border: "1px solid var(--slate-200)",
+                          color: "var(--slate-900)",
+                          fontWeight: "500",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {previewData.meta_title || "Not provided"}
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "0.75rem",
+                          fontWeight: "700",
+                          color: "var(--slate-500)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Meta Description
+                      </label>
+                      <div
+                        style={{
+                          padding: "12px",
+                          background: "var(--slate-50)",
+                          borderRadius: "8px",
+                          border: "1px solid var(--slate-200)",
+                          color: "var(--slate-900)",
+                          lineHeight: "1.5",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {previewData.meta_description || "Not provided"}
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "0.75rem",
+                          fontWeight: "700",
+                          color: "var(--slate-500)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Focus Keywords
+                      </label>
+                      <div
+                        style={{
+                          padding: "12px",
+                          background: "var(--slate-50)",
+                          borderRadius: "8px",
+                          border: "1px solid var(--slate-200)",
+                          color: "var(--slate-900)",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {previewData.meta_keywords || "Not provided"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Frontend Content Preview */}
+                <div
+                  style={{
+                    background: "#fff",
+                    padding: "48px",
+                    borderRadius: "16px",
+                    border: "1px solid var(--slate-200)",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
+                >
+                  <div
+                    style={{
+                      borderBottom: "1px dashed var(--slate-300)",
+                      paddingBottom: "16px",
+                      marginBottom: "32px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "1.5px",
+                        color: "var(--slate-400)",
+                        fontWeight: "800",
+                      }}
+                    >
+                      Frontend Content Preview
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      marginBottom: 32,
+                      background: "var(--slate-100)",
+                      aspectRatio: "16/9",
+                      boxShadow: "var(--shadow-md)",
+                    }}
+                  >
                     <img
-                      src={authorImage}
-                      alt={authorName}
+                      src={
+                        previewData.image ||
+                        "https://placehold.co/600x400?text=No+Image"
+                      }
+                      alt={previewData.title}
                       style={{
                         width: "100%",
                         height: "100%",
                         objectFit: "cover",
                       }}
                     />
-                  ) : (
-                    <LuUser style={{ fontSize: "40px", color: "#94a3b8" }} />
+                  </div>
+                  <div style={{ marginBottom: 40 }}>
+                    <h1
+                      style={{
+                        fontSize: "2.75rem",
+                        fontWeight: 900,
+                        color: "var(--slate-900)",
+                        marginBottom: 20,
+                        lineHeight: 1.1,
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {previewData.title}
+                    </h1>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 24,
+                        color: "var(--slate-500)",
+                        fontSize: "0.95rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <LuUser style={{ fontSize: 18 }} />
+                        <span>{authorName}</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <LuCalendar style={{ fontSize: 18 }} />
+                        <span>
+                          {new Date(blog.date).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <LuTag style={{ fontSize: 18 }} />
+                        <span
+                          style={{
+                            textTransform: "capitalize",
+                            color: "var(--primary-color)",
+                          }}
+                        >
+                          {previewData.category?.replace("-", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="blog-preview-body ql-editor"
+                    style={{
+                      fontSize: "1.25rem",
+                      lineHeight: 1.9,
+                      color: "var(--slate-700)",
+                      padding: 0,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: previewData.content }}
+                  />
+                  {(previewData.cta_title || previewData.cta_button_text) && (
+                    <div
+                      style={{
+                        marginTop: "60px",
+                        padding: "40px",
+                        background:
+                          "linear-gradient(135deg, var(--slate-900) 0%, #000 100%)",
+                        borderRadius: "20px",
+                        textAlign: "center",
+                        color: "#fff",
+                        boxShadow: "var(--shadow-lg)",
+                      }}
+                    >
+                      {previewData.cta_title && (
+                        <h3
+                          style={{
+                            fontSize: "1.75rem",
+                            marginBottom: "16px",
+                            color: "#fff",
+                            fontWeight: "800",
+                          }}
+                        >
+                          {previewData.cta_title}
+                        </h3>
+                      )}
+                      {previewData.cta_description && (
+                        <p
+                          style={{
+                            color: "var(--slate-400)",
+                            marginBottom: "32px",
+                            fontSize: "1.1rem",
+                            maxWidth: "600px",
+                            margin: "0 auto 32px",
+                          }}
+                        >
+                          {previewData.cta_description}
+                        </p>
+                      )}
+                      {previewData.cta_button_text &&
+                        previewData.cta_button_link && (
+                          <a
+                            href={previewData.cta_button_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-primary"
+                            style={{
+                              display: "inline-block",
+                              padding: "16px 36px",
+                              textDecoration: "none",
+                              borderRadius: "12px",
+                              fontWeight: "700",
+                              fontSize: "1.1rem",
+                            }}
+                          >
+                            {previewData.cta_button_text}
+                          </a>
+                        )}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <h5
-                    style={{
-                      margin: "0 0 4px",
-                      fontSize: "1.1rem",
-                      color: "#0f172a",
-                    }}
-                  >
-                    {authorName}
-                  </h5>
-                </div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.85rem",
-                    color: "#64748b",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  {authorBio}
-                </p>
               </div>
-            </div>
 
-            {/* Scores Block */}
-            <div
-              style={{
-                background: "#f8fafc",
-                borderRadius: "12px",
-                padding: "20px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: "0 0 16px",
-                  color: "#1e293b",
-                  fontSize: "1rem",
-                }}
-              >
-                Quality Metrics
-              </h4>
+              {/* Right Column */}
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "16px",
+                  gap: "32px",
                 }}
               >
                 <div
+                  className="author-profile-card"
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    background: "var(--slate-50)",
+                    borderRadius: "12px",
+                    padding: "24px",
+                    border: "1px solid var(--slate-200)",
                   }}
                 >
-                  <span
+                  <h4
                     style={{
-                      fontSize: "0.9rem",
-                      color: "#475569",
-                      fontWeight: 600,
+                      margin: "0 0 20px",
+                      color: "var(--slate-900)",
+                      fontSize: "1rem",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
                     }}
                   >
-                    SEO Score
-                  </span>
+                    Author Profile
+                  </h4>
                   <div
                     style={{
-                      background: seoCol.bg,
-                      color: seoCol.text,
-                      padding: "4px 12px",
-                      borderRadius: "20px",
-                      fontSize: "0.85rem",
-                      fontWeight: "bold",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      textAlign: "center",
+                      gap: "16px",
                     }}
                   >
-                    {seoScore}/100 ({getSeoLabel(seoScore)})
+                    <div
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        borderRadius: "50%",
+                        background: "var(--slate-200)",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "var(--shadow-sm)",
+                        border: "4px solid #fff",
+                      }}
+                    >
+                      {authorImage &&
+                      authorImage !==
+                        "https://placehold.co/100x100?text=Author" ? (
+                        <img
+                          src={authorImage}
+                          alt={authorName}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <LuUser
+                          style={{
+                            fontSize: "50px",
+                            color: "var(--slate-400)",
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <h5
+                        style={{
+                          margin: "0 0 4px",
+                          fontSize: "1.25rem",
+                          color: "var(--slate-900)",
+                          fontWeight: "800",
+                        }}
+                      >
+                        {authorName}
+                      </h5>
+                    </div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.95rem",
+                        color: "var(--slate-600)",
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      {authorBio}
+                    </p>
                   </div>
                 </div>
 
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    background: "var(--slate-50)",
+                    borderRadius: "20px",
+                    padding: "24px",
+                    border: "1px solid var(--slate-200)",
                   }}
                 >
-                  <span
+                  <h4
                     style={{
-                      fontSize: "0.9rem",
-                      color: "#475569",
-                      fontWeight: 600,
+                      margin: "0 0 20px",
+                      color: "var(--slate-900)",
+                      fontSize: "1rem",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
                     }}
                   >
-                    Plagiarism
-                  </span>
+                    Quality Metrics
+                  </h4>
                   <div
                     style={{
-                      background: plagCol.bg,
-                      color: plagCol.text,
-                      padding: "4px 12px",
-                      borderRadius: "20px",
-                      fontSize: "0.85rem",
-                      fontWeight: "bold",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "20px",
                     }}
                   >
-                    {plagScore === -1
-                      ? "Check Failed"
-                      : plagScore > 0
-                        ? `${plagScore}% (${getPlagLabel(plagScore)})`
-                        : "Not Checked"}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          color: "var(--slate-500)",
+                          fontWeight: "700",
+                        }}
+                      >
+                        SEO Score
+                      </span>
+                      <div
+                        style={{
+                          background: seoCol.bg,
+                          color: seoCol.text,
+                          padding: "6px 14px",
+                          borderRadius: "20px",
+                          fontSize: "0.85rem",
+                          fontWeight: "800",
+                        }}
+                      >
+                        {seoScore}/100
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.9rem",
+                          color: "var(--slate-500)",
+                          fontWeight: "700",
+                        }}
+                      >
+                        Plagiarism
+                      </span>
+                      <div
+                        style={{
+                          background: plagCol.bg,
+                          color: plagCol.text,
+                          padding: "6px 14px",
+                          borderRadius: "20px",
+                          fontSize: "0.85rem",
+                          fontWeight: "800",
+                        }}
+                      >
+                        {plagScore === -1 ? "FAILED" : `${plagScore}%`}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Rejection Feedback (Existing) */}
-            {previewData.rejection_feedback && (
-              <div
-                style={{
-                  background: "#fff1f2",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  border: "1px solid #fecaca",
-                }}
-              >
-                <h4
-                  style={{
-                    margin: "0 0 12px",
-                    color: "#991b1b",
-                    fontSize: "1rem",
-                  }}
-                >
-                  Past Rejection Feedback
-                </h4>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.9rem",
-                    color: "#b91c1c",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  {previewData.rejection_feedback}
-                </p>
-              </div>
-            )}
-
-            {/* Rejection Form Box */}
-            {rejectMode && (
-              <div
-                style={{
-                  background: "#fee2e2",
-                  border: "1px solid #fca5a5",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  animation: "modalFadeIn 0.3s ease-out",
-                }}
-              >
-                <h4
-                  style={{
-                    margin: "0 0 12px",
-                    color: "#991b1b",
-                    fontSize: "1rem",
-                  }}
-                >
-                  Rejection Feedback
-                </h4>
-                <p
-                  style={{
-                    margin: "0 0 12px",
-                    fontSize: "0.8rem",
-                    color: "#b91c1c",
-                  }}
-                >
-                  Please provide a detailed reason for rejection. This will be
-                  visible to the author.
-                </p>
-                <textarea
-                  value={rejectReason}
-                  onChange={(e) => {
-                    setRejectReason(e.target.value);
-                    if (e.target.value.trim()) setRejectError("");
-                  }}
-                  placeholder="Enter rejection reasons or requested changes..."
-                  style={{
-                    width: "100%",
-                    minHeight: "100px",
-                    resize: "vertical",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: rejectError
-                      ? "2px solid #ef4444"
-                      : "1px solid #fca5a5",
-                    fontSize: "0.9rem",
-                    fontFamily: "inherit",
-                    outline: "none",
-                  }}
-                  autoFocus
-                />
-                {rejectError && (
-                  <p
+                {previewData.rejection_feedback && (
+                  <div
                     style={{
-                      color: "#ef4444",
-                      fontSize: "0.8rem",
-                      margin: "8px 0 0",
-                      fontWeight: "bold",
+                      background: "#fff1f2",
+                      borderRadius: "20px",
+                      padding: "24px",
+                      border: "1px solid #fecaca",
                     }}
                   >
-                    {rejectError}
-                  </p>
+                    <h4
+                      style={{
+                        margin: "0 0 12px",
+                        color: "#991b1b",
+                        fontSize: "1rem",
+                        fontWeight: "800",
+                      }}
+                    >
+                      Past Feedback
+                    </h4>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.95rem",
+                        color: "#b91c1c",
+                        lineHeight: "1.6",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {previewData.rejection_feedback}
+                    </p>
+                  </div>
+                )}
+
+                {rejectMode && (
+                  <div
+                    style={{
+                      background: "#fee2e2",
+                      border: "2px solid #fca5a5",
+                      borderRadius: "20px",
+                      padding: "24px",
+                      animation: "modalFadeIn 0.3s ease-out",
+                    }}
+                  >
+                    <h4
+                      style={{
+                        margin: "0 0 8px",
+                        color: "#991b1b",
+                        fontSize: "1rem",
+                        fontWeight: "800",
+                      }}
+                    >
+                      Rejection Reasons
+                    </h4>
+                    <p
+                      style={{
+                        margin: "0 0 16px",
+                        fontSize: "0.85rem",
+                        color: "#b91c1c",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Provide detailed feedback to help the author improve the
+                      post.
+                    </p>
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => {
+                        setRejectReason(e.target.value);
+                        if (e.target.value.trim()) setRejectError("");
+                      }}
+                      placeholder="Enter rejection reasons or requested changes..."
+                      className="form-control"
+                      style={{
+                        minHeight: "120px",
+                        borderColor: rejectError ? "#ef4444" : "#fca5a5",
+                      }}
+                      autoFocus
+                    />
+                    {rejectError && (
+                      <p
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "0.85rem",
+                          margin: "8px 0 0",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {rejectError}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
         {/* Footer actions */}
-        <div
-          className="modal-footer"
-          style={{
-            background: "#f8fafc",
-            borderTop: "1px solid #e2e8f0",
-            padding: "16px 24px",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "12px",
-          }}
-        >
+        <div className="modal-footer">
           <button
-            className="btn-secondary"
+            className="btn-secondary btn-md"
             onClick={onClose}
             disabled={isReviewing}
-            style={{ background: "#fff", border: "1px solid #cbd5e1" }}
           >
             Close
           </button>
 
-          <button
-            className="btn-danger"
-            onClick={handleRejectClick}
-            disabled={isReviewing}
-            style={{ minWidth: "120px" }}
-          >
-            {isReviewing && rejectMode
-              ? "Rejecting..."
-              : rejectMode
-                ? "Confirm Rejection"
-                : "Reject"}
-          </button>
+          {previewData.submission_status !== "rejected" && (
+            <button
+              className="btn-danger btn-md"
+              onClick={handleRejectClick}
+              disabled={isReviewing}
+              style={{ minWidth: "120px" }}
+            >
+              {isReviewing && rejectMode
+                ? "Rejecting..."
+                : rejectMode
+                  ? "Confirm Rejection"
+                  : "Reject"}
+            </button>
+          )}
 
           <button
-            className="btn-success"
+            className="btn-success btn-md"
             onClick={onApprove}
             disabled={isReviewing || rejectMode}
             style={{
               opacity: rejectMode ? 0.5 : 1,
-              whiteSpace: "normal",
-              height: "auto",
-              padding: "10px 16px",
-              minWidth: "140px",
+              minWidth: "160px",
             }}
           >
             {isReviewing && !rejectMode ? "Approving..." : "Approve & Publish"}

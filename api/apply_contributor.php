@@ -30,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imagePath = null; // Default to null if no image or upload fails
         
         if (isset($_FILES['profilePhoto']) && $_FILES['profilePhoto']['error'] === UPLOAD_ERR_OK) {
-            // FIX: Use public/assets path for web accessibility reliably
-            $uploadDir = __DIR__ . '/../public/uploads/contributors/';
+            $isLocal = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
+            $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/contributors/' : __DIR__ . '/../uploads/contributors/';
             
             // Create directory if it doesn't exist
             if (!file_exists($uploadDir)) {
@@ -73,9 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
 
-            if (abs($width - $height) > 5) {
+            // Relaxed ratio validation: allow some leeway (e.g., 50px difference)
+            if (abs($width - $height) > 50) {
                 http_response_code(400);
-                echo json_encode(['status' => 'error', 'message' => 'Profile image must be square (1:1 ratio).']);
+                echo json_encode(['status' => 'error', 'message' => 'Profile image should be approximately square (max 50px difference).']);
                 exit;
             }
 
@@ -165,10 +166,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':volunteer_events' => $input['volunteerEvents'] ?? 'No',
                     ':product_evaluation' => $input['productEvaluation'] ?? 'No',
                     ':personal_website' => $input['personalWebsite'] ?? '',
-                    ':twitter_handle' => $input['twitterHandle'] ?? '',
-                    ':image' => $imagePath,
-                    ':id' => $existing['id']
-                ]);
+            ':twitter_handle' => $input['twitterHandle'] ?? '',
+            ':image' => $imagePath,
+            ':id' => $existing['id']
+        ]);
 
                 echo json_encode([
                     'status' => 'success',
@@ -225,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':product_evaluation' => $input['productEvaluation'] ?? 'No',
             ':personal_website' => $input['personalWebsite'] ?? '',
             ':twitter_handle' => $input['twitterHandle'] ?? '',
-            ':image' => $imagePath 
+            ':image' => $imagePath
         ]);
         
         echo json_encode([

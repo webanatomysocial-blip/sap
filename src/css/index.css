@@ -359,7 +359,7 @@ body {
   --input-disabled-bg: #f1f5f9;
   --input-radius: 8px;
   --input-height: 44px;
-  --error-color: #ef4444;
+  --error-color: #ee5e42;
   --label-color: #334155;
   --placeholder-color: #94a3b8;
 }
@@ -690,7 +690,7 @@ body.modal-open {
 .btn-delete,
 .btn-reject {
   padding: 8px 16px;
-  background: #ef4444;
+  background: #ee5e42;
   color: white;
   border: none;
   border-radius: 6px;

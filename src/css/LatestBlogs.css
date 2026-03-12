@@ -64,11 +64,29 @@
   z-index: 2;
 }
 
+.exclusive-badge-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #ee5e42; /* Coral from image */
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px; /* More rounded as in image */
+  font-size: 0.75rem;
+  font-weight: 800; /* Extra bold as in image */
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(238, 94, 66, 0.3);
+}
+
 .latest-indicator {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #ee5e42 0%, #ee5e42 100%);
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 20px;
@@ -76,7 +94,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px rgba(238, 94, 66, 0.4);
   animation: pulse 2s ease-in-out infinite;
   z-index: 2;
 }
@@ -85,11 +103,11 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(238, 94, 66, 0.4);
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 6px 16px rgba(238, 94, 66, 0.6);
   }
 }
 

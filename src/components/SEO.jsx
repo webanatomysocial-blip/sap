@@ -13,7 +13,8 @@ const SEO = ({
 }) => {
   const siteTitle = "SAP Security Expert";
   const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
-  const domain = "https://sap.kaphi.in"; // Updated to actual domain
+  const domain =
+    import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com";
 
   const getAbsoluteUrl = (path) => {
     if (!path) return `${domain}/assets/fav.png`;

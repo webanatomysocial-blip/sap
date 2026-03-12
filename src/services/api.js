@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
-    baseURL: '/api',
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -59,6 +59,7 @@ export const getCategories = () => api.get('/get_categories.php');
 export const getBlogs = () => api.get('/posts');
 export const saveBlog = (data) => api.post('/posts', data);
 export const deleteBlog = (id) => api.delete(`/posts/${id}`);
+export const toggleExclusiveContent = (data) => api.post('/admin/toggle-exclusive', data);
 export const uploadBlogImage = (formData) => api.post('/upload-blog-image', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
 });
@@ -67,6 +68,10 @@ export const uploadBlogImage = (formData) => api.post('/upload-blog-image', form
 export const getContributors = () => api.get('/admin/contributors');
 export const updateContributorStatus = (data) => api.post('/admin/contributors', data);
 export const deleteContributor = (id) => api.post('/delete_contributor.php', { id });
+
+// ── Members Management (Admin) ───────────────────────────────────────────────
+export const getAdminMembers = (status = 'all') => api.get(`/admin/members?status=${status}`);
+export const manageAdminMember = (data) => api.post('/admin/members', data);
 
 // ── Admin Profile ─────────────────────────────────────────────────────────────
 export const getAdminProfile = () => api.get('/admin/profile');
@@ -114,5 +119,12 @@ export const getAnnouncements = (isAdmin = false) =>
 
 export const saveAnnouncement = (data) =>
   api.post("/admin/announcements", data);
+
+// ── Member Auth (Public) ─────────────────────────────────────────────────────
+export const memberLogin = (data) => api.post('/member/login', data);
+export const memberSignup = (data) => api.post('/member/signup', data);
+export const updateMemberProfile = (formData) => api.post('/member/profile/update', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
 
 export default api;

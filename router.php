@@ -25,10 +25,12 @@ if (strpos($path, '/api/') === 0) {
     exit;
 }
 
-// Otherwise serve frontend index.html (SPA fallback)
-if (file_exists(__DIR__ . '/index.html')) {
+// Otherwise serve frontend through index.php (to inject SEO tags)
+if (file_exists(__DIR__ . '/index.php')) {
+    require __DIR__ . '/index.php';
+} elseif (file_exists(__DIR__ . '/index.html')) {
     require __DIR__ . '/index.html';
 } else {
-    echo "Frontend build missing (index.html not found)";
+    echo "Frontend build missing (index.php/html not found)";
 }
 ?>

@@ -16,9 +16,10 @@ if (!headers_sent()) {
     header('Referrer-Policy: strict-origin-when-cross-origin'); // Limit referrer info leakage
 
     // ── CORS Whitelist ────────────────────────────────────────────────────────
+    $domain = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
     $allowedOrigins = [
-        'https://sap.kaphi.in',
-        'https://www.sap.kaphi.in',
+        $domain,
+        str_replace('https://', 'https://www.', $domain),
         'http://localhost:5173',
         'http://127.0.0.1:5173',
         'http://localhost:3000',

@@ -89,6 +89,7 @@
   /* aspect-ratio: 16 / 9; */
   border-radius: 12px;
   overflow: hidden;
+  position: relative; /* Added to contain the exclusive-badge */
 }
 
 .blog-card-image img {
@@ -241,4 +242,25 @@
 
 .go-home-btn {
   margin-top: 10px;
+}
+
+.exclusive-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #ee5e42; /* Coral from image */
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(238, 94, 66, 0.4);
+  opacity: 1 !important;
+  visibility: visible !important;
 }

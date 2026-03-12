@@ -351,90 +351,106 @@ const AdminComments = () => {
                 ×
               </button>
             </div>
-            <div className="modal-body" data-lenis-prevent>
-              <div className="form-group">
-                <label className="form-label">
-                  Author Info: <strong>{editingComment.author}</strong>{" "}
-                  {editingComment.email && `<${editingComment.email}>`}
-                </label>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Target Post:</label>
-                {editingComment.slug ? (
-                  <a
-                    href={`/blogs/${editingComment.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="post-link"
-                    style={{ display: "block", marginTop: "4px" }}
-                  >
-                    View Post: {editingComment.slug}
-                  </a>
-                ) : (
-                  <span className="post-id-fallback">
-                    Internal ID: {editingComment.post_id}
-                  </span>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">Comment Text</label>
-                <textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  rows="5"
-                  className="form-control"
-                />
-              </div>
-              {editingComment.original_text && (
+            <div className="modal-body">
+              <form
+                id="edit-comment-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveEdit();
+                }}
+              >
                 <div className="form-group">
-                  <label className="form-label">Original Text</label>
-                  <p
-                    style={{
-                      background: "#f3f4f6",
-                      padding: "8px",
-                      borderRadius: "4px",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    {editingComment.original_text}
-                  </p>
+                  <label className="form-label">
+                    Author Info: <strong>{editingComment.author}</strong>{" "}
+                    {editingComment.email && `<${editingComment.email}>`}
+                  </label>
                 </div>
-              )}
-
-              {editingComment.status === "rejected" &&
-                editingComment.rejection_reason && (
-                  <div
-                    className="form-group"
-                    style={{
-                      background: "#fff1f2",
-                      padding: "12px",
-                      borderRadius: "6px",
-                      border: "1px solid #fecaca",
-                    }}
-                  >
-                    <label className="form-label" style={{ color: "#991b1b" }}>
-                      Rejection Reason
-                    </label>
+                <div className="form-group">
+                  <label className="form-label">Target Post:</label>
+                  {editingComment.slug ? (
+                    <a
+                      href={`/blogs/${editingComment.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="post-link"
+                      style={{ display: "block", marginTop: "4px" }}
+                    >
+                      View Post: {editingComment.slug}
+                    </a>
+                  ) : (
+                    <span className="post-id-fallback">
+                      Internal ID: {editingComment.post_id}
+                    </span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Comment Text</label>
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows="5"
+                    className="form-control"
+                  />
+                </div>
+                {editingComment.original_text && (
+                  <div className="form-group">
+                    <label className="form-label">Original Text</label>
                     <p
                       style={{
-                        margin: "4px 0 0",
-                        color: "#b91c1c",
+                        background: "#f3f4f6",
+                        padding: "8px",
+                        borderRadius: "4px",
                         fontSize: "0.9rem",
                       }}
                     >
-                      {editingComment.rejection_reason}
+                      {editingComment.original_text}
                     </p>
                   </div>
                 )}
+
+                {editingComment.status === "rejected" &&
+                  editingComment.rejection_reason && (
+                    <div
+                      className="form-group"
+                      style={{
+                        background: "#fff1f2",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        border: "1px solid #fecaca",
+                      }}
+                    >
+                      <label
+                        className="form-label"
+                        style={{ color: "#991b1b" }}
+                      >
+                        Rejection Reason
+                      </label>
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          color: "#b91c1c",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        {editingComment.rejection_reason}
+                      </p>
+                    </div>
+                  )}
+              </form>
             </div>
             <div className="modal-footer">
               <button
-                className="btn-cancel"
+                type="button"
+                className="btn-secondary"
                 onClick={() => setEditingComment(null)}
               >
                 Cancel
               </button>
-              <button className="btn-primary" onClick={handleSaveEdit}>
+              <button
+                type="submit"
+                form="edit-comment-form"
+                className="btn-primary"
+              >
                 Save Changes
               </button>
             </div>
@@ -455,7 +471,7 @@ const AdminComments = () => {
                 ×
               </button>
             </div>
-            <div className="modal-body" data-lenis-prevent>
+            <div className="modal-body">
               <div className="comment-view-details">
                 <div className="view-group">
                   <label>Author</label>
@@ -521,6 +537,7 @@ const AdminComments = () => {
             </div>
             <div className="modal-footer">
               <button
+                type="button"
                 className="btn-primary"
                 onClick={() => setViewingComment(null)}
               >
@@ -538,7 +555,7 @@ const AdminComments = () => {
         >
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, color: "#991b1b" }}>Reject Comment</h3>
+              <h3 style={{ color: "#991b1b" }}>Reject Comment</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setRejectingComment(null)}
@@ -557,43 +574,56 @@ const AdminComments = () => {
                 Provide a reason for rejecting this comment. Feedback helps
                 maintain community standards.
               </p>
-              <div className="form-group">
-                <label>Rejection Reason (Mandatory)</label>
-                <textarea
-                  className="form-control"
-                  rows="4"
-                  value={rejectReason}
-                  onChange={(e) => {
-                    setRejectReason(e.target.value);
-                    if (e.target.value.trim()) setRejectError("");
-                  }}
-                  placeholder="e.g., Spam, offensive language, or irrelevant."
-                  style={{
-                    borderColor: rejectError ? "#ef4444" : "var(--slate-300)",
-                  }}
-                />
-                {rejectError && (
-                  <small
-                    style={{
-                      color: "#ef4444",
-                      fontWeight: 600,
-                      marginTop: "4px",
-                      display: "block",
+              <form
+                id="reject-comment-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitRejection();
+                }}
+              >
+                <div className="form-group">
+                  <label>Rejection Reason (Mandatory)</label>
+                  <textarea
+                    className="form-control"
+                    rows="4"
+                    value={rejectReason}
+                    onChange={(e) => {
+                      setRejectReason(e.target.value);
+                      if (e.target.value.trim()) setRejectError("");
                     }}
-                  >
-                    {rejectError}
-                  </small>
-                )}
-              </div>
+                    placeholder="e.g., Spam, offensive language, or irrelevant."
+                    style={{
+                      borderColor: rejectError ? "#ef4444" : "var(--slate-300)",
+                    }}
+                  />
+                  {rejectError && (
+                    <small
+                      style={{
+                        color: "#ef4444",
+                        fontWeight: 600,
+                        marginTop: "4px",
+                        display: "block",
+                      }}
+                    >
+                      {rejectError}
+                    </small>
+                  )}
+                </div>
+              </form>
             </div>
             <div className="modal-footer">
               <button
-                className="btn-cancel"
+                type="button"
+                className="btn-secondary"
                 onClick={() => setRejectingComment(null)}
               >
                 Cancel
               </button>
-              <button className="btn-danger" onClick={submitRejection}>
+              <button
+                type="submit"
+                form="reject-comment-form"
+                className="btn-danger"
+              >
                 Confirm Rejection
               </button>
             </div>

@@ -2,7 +2,7 @@
 /**
  * api/fix_production_db.php
  * 
- * RUN THIS ONCE ON PRODUCTION (sap.kaphi.in) TO FIX DATABASE SCHEMA
+ * RUN THIS ONCE ON PRODUCTION (sapsecurityexpert.com) TO FIX DATABASE SCHEMA
  * 
  * 1. Fixes post_views.post_id (INT -> VARCHAR) to allow slug tracking.
  * 2. Fixes comments.timestamp (DEFAULT NULL -> CURRENT_TIMESTAMP).

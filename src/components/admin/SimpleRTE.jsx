@@ -574,16 +574,17 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
       {isSourceView ? (
         <textarea
           className="rte-source-textarea"
+          data-lenis-prevent
           value={value}
           onChange={handleSourceChange}
           onBlur={handleChange}
           placeholder="Type or paste HTML here..."
-          data-lenis-prevent="true"
         />
       ) : (
         <div
           className="rte-content"
           contentEditable
+          data-lenis-prevent
           ref={editorRef}
           onInput={handleChange}
           onBlur={handleChange}
@@ -591,7 +592,6 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
           onKeyUp={saveSelection}
           onPaste={handlePaste}
           onDoubleClick={handleDoubleClick}
-          data-lenis-prevent="true"
         />
       )}
 

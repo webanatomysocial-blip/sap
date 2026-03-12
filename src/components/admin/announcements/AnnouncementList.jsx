@@ -16,13 +16,14 @@ const AnnouncementList = ({
             <tr>
               <th className="text-left">Title</th>
               <th className="text-left">Status</th>
+              <th className="text-left">Last Updated</th>
               <th className="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {announcements.length === 0 ? (
               <tr>
-                <td colSpan="3" className="text-center">
+                <td colSpan="4" className="text-center">
                   No announcements found.
                 </td>
               </tr>
@@ -47,6 +48,7 @@ const AnnouncementList = ({
                     )}
                   </td>
                   <td className="text-left">
+                    {/* ... (Status badges) ... */}
                     {item.status === "approved" ||
                     item.status === "published" ||
                     item.status === "active" ? (
@@ -89,6 +91,17 @@ const AnnouncementList = ({
                         Draft
                       </span>
                     )}
+                  </td>
+                  <td className="text-left">
+                    <span
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "var(--slate-500)",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {formatDate(item.date)}
+                    </span>
                   </td>
                   <td className="text-center">
                     <ActionMenu>

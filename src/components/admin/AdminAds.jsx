@@ -225,40 +225,31 @@ const AdminAds = () => {
       </div>
 
       {editingZone && (
-        <div className="modal-overlay">
-          <div className="modal-container">
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Edit {zones.find((z) => z.id === editingZone)?.label}</h3>
               <button className="modal-close-btn" onClick={handleCloseModal}>
                 ×
               </button>
             </div>
-            <form
-              onSubmit={handleSaveZone}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-                overflow: "hidden",
-                minHeight: 0, // Fix for scrolling
-              }}
-            >
-              <div className="modal-body" data-lenis-prevent>
-                {message && (
-                  <div
-                    style={{
-                      padding: "10px",
-                      background: "#dcfce7",
-                      color: "#166534",
-                      marginBottom: "15px",
-                      borderRadius: "8px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {message}
-                  </div>
-                )}
+            <div className="modal-body">
+              {message && (
+                <div
+                  style={{
+                    padding: "10px",
+                    background: "#dcfce7",
+                    color: "#166534",
+                    marginBottom: "15px",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  {message}
+                </div>
+              )}
 
+              <form id="edit-ad-form" onSubmit={handleSaveZone}>
                 <div className="form-group">
                   <label className="admin-checkbox">
                     <input
@@ -328,20 +319,20 @@ const AdminAds = () => {
                     className="form-control"
                   />
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={handleCloseModal}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  Save Changes
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleCloseModal}
+              >
+                Cancel
+              </button>
+              <button type="submit" form="edit-ad-form" className="btn-primary">
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -39,7 +39,10 @@ const ContactUs = () => {
       return;
     }
 
-    addToast("Message Sent! We will contact you shortly.", "success");
+    addToast(
+      "Message sent successfully! We will contact you shortly.",
+      "success",
+    );
   };
 
   return (

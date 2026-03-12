@@ -22,6 +22,12 @@ const AdminSidebar = ({
   const adminNavItems = [
     { label: "Dashboard", path: "/admin", icon: "bi-grid-fill" },
     {
+      label: "Manage Users",
+      path: "/admin/users",
+      icon: "bi-person-check-fill",
+      badge: badges.pendingMembers,
+    },
+    {
       label: "Manage Contributors",
       path: "/admin/contributors",
       icon: "bi-people-fill",
@@ -127,7 +133,7 @@ const AdminSidebar = ({
         </div>
       )}
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" data-lenis-prevent>
         {navItems.map((item) => (
           <Link
             key={item.path}

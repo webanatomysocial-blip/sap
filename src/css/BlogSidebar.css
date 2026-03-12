@@ -40,6 +40,29 @@
   color: #333;
 }
 
+.search-highlight {
+  color: #ef4444; /* Highlighting in red as requested */
+  font-weight: 700;
+  background-color: rgba(239, 68, 68, 0.05);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.sidebar-exclusive-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: #ee5e42; /* Coral from image */
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  margin-left: 5px;
+}
+
 /* Latest Posts Widget */
 .latest-posts-list,
 .categories-list {

@@ -121,10 +121,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ],
             ]);
         } else {
-            // Increment login attempts
-            $stmt = $pdo->prepare("INSERT INTO login_attempts (ip, attempts, last_attempt) VALUES (?, 1, ?) 
-                                   ON CONFLICT(ip) DO UPDATE SET attempts = attempts + 1, last_attempt = EXCLUDED.last_attempt");
-            $stmt->execute([$ip, $now]);
+            // Increment login attempts (Cross-database compatible approach)
+            $checkStmt = $pdo->prepare("SELECT ip FROM login_attempts WHERE ip = ?");
+            $checkStmt->execute([$ip]);
+            if ($checkStmt->fetch()) {
+                $stmt = $pdo->prepare("UPDATE login_attempts SET attempts = attempts + 1, last_attempt = ? WHERE ip = ?");
+                $stmt->execute([$now, $ip]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO login_attempts (ip, attempts, last_attempt) VALUES (?, 1, ?)");
+                $stmt->execute([$ip, $now]);
+            }
 
             // Audit Log Failure
             $audit->log(null, 'login_failure', 'user', $username, 'IP: ' . $ip);

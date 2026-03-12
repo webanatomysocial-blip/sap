@@ -239,7 +239,9 @@ const AdminBlogs = () => {
       );
       return;
     }
-    const payload = { ...formData };
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 19).replace("T", " ");
+    const payload = { ...formData, date: formattedDate };
     delete payload.author;
     // author_id is now explicitly part of the form state
 
@@ -249,7 +251,7 @@ const AdminBlogs = () => {
         fetchBlogs();
         setView("list");
         setFormData(initialFormState);
-        addToast("Saved successfully", "success");
+        addToast("Blog saved successfully", "success");
       }
     } catch (err) {
       addToast(err.response?.data?.message || "Save failed", "error");

@@ -53,7 +53,7 @@ const ConfirmationModal = ({
           <h3 id="modal-title">{title}</h3>
         </div>
 
-        <div className="modal-body" data-lenis-prevent>
+        <div className="modal-body">
           <p>{message}</p>
           {showInput && (
             <input
@@ -83,7 +83,7 @@ const ConfirmationModal = ({
             {cancelText}
           </button>
           <button
-            className={`btn-primary ${isDanger ? "danger" : ""}`}
+            className={`btn-confirm ${isDanger ? "danger" : ""}`}
             onClick={() => onConfirm(inputValue)}
             style={
               isDanger

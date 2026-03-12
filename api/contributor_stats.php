@@ -38,17 +38,13 @@ try {
     $stmt->execute([$userId]);
     $row = $stmt->fetch();
 
-    // Comments on contributor's blogs (post_id stores slug or id as text)
+    // Comments on contributor's blogs
     $stmt = $pdo->prepare(
         "SELECT COUNT(*) AS total_comments
          FROM comments
-         WHERE post_id IN (
-             SELECT slug FROM blogs WHERE author_id = ?
-             UNION
-             SELECT CAST(id AS CHAR) FROM blogs WHERE author_id = ?
-         )"
+         WHERE post_id IN (SELECT slug FROM blogs WHERE author_id = ?)"
     );
-    $stmt->execute([$userId, $userId]);
+    $stmt->execute([$userId]);
     $comments = (int)$stmt->fetchColumn();
 
     // 4. Pending Reviews (if they have the permission) - EXCLUDE OWN BLOGS

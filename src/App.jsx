@@ -34,6 +34,8 @@ import ContactUs from "./pages/ContactUs";
 import BecomeContributor from "./components/BecomeContributor";
 import ContributorApplication from "./pages/ContributorApplication";
 import ContributorProfile from "./pages/ContributorProfile";
+import MemberLogin from "./pages/MemberLogin";
+import MemberSignup from "./pages/MemberSignup";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminHome from "./components/admin/AdminHome";
 import AdminContributors from "./components/admin/AdminContributors";
@@ -42,6 +44,7 @@ import AdminComments from "./components/admin/AdminComments";
 import AdminAds from "./components/admin/AdminAds";
 import AdminBlogs from "./components/admin/AdminBlogs";
 import AdminBlogReview from "./components/admin/AdminBlogReview";
+import AdminManageUsers from "./components/admin/AdminManageUsers";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
@@ -131,6 +134,10 @@ function App() {
         <Route path="contributor/:id" element={<ContributorProfile />} />
         <Route path="contact-us" element={<ContactUs />} />
 
+        {/* Members Only Auth Pages */}
+        <Route path="member/login" element={<MemberLogin />} />
+        <Route path="member/signup" element={<MemberSignup />} />
+
         {/* Legal Routes */}
         <Route path="privacy-policy" element={<PrivacyPolicy />} />
         <Route path="terms-conditions" element={<TermsConditions />} />
@@ -213,6 +220,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminAds />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute>
+              <AdminManageUsers />
             </ProtectedRoute>
           }
         />

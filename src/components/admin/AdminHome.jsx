@@ -68,6 +68,12 @@ const AdminHome = () => {
       label: "Total Blogs",
       color: "#1e293b",
     },
+    {
+      icon: "bi-person-badge",
+      value: stats.approved_members || 0,
+      label: "Members",
+      color: "#1e293b",
+    },
   ];
 
   return (

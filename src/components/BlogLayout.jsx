@@ -12,6 +12,8 @@ import CommentSection from "./CommentSection";
 import SEO from "./SEO";
 import AuthorProfile from "./AuthorProfile";
 import FAQ from "./FAQ";
+import { useMemberAuth } from "../context/MemberAuthContext";
+import MembersOnlyPaywall from "./MembersOnlyPaywall";
 
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
@@ -39,7 +41,9 @@ const BlogLayout = ({
   metaTitle,
   metaDescription,
   metaKeywords,
+  isMembersOnly = false,
 }) => {
+  const { isLoggedIn } = useMemberAuth();
   const progressBarRef = useRef(null);
   const currentUrl = window.location.href;
 
@@ -97,39 +101,45 @@ const BlogLayout = ({
 
   // JSON-LD Schema Construction
   const schemaData = useMemo(() => {
+    const domain =
+      import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com";
     const articleSchema = {
       "@context": "https://schema.org",
-      "@type": "Article",
+      "@type": "BlogPosting", // More specific than Article
       headline: title,
       image: [
         image
           ? image.startsWith("http")
             ? image
-            : `https://sap.kaphi.in${image}`
-          : "https://sap.kaphi.in/assets/sapsecurityexpert-black.png",
+            : `${domain}${image.startsWith("/") ? "" : "/"}${image}`
+          : `${domain}/assets/sapsecurityexpert-black.png`,
       ],
       datePublished: date,
-      dateModified: date, // Using date as modified for now
-      author: [
-        {
-          "@type": "Person",
-          name: author_name,
-          url: `https://sap.kaphi.in/contributor/${author_name.replace(/\s+/g, "-").toLowerCase()}`,
-        },
-      ],
+      dateModified: date,
+      author: {
+        "@type": "Person",
+        name: author_name,
+        url: `${domain}/contributor/${author_name.replace(/\s+/g, "-").toLowerCase()}`,
+      },
       publisher: {
         "@type": "Organization",
         name: "SAP Security Expert",
         logo: {
           "@type": "ImageObject",
-          url: "https://sap.kaphi.in/assets/sapsecurityexpert-black.png",
+          url: `${domain}/assets/sapsecurityexpert-black.png`,
         },
+      },
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": currentUrl,
       },
       description: metaDescription || title,
     };
 
-    if (faqs && faqs.length > 0) {
-      const faqSchema = {
+    const schemas = [articleSchema];
+
+    if (faqs && Array.isArray(faqs) && faqs.length > 0) {
+      schemas.push({
         "@context": "https://schema.org",
         "@type": "FAQPage",
         mainEntity: faqs.map((f) => ({
@@ -140,12 +150,11 @@ const BlogLayout = ({
             text: f.answer,
           },
         })),
-      };
-      return [articleSchema, faqSchema];
+      });
     }
 
-    return articleSchema;
-  }, [title, image, date, author_name, metaDescription, faqs]);
+    return schemas;
+  }, [title, image, date, author_name, metaDescription, faqs, currentUrl]);
 
   return (
     <div className="blog-post-wrapper">
@@ -207,13 +216,24 @@ const BlogLayout = ({
           </div>
 
           {/* 4. Title */}
+          {isMembersOnly && (
+            <div className="exclusive-badge-full">
+              <i className="bi bi-lock-fill"></i> Exclusive Members-Only Content
+            </div>
+          )}
           <h1 className="blog-title">{title}</h1>
 
-          {/* 5. Content Body */}
-          <article className="blog-content-body">{content}</article>
+          {/* 5. Content Body — gated behind paywall for members-only blogs */}
+          {isMembersOnly ? (
+            <MembersOnlyPaywall>
+              <article className="blog-content-body">{content}</article>
+            </MembersOnlyPaywall>
+          ) : (
+            <article className="blog-content-body">{content}</article>
+          )}
 
-          {/* FAQS SECTION */}
-          {faqs && faqs.length > 0 && (
+          {/* FAQS SECTION (Hidden for exclusive posts for guests) */}
+          {faqs && faqs.length > 0 && (!isMembersOnly || isLoggedIn) && (
             <div
               className="blog-faqs-section"
               style={{ marginTop: "40px", marginBottom: "40px" }}
@@ -222,8 +242,8 @@ const BlogLayout = ({
             </div>
           )}
 
-          {/* CTA SECTION */}
-          {cta && cta.title && (
+          {/* CTA SECTION (Hidden for exclusive posts for guests - replaced by White Box) */}
+          {cta && cta.title && (!isMembersOnly || isLoggedIn) && (
             <div
               className="blog-cta-section"
               style={{
@@ -283,127 +303,136 @@ const BlogLayout = ({
 
           <div className="post-footer-divider"></div>
 
-          {/* Dynamic Author Profile Card */}
-          {author_name ? (
-            <div
-              className="author-profile-card"
-              style={{
-                display: "flex",
-                gap: "20px",
-                padding: "30px",
-                background: "#f8fafc",
-                borderRadius: "16px",
-                marginTop: "40px",
-                border: "1px solid #e2e8f0",
-                alignItems: "start",
-              }}
-            >
-              <img
-                src={author_image || "https://placehold.co/100x100?text=Author"}
-                alt={author_name}
+          {/* Dynamic Author Profile Card (Hidden for exclusive posts for guests) */}
+          {(!isMembersOnly || isLoggedIn) &&
+            (author_name ? (
+              <div
+                className="author-profile-card"
                 style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: "4px solid #fff",
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  display: "flex",
+                  gap: "20px",
+                  padding: "30px",
+                  background: "#f8fafc",
+                  borderRadius: "16px",
+                  marginTop: "40px",
+                  border: "1px solid #e2e8f0",
+                  alignItems: "start",
                 }}
-                onError={(e) => {
-                  e.target.src = "https://placehold.co/100x100?text=Author";
-                }}
-              />
-              <div className="author-info">
-                <h3
+              >
+                <img
+                  src={
+                    author_image || "https://placehold.co/100x100?text=Author"
+                  }
+                  alt={author_name}
                   style={{
-                    margin: "0 0 8px 0",
-                    fontSize: "1.25rem",
-                    color: "#0f172a",
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "4px solid #fff",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                   }}
-                >
-                  {author_name}
-                </h3>
-                {author_designation && (
-                  <p
+                  onError={(e) => {
+                    e.target.src = "https://placehold.co/100x100?text=Author";
+                  }}
+                />
+                <div className="author-info">
+                  <h3
                     style={{
-                      margin: "-5px 0 10px 0",
-                      fontSize: "0.9rem",
-                      color: "#64748b",
-                      fontWeight: "600",
+                      margin: "0 0 8px 0",
+                      fontSize: "1.25rem",
+                      color: "#0f172a",
                     }}
                   >
-                    {author_designation}
-                  </p>
-                )}
-                <p
-                  style={{
-                    margin: "0 0 16px 0",
-                    color: "#475569",
-                    lineHeight: "1.6",
-                    fontSize: "0.95rem",
-                  }}
-                >
-                  {author_bio || "Expert SAP Security contributor."}
-                </p>
-                <div
-                  className="author-socials"
-                  style={{ display: "flex", gap: "14px", alignItems: "center" }}
-                >
-                  {author_linkedin && (
-                    <a
-                      href={author_linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="LinkedIn"
+                    {author_name}
+                  </h3>
+                  {author_designation && (
+                    <p
                       style={{
-                        color: "#0077b5",
-                        fontSize: "1.5rem",
-                        lineHeight: 1,
-                      }}
-                    >
-                      <FaLinkedin size={18} />
-                    </a>
-                  )}
-                  {author_twitter && (
-                    <a
-                      href={author_twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Twitter / X"
-                      style={{
-                        color: "#000",
-                        fontSize: "1.4rem",
-                        lineHeight: 1,
-                      }}
-                    >
-                      <FaXTwitter size={18} />
-                    </a>
-                  )}
-                  {author_website && (
-                    <a
-                      href={author_website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Website"
-                      style={{
+                        margin: "-5px 0 10px 0",
+                        fontSize: "0.9rem",
                         color: "#64748b",
-                        fontSize: "1.4rem",
-                        lineHeight: 1,
+                        fontWeight: "600",
                       }}
                     >
-                      <FaGlobe size={18} />
-                    </a>
+                      {author_designation}
+                    </p>
                   )}
+                  <p
+                    style={{
+                      margin: "0 0 16px 0",
+                      color: "#475569",
+                      lineHeight: "1.6",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    {author_bio || "Expert SAP Security contributor."}
+                  </p>
+                  <div
+                    className="author-socials"
+                    style={{
+                      display: "flex",
+                      gap: "14px",
+                      alignItems: "center",
+                    }}
+                  >
+                    {author_linkedin && (
+                      <a
+                        href={author_linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="LinkedIn"
+                        style={{
+                          color: "#0077b5",
+                          fontSize: "1.5rem",
+                          lineHeight: 1,
+                        }}
+                      >
+                        <FaLinkedin size={18} />
+                      </a>
+                    )}
+                    {author_twitter && (
+                      <a
+                        href={author_twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Twitter / X"
+                        style={{
+                          color: "#000",
+                          fontSize: "1.4rem",
+                          lineHeight: 1,
+                        }}
+                      >
+                        <FaXTwitter size={18} />
+                      </a>
+                    )}
+                    {author_website && (
+                      <a
+                        href={author_website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Website"
+                        style={{
+                          color: "#64748b",
+                          fontSize: "1.4rem",
+                          lineHeight: 1,
+                        }}
+                      >
+                        <FaGlobe size={18} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            // Absolute Fallback
-            <AuthorProfile authorId="raghu_boddu" />
-          )}
+            ) : (
+              // Absolute Fallback
+              <AuthorProfile authorId="raghu_boddu" />
+            ))}
 
-          {/* Dynamic Comment Section */}
-          <CommentSection blogId={blogId} onCommentAdded={onCommentAdded} />
+          {/* Dynamic Comment Section (Hidden for exclusive posts for guests) */}
+          {(!isMembersOnly || isLoggedIn) && (
+            <CommentSection blogId={blogId} onCommentAdded={onCommentAdded} />
+          )}
 
           {/* Navigation (Previous/Next) */}
           <div className="post-navigation">

@@ -17,8 +17,11 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'];
+$host = $_SERVER['HTTP_HOST'] ?? 'sapsecurityexpert.com'; // Fallback to production if host is missing
 $baseUrl = $protocol . $host;
+
+// If we are on localhost, og:image might not load in preview tools unless we use a public tunnel or production fallback.
+// However, for pure SEO correctness, we should use the current host.
 
 $defaultTitle = "SAP Security Expert";
 $defaultDesc = "The leading community for SAP Security, GRC, and BTP professionals. Get the latest insights, tutorials, and best practices.";
@@ -226,35 +229,31 @@ if (empty($cleanSlug)) {
 if ($cleanSlug) {
     try {
         $stmt = $pdo->prepare("
-            SELECT title, meta_title, meta_description, meta_keywords, image, slug
+            SELECT title, meta_title, meta_description, meta_keywords, image, slug, excerpt, author, date, is_members_only
             FROM blogs
-            WHERE slug = ? AND status = 'published'
+            WHERE slug = ? AND status IN ('approved', 'published')
             LIMIT 1
         ");
 
         $stmt->execute([$cleanSlug]);
         $blog = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($blog) {
-            // Use custom meta_title if set, else fall back to blog title
-            $title = !empty($blog['meta_title'])
-                ? $blog['meta_title']
-                : ($blog['title'] . " | SAP Security Expert");
-
-            $description = !empty($blog['meta_description'])
-                ? $blog['meta_description']
-                : $defaultDesc;
-
-            $keywords = !empty($blog['meta_keywords'])
-                ? $blog['meta_keywords']
-                : $defaultKeywords;
-
+if ($blog) {
+            // Dynamic SEO Mapping (Strictly from DB)
+            $title = !empty($blog['meta_title']) ? $blog['meta_title'] : $blog['title'];
+            $description = !empty($blog['meta_description']) ? $blog['meta_description'] : (!empty($blog['excerpt']) ? $blog['excerpt'] : $defaultDesc);
+            $keywords = !empty($blog['meta_keywords']) ? $blog['meta_keywords'] : $defaultKeywords;
+            
+            // Dynamic Image (No static fallback for blogs)
             if (!empty($blog['image'])) {
                 $image = getAbsoluteUrl($blog['image'], $baseUrl);
             } else {
-                $image = $defaultImage;
+                $image = $defaultAbsImage; // Minimum fallback
             }
 
+            $authorName = $blog['author'] ?? "SAP Security Expert";
+            $publishDate = $blog['date'] ?? null;
+            
             $url = getAbsoluteUrl($cleanPath, $baseUrl);
             $type = "article";
             $found = true;
@@ -271,6 +270,10 @@ if (array_key_exists($cleanPath, $staticPages)) {
     if (isset($staticPages[$cleanPath]['keywords'])) {
         $keywords = $staticPages[$cleanPath]['keywords'];
     }
+    if (!empty($staticPages[$cleanPath]['image'])) {
+        $image = getAbsoluteUrl($staticPages[$cleanPath]['image'], $baseUrl);
+    }
+    $url = getAbsoluteUrl($cleanPath, $baseUrl);
     $found = true;
 } 
 // Check Category Pages (Exact Match on slug)
@@ -279,6 +282,10 @@ else if (array_key_exists(ltrim($cleanPath, '/'), $categories)) {
      $title = $categories[$catKey]['title'];
      $description = $categories[$catKey]['description'];
      $keywords = $categories[$catKey]['keywords'];
+     if (!empty($categories[$catKey]['image'])) {
+         $image = getAbsoluteUrl($categories[$catKey]['image'], $baseUrl);
+     }
+     $url = getAbsoluteUrl($cleanPath, $baseUrl);
      $found = true;
 }
 
@@ -303,19 +310,29 @@ $html = preg_replace('/<title>.*?<\/title>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*property=["\']og:[^"\']+["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']og:[^"\']+["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']description["\'][^>]*\/?>/is', '', $html);
+$html = preg_replace('/<meta\s+[^>]*name=["\']Description["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']twitter:[^"\']+["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']keywords["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']author["\'][^>]*\/?>/is', '', $html);
 $html = preg_replace('/<meta\s+[^>]*name=["\']robots["\'][^>]*\/?>/is', '', $html);
+$html = preg_replace('/<meta\s+[^>]*name=["\']googlebot["\'][^>]*\/?>/is', '', $html);
 
 // Prepare New Tags
 $headEnd = '</head>';
+
+// Determine Image MIME Type
+$ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+$mime = 'image/jpeg';
+if ($ext === 'png') $mime = 'image/png';
+elseif ($ext === 'webp') $mime = 'image/webp';
+elseif ($ext === 'gif') $mime = 'image/gif';
+
 $ogTags = "
-    <!-- Dynamic SEO Tags via index.php (v3) -->
+    <!-- Dynamic SEO Tags via index.php (Refined) -->
     <title>" . htmlspecialchars($title) . "</title>
     <meta name=\"description\" content=\"" . htmlspecialchars($description) . "\">
     <meta name=\"keywords\" content=\"" . htmlspecialchars($keywords) . "\">
-    <meta name=\"author\" content=\"SAP Security Expert\">
+    <meta name=\"author\" content=\"" . htmlspecialchars($authorName ?? "SAP Security Expert") . "\">
     <meta name=\"robots\" content=\"index, follow\">
     <link rel=\"canonical\" href=\"" . htmlspecialchars($url) . "\">
 
@@ -326,17 +343,12 @@ $ogTags = "
     <meta property=\"og:type\" content=\"" . htmlspecialchars($type) . "\">
     <meta property=\"og:site_name\" content=\"SAP Security Expert\">
 
-    <!-- Additional Image Properties -->
-    <meta property=\"og:image:type\" content=\"image/jpeg\">
-    <meta property=\"og:image:width\" content=\"1200\">
-    <meta property=\"og:image:height\" content=\"630\">
-    <meta property=\"og:image:alt\" content=\"" . htmlspecialchars($title) . "\">
-
     <meta name=\"twitter:card\" content=\"summary_large_image\">
     <meta name=\"twitter:title\" content=\"" . htmlspecialchars($title) . "\">
     <meta name=\"twitter:description\" content=\"" . htmlspecialchars($description) . "\">
     <meta name=\"twitter:image\" content=\"" . htmlspecialchars($image) . "\">
     <meta name=\"google-adsense-account\" content=\"ca-pub-5501267075758433\">
+" . ($type === 'article' && !empty($publishDate) ? "    <meta property=\"article:published_time\" content=\"" . htmlspecialchars($publishDate) . "\">\n" : "") . "
 ";
 
 // Inject before </head>

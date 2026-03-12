@@ -30,6 +30,7 @@ const AdminLayout = () => {
     pendingContributors: 0,
     pendingReviews: 0,
     pendingComments: 0,
+    pendingMembers: 0,
   });
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -68,6 +69,7 @@ const AdminLayout = () => {
           pendingContributors: res.data.pending_contributors || 0,
           pendingReviews: res.data.pending_reviews || 0,
           pendingComments: res.data.pending_comments || 0,
+          pendingMembers: res.data.pending_members || 0,
         });
       } else if (role === "contributor") {
         const res = await getContributorStats();
@@ -119,7 +121,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     clearAuth();
-    navigate("/");
+    navigate("/admin");
     addToast("Logged out successfully", "success");
   };
 
@@ -201,6 +203,18 @@ const AdminLayout = () => {
             className="header-user"
             onClick={() => setShowDropdown((prev) => !prev)}
             ref={dropdownRef}
+            style={{
+              padding: "8px",
+              background: "#fff",
+              border: "1.5px solid var(--slate-200)",
+              borderRadius: "40px",
+              boxShadow: "var(--shadow-sm)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
           >
             <div className="user-avatar-circle">
               {adminData.profile_image ? (
@@ -211,16 +225,22 @@ const AdminLayout = () => {
                   .toUpperCase()
               )}
             </div>
-            <div className="user-meta">
-              <span className="user-name">
-                {adminData.full_name || adminData.username || "User"}
-              </span>
-              <span className="user-role">
-                {isContributor ? "Contributor" : "Super Admin"}
-              </span>
+
+            <div className="user-meta" style={{ display: "block" }}>
+              <div className="user-name">
+                {adminData.full_name || adminData.username}
+              </div>
+              <div className="user-role">{role}</div>
             </div>
+
             <LuChevronDown
               className={`chevron-icon ${showDropdown ? "rotate" : ""}`}
+              style={{
+                color: "var(--slate-400)",
+                fontSize: "1.2rem",
+                transition: "transform 0.3s ease",
+                transform: showDropdown ? "rotate(180deg)" : "rotate(0)",
+              }}
             />
 
             {showDropdown && (

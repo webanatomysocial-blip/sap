@@ -1,0 +1,328 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
+import { Helmet } from "react-helmet-async";
+import "../css/ContactForm.css"; // Reuse existing clean form styles
+
+const MemberSignup = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    company_name: "",
+    job_role: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const { addToast } = useToast();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      addToast("Passwords do not match.", "error");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { memberSignup } = await import("../services/api");
+      const res = await memberSignup(formData);
+
+      if (res.data.status === "success") {
+        setSuccess(true);
+        addToast(
+          "Account created successfully! Pending admin approval.",
+          "success",
+        );
+      } else {
+        addToast(res.data.message || "Failed to register.", "error");
+      }
+    } catch (err) {
+      addToast(
+        err.response?.data?.message ||
+          err.message ||
+          "Network error during registration.",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="contact-form-container"
+      style={{ paddingTop: "60px", minHeight: "80vh" }}
+    >
+      <Helmet>
+        <title>Become a Member | SAP Security Expert</title>
+      </Helmet>
+
+      <div className="contact-form-header">
+        <h2>Become a Member</h2>
+        <p>Join our exclusive community of SAP security professionals.</p>
+      </div>
+
+      <div
+        className="contact-form"
+        style={{
+          maxWidth: "700px",
+          margin: "0 auto",
+          background: "#fff",
+          padding: "40px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+        }}
+      >
+        {success ? (
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <h2 style={{ color: "#3b82f6", marginBottom: "16px" }}>
+              You're on the Waitlist! 🚀
+            </h2>
+            <p
+              style={{
+                color: "#475569",
+                fontSize: "1.1rem",
+                lineHeight: "1.6",
+                marginBottom: "24px",
+              }}
+            >
+              Thank you for applying to join the SAP Security Expert community.
+              Your application is currently being reviewed by our team.
+            </p>
+            
+            <div style={{
+              background: "#f8fafc",
+              padding: "24px",
+              borderRadius: "12px",
+              marginBottom: "32px",
+              border: "1px solid #e2e8f0"
+            }}>
+              <p style={{ fontWeight: "600", color: "#1e293b", marginBottom: "12px" }}>
+                Want to speed up your approval?
+              </p>
+              <p style={{ color: "#64748b", fontSize: "0.95rem", marginBottom: "20px" }}>
+                Share that you've applied on LinkedIn! Members who share their application often get approved faster.
+              </p>
+              <a 
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ 
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  gap: "10px", 
+                  textDecoration: "none",
+                  backgroundColor: "#0077b5",
+                  borderColor: "#0077b5"
+                }}
+              >
+                <i className="bi bi-linkedin"></i> Share on LinkedIn
+              </a>
+            </div>
+
+            <Link
+              to="/"
+              style={{ color: "#64748b", textDecoration: "none", fontSize: "0.95rem" }}
+            >
+              ← Back to Homepage
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+              }}
+            >
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  className="form-control"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email Address *</label>
+                <input
+                  type="email"
+                  name="email"
+                  className="form-control"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="john@example.com"
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+                marginBottom: "20px"
+              }}
+            >
+              <div className="form-group">
+                <label className="form-label">Company Name *</label>
+                <input
+                  type="text"
+                  name="company_name"
+                  className="form-control"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g. Acme Corp"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Job Role *</label>
+                <input
+                  type="text"
+                  name="job_role"
+                  className="form-control"
+                  value={formData.job_role}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g. SAP Security Lead"
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+              }}
+            >
+              <div className="form-group">
+                <label className="form-label">Phone (Optional)</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  className="form-control"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+1 234 567 8900"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  className="form-control"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="City, Country"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password *</label>
+              <input
+                type="password"
+                name="password"
+                className="form-control"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="Create a strong password"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Confirm Password *</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                className="form-control"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                placeholder="Repeat password"
+                style={{
+                  borderColor:
+                    formData.confirmPassword &&
+                    formData.password !== formData.confirmPassword
+                      ? "#ef4444"
+                      : "",
+                }}
+              />
+              {formData.confirmPassword &&
+                formData.password !== formData.confirmPassword && (
+                  <p
+                    style={{
+                      color: "#ef4444",
+                      fontSize: "0.85rem",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Passwords do not match.
+                  </p>
+                )}
+            </div>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={
+                loading ||
+                !formData.name ||
+                !formData.email ||
+                !formData.password ||
+                formData.password !== formData.confirmPassword
+              }
+              style={{ width: "100%", marginTop: "20px" }}
+            >
+              {loading ? "Submitting Application..." : "Submit Application"}
+            </button>
+
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: "24px",
+                paddingTop: "20px",
+                borderTop: "1px solid #eee",
+              }}
+            >
+              <p style={{ color: "#64748b", fontSize: "0.95rem" }}>
+                Already a member?{" "}
+                <Link
+                  to="/member/login"
+                  style={{
+                    color: "#3b82f6",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                  }}
+                >
+                  Log in here
+                </Link>
+              </p>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MemberSignup;

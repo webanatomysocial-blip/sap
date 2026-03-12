@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../css/CommentSection.css";
 import { submitComment, getCommentsByBlogId } from "../services/api";
 import { useToast } from "../context/ToastContext";
+import { useMemberAuth } from "../context/MemberAuthContext";
 
 const CommentItem = ({ comment, depth = 0, replyMap, onReply }) => {
   const replies = replyMap[comment.id] || [];
@@ -71,7 +72,8 @@ const CommentItem = ({ comment, depth = 0, replyMap, onReply }) => {
   );
 };
 
-const CommentSection = ({ blogId, onCommentAdded }) => {
+const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
+  const { isLoggedIn } = useMemberAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
@@ -153,9 +155,6 @@ const CommentSection = ({ blogId, onCommentAdded }) => {
         fetchComments();
 
         // Notify parent to increment comment count if not a reply and assuming it could be auto-approved
-        // Often we wait for moderation, but if the requirement is to sync the counter immediately
-        // upon a successful post API response that adds it to the list, we trigger it here.
-        // Let's only increment if it's a top-level comment
         if (!replyTo && onCommentAdded) {
           onCommentAdded();
         }
@@ -170,6 +169,11 @@ const CommentSection = ({ blogId, onCommentAdded }) => {
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + 3);
   };
+
+  // Early return for exclusive content protection
+  if (isExclusive && !isLoggedIn) {
+    return null;
+  }
 
   // Grouping logic
   const topLevelComments = comments.filter((c) => !c.parent_id);
@@ -287,8 +291,7 @@ const CommentSection = ({ blogId, onCommentAdded }) => {
         </div>
       </form>
 
-      {/* Reply Modal (Optional if inline is preferred, but user requested modal popup) */}
-      {/* Decided to use inline for better UX, but adding a modal class if replyTo is set to mimic "popup" behavior if needed */}
+      {/* Reply Modal */}
       {replyTo && (
         <div className="comment-reply-overlay" onClick={() => setReplyTo(null)}>
           <div

@@ -7,8 +7,10 @@ import {
   updatePostViews,
   getAdsByZone,
 } from "../services/api";
+import { useMemberAuth } from "../context/MemberAuthContext";
 
 export default function DynamicBlog() {
+  const { isLoggedIn } = useMemberAuth();
   const { blogId } = useParams(); // Expecting slug
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -164,6 +166,7 @@ export default function DynamicBlog() {
       : "Blog | SAP Security Expert");
   const seoDescription = blog.meta_description || blog.excerpt || "";
   const seoImage = blog.image || blog.featured_image || "";
+  const isExclusive = !!blog.is_members_only;
 
   return (
     <>
@@ -187,18 +190,15 @@ export default function DynamicBlog() {
         author_website={blog.author_website}
         category={blog.category}
         sidebarAd={sidebarAd}
-        // Pass recent posts if needed, but BlogLayout might handle logic or we can fetch them here.
-        // For now, let's keep it simple. BlogLayout might need dynamicRecentPosts prop?
-        // Let's implement dynamicRecentPosts logic here briefly or pass empty if BlogLayout handles it.
-        // Based on previous code, DynamicBlog was passing it.
         dynamicRecentPosts={[]}
         viewCount={blog.view_count || 0}
         commentCount={commentsCount}
         onCommentAdded={handleCommentAdded}
+        isExclusive={isExclusive}
         metaTitle={blog.meta_title}
         metaDescription={blog.meta_description}
         metaKeywords={blog.meta_keywords}
-        // NEW PROPS
+        isMembersOnly={!!blog.is_members_only}
         faqs={(() => {
           if (!blog.faqs || blog.faqs === "null") return [];
           if (Array.isArray(blog.faqs)) return blog.faqs;

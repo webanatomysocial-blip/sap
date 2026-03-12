@@ -112,7 +112,7 @@ export default function LatestBlogs() {
         <div className="latest-blogs-grid">
           {latestBlogs.map((blog) => (
             <Link
-              to={`/blogs/${blog.slug}`}
+              to={`/${(blog.category || "blogs").toLowerCase().replace(/\s+/g, "-")}/${blog.slug || blog.id}`}
               key={blog.id}
               className="latest-blog-card"
             >
@@ -121,6 +121,11 @@ export default function LatestBlogs() {
                 <span className="latest-blog-badge">
                   {getCategoryLabel(blog.category, blog.subCategory)}
                 </span>
+                {blog.is_members_only === 1 && (
+                  <div className="exclusive-badge-overlay">
+                    <i className="bi bi-lock-fill"></i> Exclusive
+                  </div>
+                )}
               </div>
               <div className="latest-blog-content">
                 <h3>{blog.title}</h3>

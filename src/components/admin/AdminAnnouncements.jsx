@@ -19,7 +19,7 @@ const AdminAnnouncements = () => {
   useScrollLock(isModalOpen);
   const [formData, setFormData] = useState({
     title: "",
-    date: new Date().toISOString().split("T")[0],
+    date: new Date().toISOString().slice(0, 19).replace("T", " "),
     link: "",
     status: "active",
     comments: 0,
@@ -47,7 +47,7 @@ const AdminAnnouncements = () => {
       setEditingId(null);
       setFormData({
         title: "",
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toISOString().slice(0, 19).replace("T", " "),
         link: "",
         status: "active",
         comments: 0,
@@ -70,14 +70,18 @@ const AdminAnnouncements = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData };
+      const now = new Date();
+      const formattedDate = now.toISOString().slice(0, 19).replace("T", " ");
+      const payload = { ...formData, date: formattedDate };
       if (editingId) payload.id = editingId;
       const res = await saveAnnouncement(payload);
       if (res.data.status === "success") {
         fetchAnnouncementsData();
         handleCloseModal();
         addToast(
-          editingId ? "Updated successfully" : "Created successfully",
+          editingId
+            ? "Announcement updated successfully"
+            : "Announcement created successfully",
           "success",
         );
       } else {
@@ -99,7 +103,7 @@ const AdminAnnouncements = () => {
           const res = await api.delete(`/admin/announcements?id=${id}`);
           if (res.data.status === "success") {
             fetchAnnouncementsData();
-            addToast("Deleted successfully", "success");
+            addToast("Announcement deleted successfully", "success");
           }
         } catch (error) {
           addToast("Error deleting announcement", "error");

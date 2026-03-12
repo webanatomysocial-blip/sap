@@ -3,6 +3,7 @@ import { LuUser, LuMail, LuUpload, LuX, LuTriangleAlert } from "react-icons/lu";
 import { getAdminProfile, updateAdminProfile } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
+import useScrollLock from "../../hooks/useScrollLock";
 
 const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,8 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
   const { addToast } = useToast();
   const { role } = useAuth();
   const isContributor = role === "contributor";
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -95,7 +98,7 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
     try {
       const res = await updateAdminProfile(data);
       if (res.data.status === "success") {
-        addToast("Profile updated successfully", "success");
+        addToast("Profile updated successfully!", "success");
         if (onUpdate) onUpdate(res.data.profile_image);
         onClose();
       }
@@ -116,11 +119,7 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div
-        className="modal-content profile-modal"
-        data-lenis-prevent
-        style={{ maxHeight: "90vh", overflowY: "auto" }}
-      >
+      <div className="modal-container">
         <div className="modal-header">
           <h3>Edit Profile</h3>
           <button className="close-btn" onClick={onClose} aria-label="Close">
@@ -128,170 +127,176 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate }) => {
           </button>
         </div>
 
-        {fetching ? (
-          <div className="modal-loading">Loading profile...</div>
-        ) : (
-          <form onSubmit={handleSubmit} className="modal-form">
-            {error && (
-              <div className="form-error">
-                <LuTriangleAlert /> {error}
-              </div>
-            )}
+        <div className="modal-body" data-lenis-prevent="true">
+          {fetching ? (
+            <div className="modal-loading">Loading profile...</div>
+          ) : (
+            <form id="profile-edit-form" onSubmit={handleSubmit}>
+              {error && (
+                <div className="form-error">
+                  <LuTriangleAlert /> {error}
+                </div>
+              )}
 
-            <div className="profile-image-section">
-              <div className="avatar-preview">
-                {preview ? (
-                  <img src={preview} alt="Profile preview" />
-                ) : (
-                  <div className="avatar-placeholder">
-                    <LuUser />
-                  </div>
-                )}
-                <label className="upload-badge" title="Change Photo">
-                  <LuUpload />
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/jpeg,image/png,image/webp"
-                    hidden
-                  />
+              <div className="profile-image-section">
+                <div className="avatar-preview">
+                  {preview ? (
+                    <img src={preview} alt="Profile preview" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      <LuUser />
+                    </div>
+                  )}
+                  <label className="upload-badge" title="Change Photo">
+                    <LuUpload />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/jpeg,image/png,image/webp"
+                      hidden
+                    />
+                  </label>
+                </div>
+                <p className="image-help">
+                  Square JPG, PNG or WebP — min 300×300px, max 2MB
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <LuUser /> Username
                 </label>
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  placeholder="Username"
+                  required
+                />
               </div>
-              <p className="image-help">
-                Square JPG, PNG or WebP — min 300×300px, max 2MB
-              </p>
-            </div>
 
-            <div className="form-group">
-              <label>
-                <LuUser /> Username
-              </label>
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                placeholder="Username"
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label>
+                  <LuUser /> Full Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, full_name: e.target.value })
+                  }
+                  placeholder="Your full name"
+                  required
+                  disabled={isContributor}
+                  className={isContributor ? "disabled-input" : ""}
+                  style={
+                    isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
+                  }
+                />
+              </div>
 
-            <div className="form-group">
-              <label>
-                <LuUser /> Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.full_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, full_name: e.target.value })
-                }
-                placeholder="Your full name"
-                required
-                disabled={isContributor}
-                className={isContributor ? "disabled-input" : ""}
-                style={
-                  isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
-                }
-              />
-            </div>
+              <div className="form-group">
+                <label>
+                  <LuMail /> Email Address
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="your@email.com"
+                  required
+                  disabled={isContributor}
+                  className={isContributor ? "disabled-input" : ""}
+                  style={
+                    isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
+                  }
+                />
+              </div>
 
-            <div className="form-group">
-              <label>
-                <LuMail /> Email Address
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="your@email.com"
-                required
-                disabled={isContributor}
-                className={isContributor ? "disabled-input" : ""}
-                style={
-                  isContributor ? { cursor: "not-allowed", opacity: 0.7 } : {}
-                }
-              />
-            </div>
+              <div className="form-group">
+                <label>Short Bio</label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bio: e.target.value })
+                  }
+                  placeholder="A brief introduction about yourself..."
+                  rows="3"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Short Bio</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) =>
-                  setFormData({ ...formData, bio: e.target.value })
-                }
-                placeholder="A brief introduction about yourself..."
-                rows="3"
-              />
-            </div>
+              <div className="form-group">
+                <label>Designation</label>
+                <input
+                  type="text"
+                  value={formData.designation}
+                  onChange={(e) =>
+                    setFormData({ ...formData, designation: e.target.value })
+                  }
+                  placeholder="e.g. SAP Security Consultant"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Designation</label>
-              <input
-                type="text"
-                value={formData.designation}
-                onChange={(e) =>
-                  setFormData({ ...formData, designation: e.target.value })
-                }
-                placeholder="e.g. SAP Security Consultant"
-              />
-            </div>
+              <div className="form-group">
+                <label>LinkedIn Profile URL</label>
+                <input
+                  type="url"
+                  value={formData.linkedin}
+                  onChange={(e) =>
+                    setFormData({ ...formData, linkedin: e.target.value })
+                  }
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>LinkedIn Profile URL</label>
-              <input
-                type="url"
-                value={formData.linkedin}
-                onChange={(e) =>
-                  setFormData({ ...formData, linkedin: e.target.value })
-                }
-                placeholder="https://linkedin.com/in/username"
-              />
-            </div>
+              <div className="form-group">
+                <label>Twitter/X Handle</label>
+                <input
+                  type="text"
+                  value={formData.twitter_handle}
+                  onChange={(e) =>
+                    setFormData({ ...formData, twitter_handle: e.target.value })
+                  }
+                  placeholder="@username"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Twitter/X Handle</label>
-              <input
-                type="text"
-                value={formData.twitter_handle}
-                onChange={(e) =>
-                  setFormData({ ...formData, twitter_handle: e.target.value })
-                }
-                placeholder="@username"
-              />
-            </div>
+              <div className="form-group">
+                <label>Personal Website / Blog</label>
+                <input
+                  type="url"
+                  value={formData.personal_website}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      personal_website: e.target.value,
+                    })
+                  }
+                  placeholder="https://yourwebsite.com"
+                />
+              </div>
+            </form>
+          )}
+        </div>
 
-            <div className="form-group">
-              <label>Personal Website / Blog</label>
-              <input
-                type="url"
-                value={formData.personal_website}
-                onChange={(e) =>
-                  setFormData({ ...formData, personal_website: e.target.value })
-                }
-                placeholder="https://yourwebsite.com"
-              />
-            </div>
-
-            <div className="modal-footer">
-              <button type="button" className="btn-secondary" onClick={onClose}>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary btn-md"
-                disabled={loading}
-              >
-                {loading ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          </form>
-        )}
+        <div className="modal-footer">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="profile-edit-form"
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -23,6 +23,8 @@ class BlogService {
         $isContributor = ($role === 'contributor');
 
         $sql = "SELECT b.*, 
+                       b.view_count,
+                       (SELECT COUNT(*) FROM comments c_count WHERE c_count.post_id = b.slug AND c_count.status = 'approved') as comment_count,
                        u.id as author_id, u.username as author_username, u.role as author_role,
                        COALESCE(c.full_name, u.full_name, u.username) as author_name,
                        COALESCE(c.image, u.profile_image) as author_image,
@@ -68,6 +70,8 @@ class BlogService {
         $isContributor = ($role === 'contributor');
 
         $sql = "SELECT b.*, 
+                       b.view_count,
+                       (SELECT COUNT(*) FROM comments c_count WHERE c_count.post_id = b.slug AND c_count.status = 'approved') as comment_count,
                        u.id as author_id, u.username as author_username, u.role as author_role, u.email as author_email,
                        COALESCE(c.full_name, u.full_name, u.username) as author_name,
                        COALESCE(c.image, u.profile_image) as author_image,
@@ -101,6 +105,40 @@ class BlogService {
                 $blog['author_name'] = "Guest Author";
                 $blog['author_image'] = "https://placehold.co/100x100?text=Author";
             }
+
+            // ── Exclusivity Enforcement ──────────────────────────────────────────
+            // If post is members-only, check for member session or admin/contributor status.
+            $isMembersOnly = (int)($blog['is_members_only'] ?? 0);
+            $isMember = !empty($_SESSION['member_logged_in']);
+            $hasAdminAccess = !empty($currentUserId); // In this context, currentUserId is set if admin/contributor logged in
+
+            if ($isMembersOnly && !$isMember && !$hasAdminAccess) {
+                // 1-Para Teaser Logic: Extract first <p> or first 400 chars
+                $teaser = '';
+                if (preg_match('/<p>(.*?)<\/p>/is', $blog['content'], $matches)) {
+                    $teaser = $matches[0]; // Include the tags
+                } else {
+                    $teaser = '<p>' . substr(strip_tags($blog['content']), 0, 400) . '...</p>';
+                }
+                $blog['content'] = $teaser;
+
+                // Strict Redaction of sensitive fields
+                $blog['faqs'] = null;
+                $blog['cta_title'] = "Professional Content Locked";
+                $blog['cta_description'] = "Join our expert community to access premium SAP security insights, technical guides, and member-only analysis.";
+                $blog['cta_button_text'] = "Join Members Area";
+                $blog['cta_button_link'] = "/member/signup";
+
+                // Redact Author Everything (Protect the expert's identity for guests)
+                $blog['author'] = "SAP Security Expert";
+                $blog['author_name'] = "SAP Security Expert";
+                $blog['author_bio'] = null;
+                $blog['author_image'] = null;
+                $blog['author_designation'] = null;
+                $blog['author_linkedin'] = null;
+                $blog['author_twitter'] = null;
+                $blog['author_website'] = null;
+            }
         }
 
         return $blog;
@@ -111,15 +149,9 @@ class BlogService {
         $isContributor = ($role === 'contributor');
         $isAdmin = ($role === 'admin');
 
-        // Force Author Identity
-        if ($isAdmin) {
-            $author_id = (int)$currentUserId;
-            $authorName = "Raghu Boddu";
-        } else {
-            $author_id = (int)$currentUserId;
-            // Contributor username/name will be fetched via COALESCE in queries
-            $authorName = $_SESSION['admin_username'] ?? 'Contributor';
-        }
+        // Initial Author Identity (Defaults for New Blogs)
+        $author_id = (int)$currentUserId;
+        $authorName = $isAdmin ? "Raghu Boddu" : ($_SESSION['admin_username'] ?? 'Contributor');
 
         // Fields
         $title = $data['title'] ?? '';
@@ -138,6 +170,13 @@ class BlogService {
         $cta_description = $data['cta_description'] ?? null;
         $cta_button_text = $data['cta_button_text'] ?? null;
         $cta_button_link = $data['cta_button_link'] ?? null;
+        $is_members_only = isset($data['is_members_only']) ? (int)$data['is_members_only'] : 0;
+
+        // Auto-generate slug if title is present but slug is missing
+        if (empty($slug) && !empty($title)) {
+            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
+            $slug = trim($slug, '-');
+        }
 
         // Validation
         if (empty($category) || $category === 'Select Category' || $category === 'none') {
@@ -152,13 +191,20 @@ class BlogService {
 
         if ($id) {
             // Update Logic
-            $stmt = $this->pdo->prepare("SELECT author_id, submission_status, status, plagiarism_score FROM blogs WHERE id = ?");
+            $stmt = $this->pdo->prepare("SELECT author_id, author, submission_status, status, plagiarism_score FROM blogs WHERE id = ?");
             $stmt->execute([$id]);
             $existing = $stmt->fetch();
 
-            if (!$existing) return ['status' => 'error', 'message' => 'Blog not found'];
-
             $existingPlagScore = $existing['plagiarism_score'] ?? 0;
+            $oldSlug = $existing['slug'] ?? '';
+            
+            // Cascading Slug Change: If slug changed, update linked data
+            if (!empty($oldSlug) && !empty($slug) && $oldSlug !== $slug) {
+                $this->pdo->prepare("UPDATE comments SET post_id = ? WHERE post_id = ?")->execute([$slug, $oldSlug]);
+                $this->pdo->prepare("UPDATE post_views SET post_id = ? WHERE post_id = ?")->execute([$slug, $oldSlug]);
+            }
+            $author_id = (int)$existing['author_id'];
+            $authorName = $existing['author'];
 
             if (!$isAdmin && $existing['author_id'] != $currentUserId) {
                 return ['status' => 'error', 'message' => 'Unauthorized'];
@@ -198,11 +244,12 @@ class BlogService {
                 $subStatus = $isAdmin ? 'approved' : 'submitted';
 
                 $sql = "UPDATE blogs SET 
-                        title=?, slug=?, excerpt=?, content=?, date=?, image=?, category=?, tags=?, faqs=?,
+                        title=?, slug=?, excerpt=?, content=?, date=COALESCE(NULLIF(?, ''), CURRENT_DATE), image=?, category=?, tags=?, faqs=?,
                         cta_title=?, cta_description=?, cta_button_text=?, cta_button_link=?,
                         meta_title=?, meta_description=?, meta_keywords=?,
                         status=?, submission_status=?, rejection_feedback = NULL,
                         author_id = ?, author = ?, seo_score = ?, plagiarism_score = ?, plagiarism_status = 'completed',
+                        is_members_only = ?, updated_at = CURRENT_TIMESTAMP,
                         draft_title=NULL, draft_content=NULL, draft_excerpt=NULL, draft_image=NULL, 
                         draft_category=NULL, draft_faqs=NULL, draft_meta_title=NULL, draft_meta_description=NULL,
                         draft_meta_keywords=NULL, draft_cta_title=NULL, draft_cta_description=NULL,
@@ -217,7 +264,7 @@ class BlogService {
                     $cta_title, $cta_description, $cta_button_text, $cta_button_link,
                     $meta_title, $meta_description, $meta_keywords,
                     $targetStatus, $subStatus,
-                    $author_id, $authorName, $seoScore, $finalPlag, $id
+                    $author_id, $authorName, $seoScore, $finalPlag, $is_members_only, $id
                 ];
                 $this->pdo->prepare($sql)->execute($params);
                 $this->invalidateHomepage();
@@ -234,15 +281,15 @@ class BlogService {
             $sql = "INSERT INTO blogs 
                     (id, title, slug, excerpt, content, author, author_id, date, image, category, tags, faqs,
                      cta_title, cta_description, cta_button_text, cta_button_link,
-                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')";
+                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status, is_members_only, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_DATE), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             $plagRes = checkPlagiarismScore($content, $id, $this->pdo);
             $plagScore = $plagRes['score'];
             $finalPlag = ($plagScore === -1) ? 0 : $plagScore; // New blog fallback is 0 (Not Checked)
             $params = [
                 $id, $title, $slug, $excerpt, $content, $authorName, $author_id, $date, $image, $category, $tags, json_encode($faqs),
                 $cta_title, $cta_description, $cta_button_text, $cta_button_link,
-                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag
+                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag, $is_members_only
             ];
             $this->pdo->prepare($sql)->execute($params);
             $this->invalidateHomepage();

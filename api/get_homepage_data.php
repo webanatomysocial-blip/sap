@@ -40,8 +40,10 @@ try {
     $currentDate = gmdate('Y-m-d');
     $currentDateTime = gmdate('Y-m-d H:i:s');
 
-    // 1. Fetch Featured Blog (Latest 1)
+    // 1. Fetch Featured Blog (Latest 1, using full datetime)
     $featuredSql = "SELECT b.*,
+                   b.category,
+                   b.view_count,
                    CASE
                      WHEN u.role = 'admin' OR b.author_id IS NULL THEN 'Raghu Boddu'
                      ELSE COALESCE(c.full_name, b.author)
@@ -59,16 +61,19 @@ try {
         LEFT JOIN users u ON b.author_id = u.id
         LEFT JOIN contributors c ON u.contributor_id = c.id
         WHERE b.status IN ('approved', 'published') AND b.date <= ?
-        ORDER BY b.created_at DESC LIMIT 1";
+        ORDER BY b.date DESC, b.id DESC LIMIT 1";
     
     $stmt = $pdo->prepare($featuredSql);
-    $stmt->execute([$currentDate]);
+    $stmt->execute([$currentDateTime]);
     $featured = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 2. Fetch Recent Blogs (Next 3, excluding featured)
+    // 2. Fetch Recent Blogs (Next 3, excluding featured, using full datetime sort)
     $recent = [];
     $recentParams = [];
     $sql = "SELECT b.*,
+                   b.category,
+                   b.view_count,
+                   (SELECT COUNT(*) FROM comments c2 WHERE c2.post_id = b.slug AND c2.status = 'approved') AS comment_count,
                    CASE
                      WHEN u.role = 'admin' OR b.author_id IS NULL THEN 'Raghu Boddu'
                      ELSE COALESCE(c.full_name, b.author)
@@ -85,14 +90,14 @@ try {
             LEFT JOIN users u ON b.author_id = u.id
             LEFT JOIN contributors c ON u.contributor_id = c.id
             WHERE b.status = 'approved' AND b.date <= ?";
-    $recentParams[] = $currentDate;
+    $recentParams[] = $currentDateTime;
 
     if ($featured) {
         $sql .= " AND b.id != ?";
         $recentParams[] = $featured['id'];
     }
     
-    $sql .= " ORDER BY b.created_at DESC LIMIT 3";
+    $sql .= " ORDER BY b.date DESC, b.id DESC LIMIT 3";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute($recentParams);

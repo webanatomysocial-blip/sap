@@ -18,6 +18,7 @@
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     define('ALLOW_PUBLIC_API', true);
 }
+require_once 'db.php';
 require_once 'auth_check.php';
 require_once 'utils.php';            // deleteImage() helper
 require_once 'services/BlogService.php';

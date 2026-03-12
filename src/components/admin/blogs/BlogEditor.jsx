@@ -18,7 +18,7 @@ const BlogEditor = ({
       className="blog-editor-layout"
       style={{
         display: "grid",
-        gridTemplateColumns: "2fr 1fr",
+        gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)",
         gap: "24px",
         alignItems: "start",
       }}
@@ -137,7 +137,6 @@ const BlogEditor = ({
           </button>
 
           <div className="form-group">
-            {" "}
             <label className="form-label">Category</label>
             <select
               name="category"
@@ -169,18 +168,6 @@ const BlogEditor = ({
               <option value="videos">Videos</option>
               <option value="other-tools">Other Tools</option>
             </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Publish Date</label>
-            <input
-              className="form-control"
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              required
-            />
           </div>
         </div>
 

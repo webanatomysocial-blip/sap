@@ -156,7 +156,7 @@ const ContributorApplication = () => {
 
       if (res.data?.status === "success") {
         setSubmitStatus("success");
-        addToast("Application Submitted Successfully!", "success");
+        addToast("Application submitted successfully!", "success");
         window.scrollTo(0, 0);
       } else {
         console.error("Server error:", res.data?.message);

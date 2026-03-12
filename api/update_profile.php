@@ -81,16 +81,16 @@ try {
             exit;
         }
 
-        // 4. Ratio Validation (1:1 ratio within strict tolerance)
-        $ratio = $width / $height;
-        if (abs($width - $height) > 5) {
+        // 4. Ratio Validation (Relaxed tolerance)
+        if (abs($width - $height) > 50) {
             http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Image must be exactly square (1:1 ratio)']);
+            echo json_encode(['status' => 'error', 'message' => 'Image should be approximately square (max 50px difference)']);
             exit;
         }
 
         // 5. Save Image
-        $uploadDir = __DIR__ . '/../public/uploads/contributors/';
+        $isLocal = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
+        $uploadDir = $isLocal ? __DIR__ . '/../public/uploads/contributors/' : __DIR__ . '/../uploads/contributors/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
@@ -181,9 +181,9 @@ try {
     // 3. Timestamp
     $isSqlite = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
     if ($isSqlite) {
-        $userUpdates[] = "updated_at = datetime('now')";
+        $userUpdates[] = "updated_at = CURRENT_TIMESTAMP";
     } else {
-        $userUpdates[] = "updated_at = NOW()";
+        $userUpdates[] = "updated_at = CURRENT_TIMESTAMP";
     }
 
     // 4. Execute User Updates

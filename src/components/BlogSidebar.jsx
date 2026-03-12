@@ -128,6 +128,24 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
+  const highlightSearch = (text) => {
+    if (!searchTerm.trim()) return text;
+    const parts = text.split(new RegExp(`(${searchTerm})`, "gi"));
+    return (
+      <span>
+        {parts.map((part, i) =>
+          part.toLowerCase() === searchTerm.toLowerCase() ? (
+            <span key={i} className="search-highlight">
+              {part}
+            </span>
+          ) : (
+            part
+          )
+        )}
+      </span>
+    );
+  };
+
   return (
     <aside className="blog-sidebar">
       {/* Search Widget */}
@@ -157,8 +175,13 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
             {filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
                 <li key={post.id} className="latest-post-item">
-                  <Link to={`/${post.category || "blogs"}/${post.slug}`}>
-                    {post.title}
+                  <Link to={`/${(post.category || "blogs").toLowerCase().replace(/\s+/g, "-")}/${post.slug || post.id}`}>
+                    {highlightSearch(post.title)}
+                    {post.is_members_only === 1 && (
+                      <span className="sidebar-exclusive-tag">
+                        <i className="bi bi-lock-fill"></i> Exclusive
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))

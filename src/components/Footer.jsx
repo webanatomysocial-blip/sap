@@ -125,8 +125,14 @@ const Footer = () => {
           SAP SE, SAP AG, or any of their affiliates ("SAP") has no affiliation,
           association, endorsement, sponsorship, or connection whatsoever with
           SAP Security Expert or the website{" "}
-          <a href="https://www.sapsecurityexpert.com">
-            www.sapsecurityexpert.com
+          <a
+            href={
+              import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com"
+            }
+          >
+            {(import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com")
+              .replace("https://", "")
+              .replace("http://", "")}
           </a>
           . This website is independently owned and operated by a third party
           and is not authorized, approved, or related in any manner to SAP. All

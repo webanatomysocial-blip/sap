@@ -24,8 +24,8 @@
 }
 
 .user-avatar-circle {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   overflow: hidden;
   background: var(--slate-800, #1e293b);
@@ -36,6 +36,7 @@
   font-size: 14px;
   color: white;
   flex-shrink: 0;
+  border: 3px solid #e2e8f0;
 }
 
 .user-avatar-circle img {
@@ -295,7 +296,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 8px;
   padding-top: 16px;
   border-top: 1px solid var(--slate-100, #f1f5f9);
 }
@@ -555,6 +555,7 @@
   cursor: pointer;
   transition: background 0.2s ease;
   flex-shrink: 0;
+  /* display:none; */
 }
 
 .toggle-switch::after {
@@ -568,6 +569,7 @@
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease;
+  display:none;
 }
 
 .toggle-switch.on {

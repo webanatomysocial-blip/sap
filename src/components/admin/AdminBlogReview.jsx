@@ -393,7 +393,7 @@ const AdminBlogReview = () => {
             setReviewingId(previewBlog.id);
             reviewBlog(previewBlog.id, "reject", reason)
               .then(() => {
-                addToast("Blog rejected.", "success");
+                addToast("Blog rejected successfully.", "success");
                 setBlogs((prev) => prev.filter((b) => b.id !== previewBlog.id));
                 setPreviewBlog(null);
               })

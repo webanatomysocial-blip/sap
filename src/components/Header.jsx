@@ -1,9 +1,15 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useContext, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../css/header.css";
 import logo from "../assets/sapsecurityexpert-black.png";
 import { FiMenu, FiX } from "react-icons/fi";
 import { FaChevronDown } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { useMemberAuth } from "../context/MemberAuthContext";
+
+import { LuSettings, LuUser, LuKey, LuLogOut } from "react-icons/lu";
+import MemberProfileModal from "./MemberProfileModal";
+import ResetPasswordModal from "./admin/ResetPasswordModal";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,6 +18,26 @@ const Header = () => {
     sapGrc: false,
     resources: false,
   });
+
+  const { isLoggedIn, role, user } = useAuth();
+  const {
+    isLoggedIn: isMemberLoggedIn,
+    member,
+    logout: memberLogout,
+  } = useMemberAuth();
+  const navigate = useNavigate();
+
+  // These states from the instruction seem to be for a different header implementation,
+  // but I'll add them as requested, assuming they might be used elsewhere or are placeholders.
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Member profile state
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const memberDropdownRef = useRef(null);
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -97,10 +123,84 @@ const Header = () => {
 
         {/* Right Actions */}
         <div className="header-actions">
-          <Link to="/become-a-contributor" className="btn-contributor">
-            Become a Contributor
-          </Link>
+          <div
+            className="nav-actions only-windows"
+            style={{ display: "flex", alignItems: "center", gap: "15px" }}
+          >
+            {isMemberLoggedIn && member ? (
+              <div
+                className="member-profile-wrap"
+                ref={memberDropdownRef}
+                style={{ position: "relative" }}
+              >
+                <div
+                  className="header-member-pill"
+                  onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)}
+                  style={{
+                    padding: "0",
+                    background: "transparent",
+                    border: "none",
+                    boxShadow: "none",
+                  }}
+                >
+                  <div className="member-avatar-circle">
+                    {member.profile_image ? (
+                      <img src={member.profile_image} alt="Avatar" />
+                    ) : (
+                      (member.name || member.email || "M")
+                        .charAt(0)
+                        .toUpperCase()
+                    )}
+                  </div>
+                </div>
 
+                {isMemberDropdownOpen && (
+                  <div className="member-dropdown-menu">
+                    <div className="member-dropdown-header">
+                      <strong>{member.name}</strong>
+                      <span>{member.email}</span>
+                    </div>
+                    <button
+                      className="member-dropdown-item"
+                      onClick={() => {
+                        setIsProfileModalOpen(true);
+                        setIsMemberDropdownOpen(false);
+                      }}
+                    >
+                      <LuUser className="dropdown-icon" /> Profile Settings
+                    </button>
+                    <button
+                      className="member-dropdown-item"
+                      onClick={() => {
+                        setIsResetPasswordOpen(true);
+                        setIsMemberDropdownOpen(false);
+                      }}
+                    >
+                      <LuKey className="dropdown-icon" /> Reset Password
+                    </button>
+                    <button
+                      className="member-dropdown-item logout"
+                      onClick={() => {
+                        memberLogout();
+                        setIsMemberDropdownOpen(false);
+                        navigate("/member/login");
+                      }}
+                    >
+                      <LuLogOut className="dropdown-icon" /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/member/login" className="btn-header-login">
+                Member Login
+              </Link>
+            )}
+
+            <Link to="/become-a-contributor" className="btn-header-signup">
+              Become a Contributor
+            </Link>
+          </div>
           <button
             className="mobile-menu-btn only-mobile"
             onClick={() => setMenuOpen(true)}
@@ -120,6 +220,59 @@ const Header = () => {
         </div>
 
         <nav className="mobile-nav">
+          {isMemberLoggedIn && member ? (
+            <div className="mobile-profile-card">
+              <div className="mobile-profile-header">
+                <div className="mobile-profile-avatar">
+                  {member.profile_image ? (
+                    <img src={member.profile_image} alt="Avatar" />
+                  ) : (
+                    (member.name || member.email || "M").charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div className="mobile-profile-info">
+                  <span className="mobile-profile-name">{member.name}</span>
+                  <span className="mobile-profile-email">{member.email}</span>
+                  <span className="mobile-profile-role">Member</span>
+                </div>
+              </div>
+              <div className="mobile-profile-actions">
+                <button
+                  className="mobile-profile-btn"
+                  onClick={() => {
+                    setIsProfileModalOpen(true);
+                    closeMenu();
+                  }}
+                >
+                  <LuUser size={18} /> Profile Settings
+                </button>
+                <button
+                  className="mobile-profile-btn"
+                  onClick={() => {
+                    setIsResetPasswordOpen(true);
+                    closeMenu();
+                  }}
+                >
+                  <LuKey size={18} /> Reset Password
+                </button>
+                <button
+                  className="mobile-profile-btn logout"
+                  onClick={() => {
+                    memberLogout();
+                    closeMenu();
+                    navigate("/member/login");
+                  }}
+                >
+                  <LuLogOut size={18} /> Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link to="/member/login" onClick={closeMenu}>
+              Member Login
+            </Link>
+          )}
+
           <Link to="/" onClick={closeMenu}>
             Home
           </Link>
@@ -252,6 +405,14 @@ const Header = () => {
           </Link>
         </nav>
       </div>
+      <MemberProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
+      <ResetPasswordModal
+        isOpen={isResetPasswordOpen}
+        onClose={() => setIsResetPasswordOpen(false)}
+      />
     </header>
   );
 };

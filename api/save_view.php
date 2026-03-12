@@ -32,7 +32,7 @@ if (!$postId) {
 try {
     // Check if blog exists and is currently live
     $now = gmdate('Y-m-d H:i:s');
-    $stmt = $pdo->prepare("SELECT id FROM blogs WHERE (slug = ? OR id = ?) AND (status = 'published' OR (status = 'scheduled' AND publish_date <= ?))");
+    $stmt = $pdo->prepare("SELECT id FROM blogs WHERE (slug = ? OR id = ?) AND (status IN ('published', 'approved') OR (status = 'scheduled' AND publish_date <= ?))");
     $stmt->execute([$postId, $postId, $now]);
     $blog = $stmt->fetch();
 

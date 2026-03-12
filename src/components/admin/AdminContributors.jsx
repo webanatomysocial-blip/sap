@@ -47,6 +47,20 @@ const AdminContributors = () => {
     fetchApplications();
   }, []);
 
+  useEffect(() => {
+    if (selectedApp) {
+      document.body.classList.add("modal-open");
+      if (window.lenis) window.lenis.stop();
+    } else {
+      document.body.classList.remove("modal-open");
+      if (window.lenis) window.lenis.start();
+    }
+    return () => {
+      document.body.classList.remove("modal-open");
+      if (window.lenis) window.lenis.start();
+    };
+  }, [selectedApp]);
+
   const updateStatus = async (id, status, rejection_reason = null) => {
     try {
       const res = await updateContributorStatus({
@@ -55,19 +69,20 @@ const AdminContributors = () => {
         rejection_reason,
       });
       if (res.data.status === "success") {
-        // Find the application BEFORE updating state to have the object
-        const approvedApp = applications.find((app) => app.id === id);
-
         // Optimistic update or refresh
         setApplications((prev) =>
           prev.map((app) =>
             app.id === id ? { ...app, status, rejection_reason } : app,
           ),
         );
+
+        // Find the application AFTER state update logic setup to have the updated object
+        const approvedApp = applications.find((app) => app.id === id);
+
         setSelectedApp(null);
         setRejectingId(null);
         setRejectReason("");
-        addToast(`Application ${status}.`, "success");
+        addToast(`Application ${status} successfully.`, "success");
 
         // If newly approved, trigger Manage Login modal automatically
         if (status === "approved" && approvedApp) {
@@ -78,7 +93,7 @@ const AdminContributors = () => {
       }
     } catch (error) {
       console.error(`Error updating status to ${status}:`, error);
-      addToast("Network error.", "error");
+      addToast("Connection error. Please try again.", "error");
     }
   };
 
@@ -96,13 +111,13 @@ const AdminContributors = () => {
             if (selectedApp && selectedApp.id === id) {
               setSelectedApp(null);
             }
-            addToast("Contributor deleted.", "success");
+            addToast("Contributor deleted successfully.", "success");
           } else {
             addToast("Failed to delete: " + res.data.message, "error");
           }
         } catch (error) {
           console.error("Error deleting contributor:", error);
-          addToast("Network error.", "error");
+          addToast("Connection error. Please try again.", "error");
         }
       },
     });
@@ -179,11 +194,14 @@ const AdminContributors = () => {
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th className="text-center" style={{ width: "60px" }}>
+                    #
+                  </th>
                   <th className="col-name text-left">Name</th>
                   <th className="col-role text-left">Role</th>
                   <th className="col-status">Status</th>
                   <th className="col-date text-left">Date</th>
-                  <th className="col-actions text-center">Action</th>
+                  <th className="col-actions text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,7 +210,7 @@ const AdminContributors = () => {
                     filterStatus === "all" || app.status === filterStatus,
                 ).length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center">
+                    <td colSpan="6" className="text-center">
                       No {filterStatus !== "all" ? filterStatus : ""}{" "}
                       applications found.
                     </td>
@@ -203,8 +221,14 @@ const AdminContributors = () => {
                       (app) =>
                         filterStatus === "all" || app.status === filterStatus,
                     )
-                    .map((app) => (
+                    .map((app, index) => (
                       <tr key={app.id}>
+                        <td
+                          className="text-center"
+                          style={{ color: "#64748b", fontWeight: 500 }}
+                        >
+                          {index + 1}
+                        </td>
                         <td className="col-name text-left">
                           <strong>{app.name}</strong>
                           <br />
@@ -297,7 +321,7 @@ const AdminContributors = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h2 style={{ margin: 0 }}>Contributor Details</h2>
+              <h3>Contributor Details</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setSelectedApp(null)}
@@ -306,7 +330,7 @@ const AdminContributors = () => {
               </button>
             </div>
 
-            <div className="modal-body" data-lenis-prevent>
+            <div className="modal-body" data-lenis-prevent="true">
               <div style={{ textAlign: "center", marginBottom: "20px" }}>
                 {selectedApp.profile_image ? (
                   <img
@@ -538,6 +562,12 @@ const AdminContributors = () => {
                   }}
                 >
                   {(() => {
+                    const typeLabels = {
+                      technicalArticle: "Technical Article / Tutorial",
+                      opinionPiece: "Opinion Piece / Thought Leadership",
+                      news: "News / Industry Updates",
+                      tools: "Tools, Scripts, or Resources",
+                    };
                     if (!selectedApp.contribution_types) return "None";
                     try {
                       const types =
@@ -545,9 +575,9 @@ const AdminContributors = () => {
                           ? JSON.parse(selectedApp.contribution_types)
                           : selectedApp.contribution_types;
                       if (typeof types === "object" && !Array.isArray(types)) {
-                        const active = Object.keys(types).filter(
-                          (k) => types[k] === true,
-                        );
+                        const active = Object.keys(types)
+                          .filter((k) => types[k] === true)
+                          .map((k) => typeLabels[k] || k);
                         return active.length > 0 ? active.join(", ") : "None";
                       }
                       return JSON.stringify(types);
@@ -562,23 +592,30 @@ const AdminContributors = () => {
                 selectedApp.rejection_reason && (
                   <div
                     style={{
-                      marginBottom: "15px",
+                      marginBottom: "24px",
                       background: "#fff1f2",
-                      padding: "16px",
-                      borderRadius: "8px",
+                      padding: "20px",
+                      borderRadius: "12px",
                       border: "1px solid #fecaca",
                     }}
                   >
-                    <strong style={{ color: "#991b1b" }}>
+                    <strong
+                      style={{
+                        color: "#991b1b",
+                        display: "block",
+                        marginBottom: "8px",
+                      }}
+                    >
                       Rejection Reason:
                     </strong>
                     <p
                       style={{
-                        margin: "8px 0 0",
+                        margin: 0,
                         color: "#b91c1c",
                         fontSize: "0.95rem",
-                        lineHeight: "1.5",
+                        lineHeight: "1.6",
                         fontWeight: 500,
+                        wordBreak: "break-word",
                       }}
                     >
                       {selectedApp.rejection_reason}
@@ -595,6 +632,7 @@ const AdminContributors = () => {
                     borderRadius: "6px",
                     marginTop: "5px",
                     color: "#334155",
+                    wordBreak: "break-word",
                   }}
                 >
                   {selectedApp.proposed_topics || "N/A"}
@@ -610,9 +648,18 @@ const AdminContributors = () => {
                     borderRadius: "6px",
                     marginTop: "5px",
                     color: "#334155",
+                    wordBreak: "break-word",
                   }}
                 >
                   {(() => {
+                    const expertiseLabels = {
+                      sapSecurity: "SAP Security (ABAP/Java)",
+                      sapGrc: "SAP GRC (Access Control, Process Control, RM)",
+                      sapIag: "Audit & Compliance",
+                      sapBtp: "Cybersecurity",
+                      sapCyber: "IAM / Cloud Security",
+                      sapLicensing: "Data Security & Privacy",
+                    };
                     if (!selectedApp.expertise) return "None listed";
                     try {
                       const exp =
@@ -620,11 +667,10 @@ const AdminContributors = () => {
                           ? JSON.parse(selectedApp.expertise)
                           : selectedApp.expertise;
 
-                      // If object with booleans (from new form)
                       if (!Array.isArray(exp) && typeof exp === "object") {
-                        const active = Object.keys(exp).filter(
-                          (k) => exp[k] === true,
-                        );
+                        const active = Object.keys(exp)
+                          .filter((k) => exp[k] === true)
+                          .map((k) => expertiseLabels[k] || k);
                         return active.length > 0
                           ? active.join(", ")
                           : "None listed";
@@ -713,9 +759,7 @@ const AdminContributors = () => {
         <div className="modal-overlay" onClick={() => setRejectingId(null)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, color: "#991b1b" }}>
-                Reject Application
-              </h3>
+              <h3 style={{ color: "#991b1b" }}>Reject Application</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setRejectingId(null)}
@@ -723,7 +767,7 @@ const AdminContributors = () => {
                 ×
               </button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" data-lenis-prevent="true">
               <p
                 style={{
                   color: "#64748b",

@@ -165,6 +165,35 @@ if ($path === '/migrate-contributor-login') {
     require __DIR__ . '/migrate_contributor_login.php';
     exit;
 }
+if ($path === '/migrate-members') {
+    require __DIR__ . '/migrate_members.php';
+    exit;
+}
+
+// 11. Members (public) API
+if ($path === '/member/signup') {
+    require __DIR__ . '/member_signup.php';
+    exit;
+}
+if ($path === '/member/login') {
+    require __DIR__ . '/member_login.php';
+    exit;
+}
+if ($path === '/member/profile/update') {
+    require __DIR__ . '/member_update_profile.php';
+    exit;
+}
+
+// 12. Admin Members Management
+if ($path === '/admin/members') {
+    require __DIR__ . '/admin_members.php';
+    exit;
+}
+
+if ($path === '/admin/toggle-exclusive') {
+    require __DIR__ . '/toggle_exclusive_content.php';
+    exit;
+}
 
 // 404 Fallback
 http_response_code(404);

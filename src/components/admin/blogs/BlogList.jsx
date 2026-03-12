@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import ActionMenu from "../ActionMenu";
-import { recalculatePlagiarism } from "../../../services/api";
+import {
+  recalculatePlagiarism,
+  toggleExclusiveContent,
+} from "../../../services/api";
 import { useToast } from "../../../context/ToastContext";
 
 const BlogList = ({
@@ -12,6 +15,7 @@ const BlogList = ({
   getScoreColor,
 }) => {
   const [recalculating, setRecalculating] = useState({});
+  const [togglingMap, setTogglingMap] = useState({});
   const { addToast } = useToast();
 
   const handleRecalculate = async (blogId) => {
@@ -20,7 +24,7 @@ const BlogList = ({
       const res = await recalculatePlagiarism(blogId);
       if (res.data.status === "success") {
         const newScore = res.data.plagiarism_score;
-        addToast("Plagiarism score updated.", "success");
+        addToast("Plagiarism score updated successfully.", "success");
         setBlogs((prev) =>
           prev.map((b) =>
             b.id === blogId ? { ...b, plagiarism_score: newScore } : b,
@@ -36,12 +40,43 @@ const BlogList = ({
         );
       }
     } catch (err) {
-      addToast("Error during recalculation.", "error");
+      addToast("Failed to recalculate plagiarism score.", "error");
       setBlogs((prev) =>
         prev.map((b) => (b.id === blogId ? { ...b, plagiarism_score: -1 } : b)),
       );
     } finally {
       setRecalculating((prev) => ({ ...prev, [blogId]: false }));
+    }
+  };
+
+  const handleToggleExclusive = async (blog) => {
+    const newVal = blog.is_members_only === 1 ? 0 : 1;
+    setTogglingMap((prev) => ({ ...prev, [blog.id]: true }));
+    try {
+      const res = await toggleExclusiveContent({
+        id: blog.id,
+        is_members_only: newVal,
+      });
+      if (res.data?.status === "success") {
+        addToast(
+          `Exclusive content ${newVal ? "enabled" : "disabled"} successfully.`,
+          "success",
+        );
+        setBlogs((prev) =>
+          prev.map((b) =>
+            b.id === blog.id ? { ...b, is_members_only: newVal } : b,
+          ),
+        );
+      } else {
+        addToast(
+          res.data?.message || "Failed to update exclusive content",
+          "error",
+        );
+      }
+    } catch (err) {
+      addToast("Error updating exclusive content flag", "error");
+    } finally {
+      setTogglingMap((prev) => ({ ...prev, [blog.id]: false }));
     }
   };
 
@@ -52,7 +87,10 @@ const BlogList = ({
           <thead>
             <tr>
               <th className="text-left col-title">Title</th>
+              <th className="text-left">Slug</th>
               <th className="text-left">Status</th>
+              <th className="text-left">Last Updated</th>
+              <th className="text-center">Exclusive</th>
               <th className="text-center">SEO Score</th>
               <th className="text-center">Plagiarism Score</th>
               <th className="text-center">Actions</th>
@@ -61,13 +99,22 @@ const BlogList = ({
           <tbody>
             {blogs.length === 0 ? (
               <tr>
-                <td colSpan="5">No custom blogs found.</td>
+                <td colSpan="7">No custom blogs found.</td>
               </tr>
             ) : (
               blogs.map((blog) => (
                 <tr key={blog.id}>
                   <td className="text-left col-title">
-                    <span title={blog.title}>{blog.title}</span>
+                    <span
+                      title={blog.title}
+                      style={{
+                        wordBreak: "break-word",
+                        display: "block",
+                        minWidth: "200px",
+                      }}
+                    >
+                      {blog.title}
+                    </span>
                     {/* Status Badges */}
                     {blog.submission_status === "edited" && (
                       <span
@@ -113,6 +160,11 @@ const BlogList = ({
                         {blog.rejection_feedback || "No feedback provided."}
                       </div>
                     )}
+                  </td>
+                  <td className="text-left">
+                    <code style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                      {blog.slug || "—"}
+                    </code>
                   </td>
                   <td className="text-left">
                     {blog.status === "approved" ||
@@ -172,6 +224,30 @@ const BlogList = ({
                         Draft
                       </span>
                     )}
+                  </td>
+                  <td className="text-left">
+                    <span
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "var(--slate-500)",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {formatDate(blog.date)}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <label
+                      className={`toggle-switch ${togglingMap[blog.id] ? "toggle-loading" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={blog.is_members_only === 1}
+                        onChange={() => handleToggleExclusive(blog)}
+                        disabled={togglingMap[blog.id]}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
                   </td>
                   <td className="text-center">
                     <span

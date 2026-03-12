@@ -35,14 +35,26 @@ sql("");
 
 // ── SQLite → MySQL type mapping ───────────────────────────────────────────────
 function sqliteTypeToMysql($sqliteType, $colName) {
-    // Special cases for indexed columns
-    // SQLite's typelessness means these are often just TEXT, but MySQL requires lengths for indexes
-    if ($colName === 'ip' || $colName === 'ip_address') return 'VARCHAR(45)'; // supports IPv6
-    if ($colName === 'slug') return 'VARCHAR(255)';
-    if ($colName === 'username') return 'VARCHAR(255)';
-   if ($colName === 'post_id') return 'VARCHAR(255)';
+    if (!$sqliteType && $colName) {
+        // Fallback for missing types in some ALTER TABLE scenarios
+        $dateCols = ['created_at', 'updated_at', 'approved_at', 'publish_date', 'publish_datetime', 'plagiarism_checked_at', 'date'];
+        if (in_array(strtolower($colName), $dateCols)) return 'DATETIME';
+        return 'LONGTEXT';
+    }
 
-    $t = strtoupper(trim($sqliteType ?? '')); // guard against null types from ALTER TABLE columns
+    // Special cases for indexed columns - MySQL/MariaDB requires lengths for keys
+    $col = strtolower($colName ?? '');
+    if ($col === 'ip' || $col === 'ip_address') return 'VARCHAR(45)'; // supports IPv6
+    if ($col === 'slug' || $col === 'username' || $col === 'email' || $col === 'post_id' || $col === 'company_name' || $col === 'job_role') return 'VARCHAR(255)';
+    if ($col === 'status' || $col === 'role') return 'VARCHAR(50)';
+
+    $t = strtoupper(trim($sqliteType ?? '')); 
+
+    // Date/Time specific mapping even if TEXT in SQLite (common for members table etc)
+    $dateColsArr = ['created_at', 'updated_at', 'approved_at', 'publish_date', 'publish_datetime', 'plagiarism_checked_at', 'date'];
+    if (in_array($col, $dateColsArr)) {
+        return 'DATETIME';
+    }
 
     // Exact / prefix matches
     if ($t === '' || $t === 'TEXT' || $t === 'CLOB')           return 'LONGTEXT';
@@ -59,7 +71,7 @@ function sqliteTypeToMysql($sqliteType, $colName) {
     if (str_starts_with($t, 'MEDIUMTEXT'))                      return 'MEDIUMTEXT';
 
     // id column heuristic
-    if ($colName === 'id' && ($t === '' || $t === 'INTEGER'))   return 'INT(11)';
+    if ($col === 'id' && ($t === '' || $t === 'INTEGER'))   return 'INT(11)';
 
     return 'LONGTEXT'; // safe fallback
 }
@@ -74,7 +86,7 @@ $allTables = $pdo->query(
 $skipData = ['login_attempts', 'audit_logs', 'analytics', 'plagiarism_logs'];
 
 // Tables to write in a specific safe order (parent before child)
-$orderedTables = ['users', 'contributors', 'blogs', 'announcements', 'ads',
+$orderedTables = ['users', 'contributors', 'members', 'blogs', 'announcements', 'ads',
                   'comments', 'contributor_applications', 'user_permissions',
                   'post_views', 'login_attempts', 'plagiarism_logs',
                   'audit_logs', 'analytics'];
@@ -108,16 +120,26 @@ foreach ($orderedTables as $table) {
         // Handle defaults
         $dflt = $col['dflt_value'];
         if ($dflt !== null && $dflt !== '' && strtoupper($dflt) !== 'NULL') {
-            if (strtoupper($dflt) === 'CURRENT_TIMESTAMP') {
+            $dfltUpper = strtoupper(trim($dflt));
+            if ($dfltUpper === 'CURRENT_TIMESTAMP' || 
+                $dfltUpper === "DATETIME('NOW')" || 
+                $dfltUpper === "DATETIME(\"NOW\")" ||
+                $dfltUpper === "(DATETIME('NOW'))" ||
+                $dfltUpper === "(DATETIME(\"NOW\"))") {
                 $default = ' DEFAULT CURRENT_TIMESTAMP';
             } else {
                 // Strip outer quotes if present
                 $dfltClean = trim($dflt, "'\"");
-                $default = " DEFAULT '" . addslashes($dfltClean) . "'";
+                
+                // If the cleaned value is a number, don't quote it in default for numeric types
+                if (is_numeric($dfltClean) && in_array($type, ['INT(11)', 'DOUBLE', 'DECIMAL(10,2)', 'TINYINT(1)'])) {
+                    $default = " DEFAULT " . $dfltClean;
+                } else {
+                    $default = " DEFAULT '" . addslashes($dfltClean) . "'";
+                }
                 
                 // MySQL Strict Mode Fix: LONGTEXT/JSON cannot have string default values.
-                // If a column has a string default (like 'pending' or 'Admin'), it's a short string.
-                if ($type === 'LONGTEXT' || $type === 'JSON') {
+                if (($type === 'LONGTEXT' || $type === 'JSON') && $default !== '') {
                     $type = 'VARCHAR(255)';
                 }
             }
