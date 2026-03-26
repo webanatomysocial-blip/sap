@@ -24,16 +24,17 @@ Deny from all
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Prevent direct access to forbidden folders
     RewriteRule ^cache/ - [F,L]
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^migrations/ - [F,L]
 
-    # Route all API requests to index.php (The Custom PHP Router)
-    RewriteBase /api/
+    # Route all other API requests to index.php
+    # We remove RewriteBase to ensure it works correctly in subdirectories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
-
 </IfModule>
 
 # Block backup files

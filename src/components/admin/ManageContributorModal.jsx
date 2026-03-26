@@ -97,6 +97,7 @@ const ManageContributorModal = ({ contributor, onClose }) => {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contributor.id]);
 
   const handlePermChange = (key, checked) => {
@@ -520,7 +521,7 @@ const ManageContributorModal = ({ contributor, onClose }) => {
                 ? "Saving..."
                 : hasLogin
                   ? "Update Access"
-                  : "Create Login"}
+                  : created ? "Created" : "Save"}
             </button>
           )}
         </div>

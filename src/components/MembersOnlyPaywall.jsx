@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useMemberAuth } from "../context/MemberAuthContext";
 import "../css/members-paywall.css";
@@ -6,82 +6,21 @@ import "../css/members-paywall.css";
 /**
  * MembersOnlyPaywall
  *
- * Renders an overlay that:
- * 1. Blocks scroll past 100vh when user is not a logged-in member.
- * 2. Shows heading + Login / Sign Up buttons.
- * 3. If member is authenticated → renders nothing (children show freely).
+ * For logged-out users:
+ *   - Shows only the first ~1 paragraph of content (via CSS max-height + fade)
+ *   - Displays a lock card with Login / Sign Up buttons beneath the preview
+ *
+ * For logged-in members:
+ *   - Renders children normally with no restriction.
  *
  * Usage:
  *   <MembersOnlyPaywall>
- *     <BlogContent />
+ *     <YourContent />
  *   </MembersOnlyPaywall>
  */
 const MembersOnlyPaywall = ({ children }) => {
   const { isLoggedIn } = useMemberAuth();
   const navigate = useNavigate();
-  const scrollBlockRef = useRef(false);
-
-  // Block scroll past 100vh when paywall is active
-  useEffect(() => {
-    if (isLoggedIn) return;
-
-    const LIMIT = window.innerHeight; // 100vh
-
-    const blockScroll = (e) => {
-      if (scrollBlockRef.current) return;
-      const scrollY = window.scrollY || window.pageYOffset;
-      if (scrollY >= LIMIT - 50) {
-        e.preventDefault();
-        window.scrollTo({ top: LIMIT - 50 });
-        scrollBlockRef.current = true;
-        setTimeout(() => {
-          scrollBlockRef.current = false;
-        }, 100);
-      }
-    };
-
-    const handleWheel = (e) => {
-      const scrollY = window.scrollY || window.pageYOffset;
-      if (scrollY >= LIMIT - 55) {
-        e.preventDefault();
-      }
-    };
-
-    const handleKeyDown = (e) => {
-      const keys = [" ", "PageDown", "ArrowDown", "End"];
-      const scrollY = window.scrollY || window.pageYOffset;
-      if (keys.includes(e.key) && scrollY >= LIMIT - 60) {
-        e.preventDefault();
-      }
-    };
-
-    // Touch support
-    let touchStartY = 0;
-    const handleTouchStart = (e) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e) => {
-      const touchY = e.touches[0].clientY;
-      const scrollY = window.scrollY || window.pageYOffset;
-      if (touchStartY > touchY && scrollY >= LIMIT - 55) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener("scroll", blockScroll, { passive: false });
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-
-    return () => {
-      window.removeEventListener("scroll", blockScroll);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [isLoggedIn]);
 
   // If logged in, render children normally with no restriction
   if (isLoggedIn) {
@@ -90,19 +29,22 @@ const MembersOnlyPaywall = ({ children }) => {
 
   return (
     <>
-      {/* Content is still rendered for SEO but visually clipped */}
+      {/* Show a short preview of the content — clipped to ~1 paragraph height */}
       <div className="members-content-preview">{children}</div>
 
       {/* Paywall overlay */}
       <div className="members-paywall-overlay">
         <div className="members-paywall-gradient" />
         <div className="members-paywall-card">
+          <div className="members-paywall-lock-icon">
+            <i className="bi bi-lock-fill"></i>
+          </div>
           <h2 className="members-paywall-heading">
-            Exclusive Content for Members
+            Exclusive Members-Only Content
           </h2>
           <p className="members-paywall-subtext">
             Join our expert community to access premium SAP security insights,
-            technical guides, and member-only analysis.
+            technical guides, and members-only analysis.
           </p>
           <div className="members-paywall-actions">
             <button
@@ -115,7 +57,7 @@ const MembersOnlyPaywall = ({ children }) => {
               className="members-paywall-btn-signup"
               onClick={() => navigate("/member/signup")}
             >
-              Sign Up — It's Free
+              Sign Up — It&apos;s Free
             </button>
           </div>
           <p className="members-paywall-note">

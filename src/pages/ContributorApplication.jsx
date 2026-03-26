@@ -119,6 +119,23 @@ const ContributorApplication = () => {
     setShowTermsModal(true);
   };
 
+  const [captchaData, setCaptchaData] = useState({ question: "2 + 2 = ?", loading: true });
+  const [captchaAnsInput, setCaptchaAnsInput] = useState("");
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
+  const fetchCaptcha = async () => {
+    try {
+      const { getCaptcha } = await import("../services/api");
+      const res = await getCaptcha();
+      setCaptchaData({ question: res.data.question, loading: false });
+    } catch (err) {
+      console.error("Failed to load captcha", err);
+    }
+  };
+
   // Triggered by "Agree & Submit" in Modal
   const handleFinalSubmit = async () => {
     setShowTermsModal(false);
@@ -131,14 +148,14 @@ const ContributorApplication = () => {
       if (key === "expertise" || key === "contributionTypes") {
         payload.append(key, JSON.stringify(formData[key]));
       } else if (key === "primaryMotivation") {
-        // Convert object of booleans to comma separated string for backward compatibility with backend
+        // Convert object of booleans to comma separated string (format camelCase to Title Case)
         const selectedMotivations = Object.keys(formData.primaryMotivation)
           .filter((k) => formData.primaryMotivation[k] === true)
           .map((k) =>
             k
               .replace(/([A-Z])/g, " $1")
               .replace(/^./, (str) => str.toUpperCase()),
-          ) // format camelCase to Title Case
+          ) 
           .join(", ");
         payload.append(key, selectedMotivations || "");
       } else if (key === "profilePhoto") {
@@ -149,6 +166,9 @@ const ContributorApplication = () => {
         payload.append(key, formData[key] || "");
       }
     });
+
+    // Add Captcha Ans
+    payload.append("captchaAns", captchaAnsInput);
 
     try {
       // Use standardized API service
@@ -166,6 +186,7 @@ const ContributorApplication = () => {
             "Something went wrong while submitting your application. Please try again.",
           "error",
         );
+        fetchCaptcha(); // Refresh captcha on failure
       }
     } catch (error) {
       console.error("Network error submitting application:", error);
@@ -174,6 +195,7 @@ const ContributorApplication = () => {
         error.response?.data?.message ||
         "We're having trouble connecting to the system. Please check your internet connection and try again.";
       addToast(errorMsg, "error");
+      fetchCaptcha();
     } finally {
       setIsSubmitting(false);
       if (submitStatus === "success") {
@@ -511,14 +533,15 @@ const ContributorApplication = () => {
 
                 <div className="form-group">
                   <label className="form-label">
-                    Short Bio (100-150 words)
+                    Short Bio (Max 200 words)
                   </label>
                   <textarea
                     className="form-control"
                     name="shortBio"
-                    rows="3"
+                    rows="6"
                     value={formData.shortBio}
                     onChange={handleInputChange}
+                    placeholder="Tell us about your professional journey. You can use multiple paragraphs."
                   ></textarea>
                 </div>
               </div>
@@ -854,12 +877,33 @@ const ContributorApplication = () => {
                 </div>
               </div>
 
+              {/* Section 6: Bot Protection */}
+              <div className="form-section">
+                <h3>6. Bot Protection</h3>
+                <div className="form-group full">
+                  <label className="form-label">
+                    Security Challenge: {captchaData.question} *
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={captchaAnsInput}
+                    onChange={(e) => setCaptchaAnsInput(e.target.value)}
+                    required
+                    placeholder="Enter result"
+                  />
+                  <small style={{ color: "var(--text-muted)", marginTop: "8px", display: "block" }}>
+                    Please solve this simple math problem to verify you are human.
+                  </small>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="form-footer">
                 <button
                   type="submit"
                   className="btn-primary"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !captchaAnsInput}
                 >
                   Summary & Terms <i className="bi bi-arrow-right"></i>
                 </button>

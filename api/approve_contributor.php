@@ -32,17 +32,11 @@ try {
     $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
-        $to = $user['email'];
-        $subject = "Welcome to the SAP Security Expert Community!";
-        $message = "Hello " . $user['full_name'] . ",\n\n" .
-                   "Congratulations! Your application to become a '" . $user['role'] . "' has been approved.\n\n" .
-                   "We are thrilled to have you onboard. You can now start contributing.\n\n" .
-                   "Best Regards,\nSAP Security Expert Team";
-        
-        $headers = "From: hello@sapsecurityexpert.com";
-
-        // Attempt to send email
-        @mail($to, $subject, $message, $headers);
+        require_once 'services/NotificationService.php';
+        $ns = new NotificationService();
+        $siteUrl = getenv('SITE_URL') ?: 'http://localhost:5173';
+        $loginUrl = $siteUrl . '/member/login';
+        $ns->notifyContributorApproved($user['email'], $user['full_name'], $loginUrl);
     }
 
     echo json_encode(["status" => "success", "message" => "Application approved and email sent."]);

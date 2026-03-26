@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
@@ -53,47 +53,59 @@ const AdminLayout = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch profile and stats when authenticated
+  const isMounted = useRef(true);
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProfile();
-      fetchBadges();
-    }
-  }, [isAuthenticated, location.pathname]);
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
-  const fetchBadges = async () => {
+  const fetchBadges = useCallback(async () => {
     try {
       if (role === "admin") {
         const res = await getAdminStats();
-        setBadges({
-          pendingContributors: res.data.pending_contributors || 0,
-          pendingReviews: res.data.pending_reviews || 0,
-          pendingComments: res.data.pending_comments || 0,
-          pendingMembers: res.data.pending_members || 0,
-        });
+        if (isMounted.current) {
+          setBadges({
+            pendingContributors: res.data.pending_contributors || 0,
+            pendingReviews: res.data.pending_reviews || 0,
+            pendingComments: res.data.pending_comments || 0,
+            pendingMembers: res.data.pending_members || 0,
+          });
+        }
       } else if (role === "contributor") {
         const res = await getContributorStats();
-        setBadges({
-          pendingContributors: 0,
-          pendingReviews: res.data.pending_reviews || 0,
-          pendingComments: res.data.pending_comments || 0,
-        });
+        if (isMounted.current) {
+          setBadges({
+            pendingContributors: 0,
+            pendingReviews: res.data.pending_reviews || 0,
+            pendingComments: res.data.pending_comments || 0,
+          });
+        }
       }
     } catch (err) {
       console.error("Failed to fetch dashboard badges", err);
     }
-  };
+  }, [role]);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await getAdminProfile();
-      if (res.data.status === "success") {
+      if (isMounted.current && res.data.status === "success") {
         setAdminData(res.data.user);
       }
     } catch (err) {
       console.error("Failed to fetch admin profile", err);
     }
-  };
+  }, []);
+
+  // Fetch profile and stats when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const initDashboard = async () => {
+        await Promise.all([fetchProfile(), fetchBadges()]);
+      };
+      initDashboard();
+    }
+  }, [isAuthenticated, location.pathname, fetchProfile, fetchBadges]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -138,14 +150,19 @@ const AdminLayout = () => {
   };
 
   // ── Login Screen ────────────────────────────────────────────────────────────
-  if (
-    !isAuthenticated &&
-    (location.pathname === "/admin" || location.pathname === "/admin/")
-  ) {
+  if (!isAuthenticated) {
     return (
       <div className="admin-login-wrapper">
         <div className="admin-login-box">
-          <h2 style={{ marginBottom: "20px", textAlign: "center" }}>
+          <div className="sidebar-header" style={{ border: 'none', background: 'transparent' }}>
+            <img 
+               src="/assets/sapsecurityexpert-white.png" 
+               alt="SAP Security Expert" 
+               className="sidebar-logo" 
+               style={{ filter: 'brightness(0) invert(0.2)', marginBottom: '30px' }}
+            />
+          </div>
+          <h2 style={{ marginBottom: "20px", textAlign: "center", color: '#1e293b' }}>
             Admin Login
           </h2>
           <form onSubmit={handleLogin}>
@@ -160,7 +177,7 @@ const AdminLayout = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label" style={{ marginTop: '15px' }}>Password</label>
               <input
                 type="password"
                 className="form-control"
@@ -172,7 +189,7 @@ const AdminLayout = () => {
             <button
               type="submit"
               className="btn-primary"
-              style={{ width: "100%", marginTop: "10px" }}
+              style={{ width: "100%", marginTop: "25px", height: '45px' }}
             >
               Login
             </button>
@@ -183,7 +200,7 @@ const AdminLayout = () => {
   }
 
   // ── Authenticated layout ────────────────────────────────────────────────────
-  const isContributor = role === "contributor";
+
 
   return (
     <div className="admin-container">

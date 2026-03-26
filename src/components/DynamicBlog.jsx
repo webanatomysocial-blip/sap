@@ -7,10 +7,8 @@ import {
   updatePostViews,
   getAdsByZone,
 } from "../services/api";
-import { useMemberAuth } from "../context/MemberAuthContext";
 
 export default function DynamicBlog() {
-  const { isLoggedIn } = useMemberAuth();
   const { blogId } = useParams(); // Expecting slug
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,9 +26,6 @@ export default function DynamicBlog() {
   // Check for Virtual Blog (API) + Track Views
   useEffect(() => {
     if (!blogId) return;
-
-    setLoading(true);
-    setError(null);
 
     // Generate or retrieve visitor_token from localStorage
     let visitorToken = localStorage.getItem("visitor_token");
@@ -136,7 +131,7 @@ export default function DynamicBlog() {
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p>Loading Blog...</p>
+        <p>Blog...</p>
       </div>
     );
   }
@@ -159,14 +154,7 @@ export default function DynamicBlog() {
     );
   }
 
-  const seoTitle =
-    blog.meta_title ||
-    (blog.title
-      ? `${blog.title} | SAP Security Expert`
-      : "Blog | SAP Security Expert");
-  const seoDescription = blog.meta_description || blog.excerpt || "";
-  const seoImage = blog.image || blog.featured_image || "";
-  const isExclusive = !!blog.is_members_only;
+  const isExclusive = Number(blog.is_members_only) === 1;
 
   return (
     <>
@@ -198,7 +186,7 @@ export default function DynamicBlog() {
         metaTitle={blog.meta_title}
         metaDescription={blog.meta_description}
         metaKeywords={blog.meta_keywords}
-        isMembersOnly={!!blog.is_members_only}
+        isMembersOnly={isExclusive}
         faqs={(() => {
           if (!blog.faqs || blog.faqs === "null") return [];
           if (Array.isArray(blog.faqs)) return blog.faqs;

@@ -86,7 +86,7 @@
 
 .blog-card-image {
   width: 100%;
-  /* aspect-ratio: 16 / 9; */
+  aspect-ratio: 16 / 9;
   border-radius: 12px;
   overflow: hidden;
   position: relative; /* Added to contain the exclusive-badge */

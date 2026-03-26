@@ -48,6 +48,10 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) AS c FROM members WHERE status = 'pending'");
     $pending_members = (int)$stmt->fetchColumn();
 
+    // Total views across all blogs
+    $stmt = $pdo->query("SELECT SUM(view_count) AS total FROM blogs");
+    $total_views = (int)$stmt->fetchColumn();
+
     echo json_encode([
         'contributors'         => $contributors,
         'pending_contributors' => $pending_contributors,

@@ -9,7 +9,6 @@ import {
   saveBlog,
   deleteBlog,
   uploadBlogImage,
-  getAuthors,
   bulkRecalculatePlagiarism,
 } from "../../services/api";
 
@@ -25,7 +24,7 @@ const AdminBlogs = () => {
   const [view, setView] = useState("list"); // 'list' | 'editor'
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
-  const { role, user } = useAuth();
+  const { role } = useAuth();
   const isAdmin = role === "admin";
 
   const initialFormState = {
@@ -49,12 +48,15 @@ const AdminBlogs = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [uploading, setUploading] = useState(false);
   const [imageVersion, setImageVersion] = useState(Date.now());
-  const [authorsList, setAuthorsList] = useState([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("active"); // "active" | "rejected"
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
+
   useEffect(() => {
     fetchBlogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const safeJsonParse = (val, fallback = []) => {
@@ -221,6 +223,7 @@ const AdminBlogs = () => {
             addToast("Deleted successfully", "success");
           }
         } catch (err) {
+          console.error(err);
           addToast("Delete failed", "error");
         }
       },
@@ -275,6 +278,7 @@ const AdminBlogs = () => {
             addToast(res.data.message || "Bulk update failed.", "error");
           }
         } catch (err) {
+          console.error(err);
           addToast("Error during bulk recalculation.", "error");
         } finally {
           setIsBulkProcessing(false);
@@ -354,13 +358,53 @@ const AdminBlogs = () => {
         </div>
       </div>
 
+      {view === "list" && (
+        <div className="admin-filter-bar" style={{ marginBottom: "20px", display: "flex", gap: "15px", alignItems: "center", background: "#fff", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <div style={{ flex: 1, position: "relative" }}>
+            <i className="bi bi-search" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }}></i>
+            <input
+              type="text"
+              placeholder="Search blogs by title or author..."
+              className="form-control"
+              style={{ paddingLeft: "35px", width: "100%" }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <select
+            className="form-control"
+            style={{ width: "200px" }}
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="All">All Categories</option>
+            <option value="sap-grc">SAP GRC</option>
+            <option value="sap-iag">IAM</option>
+            <option value="sap-licensing">Licensing</option>
+            <option value="sap-public-cloud">Cloud</option>
+            <option value="sap-btp-security">Cybersecurity</option>
+            <option value="podcasts">Podcasts</option>
+            <option value="other-tools">Tools</option>
+          </select>
+        </div>
+      )}
+
       {view === "list" ? (
         <BlogList
-          blogs={blogs.filter((b) =>
-            activeTab === "rejected"
-              ? b.submission_status === "rejected"
-              : b.submission_status !== "rejected",
-          )}
+          blogs={blogs
+            .filter((b) =>
+              activeTab === "rejected"
+                ? b.submission_status === "rejected"
+                : b.submission_status !== "rejected",
+            )
+            .filter((b) => {
+              const matchesSearch =
+                b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (b.author_name || "").toLowerCase().includes(searchQuery.toLowerCase());
+              const matchesCategory =
+                filterCategory === "All" || b.category === filterCategory;
+              return matchesSearch && matchesCategory;
+            })}
           setBlogs={setBlogs}
           onEdit={handleEdit}
           onDelete={handleDelete}

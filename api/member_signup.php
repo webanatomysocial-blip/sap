@@ -5,6 +5,8 @@
  * Admin must approve before the member can log in.
  */
 require_once 'db.php';
+require_once 'services/OTPService.php';
+require_once 'services/NotificationService.php';
 
 header('Content-Type: application/json');
 
@@ -27,6 +29,14 @@ $password = $input['password'] ?? '';
 if (!$name || !$email || !$password) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Name, email and password are required.']);
+    exit;
+}
+
+// 1. Verify OTP first
+$otpService = new OTPService();
+if (!$otpService->isVerified($email, 'signup')) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Email not verified. Please verify your email with OTP first.']);
     exit;
 }
 
@@ -69,6 +79,10 @@ try {
         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
     ");
     $stmt->execute([$name, $phone, $email, $location, $company, $role, $hash]);
+
+    // 2. Send Notifications
+    $notificationService = new NotificationService();
+    $notificationService->notifyMemberSignupSubmitted($email, $name);
 
     echo json_encode([
         'status'  => 'success',

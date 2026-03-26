@@ -56,6 +56,17 @@ try {
         if ($action === 'approve') {
             $stmt = $pdo->prepare("UPDATE members SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$id]);
+
+            // Notify user
+            $stmtUser = $pdo->prepare("SELECT email, name FROM members WHERE id = ?");
+            $stmtUser->execute([$id]);
+            $member = $stmtUser->fetch();
+            if ($member) {
+                require_once 'services/NotificationService.php';
+                $ns = new NotificationService();
+                $ns->notifyMemberApproved($member['email'], $member['name']);
+            }
+
             echo json_encode(['status' => 'success', 'message' => 'Member approved successfully.']);
         } elseif ($action === 'reject') {
             if ($reason) {
@@ -65,6 +76,17 @@ try {
                 $stmt = $pdo->prepare("UPDATE members SET status = 'rejected' WHERE id = ?");
                 $stmt->execute([$id]);
             }
+
+            // Notify user
+            $stmtUser = $pdo->prepare("SELECT email, name FROM members WHERE id = ?");
+            $stmtUser->execute([$id]);
+            $member = $stmtUser->fetch();
+            if ($member) {
+                require_once 'services/NotificationService.php';
+                $ns = new NotificationService();
+                $ns->notifyMemberRejected($member['email'], $member['name'], $reason ?: 'No reason provided.');
+            }
+
             echo json_encode(['status' => 'success', 'message' => 'Member rejected.']);
         } elseif ($action === 'delete') {
             $stmt = $pdo->prepare("DELETE FROM members WHERE id = ?");

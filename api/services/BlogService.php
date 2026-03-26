@@ -235,6 +235,15 @@ class BlogService {
                     $seoScore, $finalPlag, $id
                 ]);
                 $this->invalidateHomepage();
+
+                // Notify Admin
+                try {
+                    require_once __DIR__ . '/NotificationService.php';
+                    $ns = new NotificationService();
+                    $ns->notifyBlogSubmitted($title . " (Update)", $authorName);
+                } catch (Exception $e) {
+                    error_log("Notification Error: " . $e->getMessage());
+                }
                 $msg = 'Changes saved for review. Live version remains unchanged.';
                 if ($plagScore === -1) $msg .= ' (Warning: Plagiarism check failed)';
                 return ['status' => 'success', 'message' => $msg, 'plagiarism_score' => $finalPlag];
@@ -293,6 +302,18 @@ class BlogService {
             ];
             $this->pdo->prepare($sql)->execute($params);
             $this->invalidateHomepage();
+            
+            // Notify Admin if it's a contributor submission
+            if (!$isAdmin) {
+                try {
+                    require_once __DIR__ . '/NotificationService.php';
+                    $ns = new NotificationService();
+                    $ns->notifyBlogSubmitted($title, $authorName);
+                } catch (Exception $e) {
+                    error_log("Notification Error: " . $e->getMessage());
+                }
+            }
+
             $msg = 'Blog created';
             if ($plagScore === -1) $msg .= ' (Warning: Plagiarism check failed)';
             return ['status' => 'success', 'message' => $msg, 'plagiarism_score' => $finalPlag];

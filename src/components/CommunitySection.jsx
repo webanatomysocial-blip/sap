@@ -13,21 +13,13 @@ import {
 } from "../services/api";
 
 export default function CommunitySection() {
-  /* eslint-disable no-unused-vars */
-  // Tabs and state placeholders - removing unused ones
-  // const [activeMembersTab, setActiveMembersTab] = useState("Newest");
-  // const [groupsTab, setGroupsTab] = useState("Popular");
-  /* eslint-enable no-unused-vars */
 
-  const [newsletterEmail, setNewsletterEmail] = useState("");
   const [contributorCount, setContributorCount] = useState(0);
   const [memberCount, setMemberCount] = useState(0);
   const [contributors, setContributors] = useState([]);
-  const [stats, setStats] = useState({ views: {}, comments: {} });
 
   // State for announcements
   const [announcements, setAnnouncements] = useState([]);
-  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
 
   // State for Ads
   const [adsConfig, setAdsConfig] = useState({
@@ -38,10 +30,8 @@ export default function CommunitySection() {
   // Dynamic Data State
   const [featuredArticle, setFeaturedArticle] = useState({});
   const [recentActivity, setRecentActivity] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     // Fetch consolidated homepage data
     getHomepageData()
       .then((res) => {
@@ -59,11 +49,9 @@ export default function CommunitySection() {
           setContributors(data.contributors || []);
           setContributorCount(data.contributors ? data.contributors.length : 0);
         }
-        setLoading(false);
       })
       .catch((err) => {
         console.error("Homepage API failed", err);
-        setLoading(false);
       });
 
     // Keep Announcements & Ads separate as they might have different caching/logic
@@ -71,11 +59,9 @@ export default function CommunitySection() {
     getPublicAnnouncements()
       .then((res) => {
         setAnnouncements(res.data);
-        setLoadingAnnouncements(false);
       })
       .catch((err) => {
         console.warn("Announcement Fetch Failed", err);
-        setLoadingAnnouncements(false);
       });
 
     // Fetch Ads
@@ -118,7 +104,6 @@ export default function CommunitySection() {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    const options = { month: "long", day: "numeric", year: "numeric" };
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
@@ -143,16 +128,30 @@ export default function CommunitySection() {
           <h1>An exclusive community for SAP Security & GRC professionals</h1>
         </div> */}
 
+
         <div className="community-grid">
           {/* LEFT COLUMN */}
           <div className="community-left">
+            {/* New to SAP Security? Box */}
+            {/* <div className="widget new-to-sap-box">
+              <div className="widget-header">
+                <h3>New to SAP Security?</h3>
+              </div>
+              <div className="new-to-sap-content">
+                <p>Start with the basics and build your knowledge.</p>
+                <Link to="/sap-security-fundamentals" className="start-here-btn">
+                  Start Here
+                </Link>
+              </div>
+            </div> */}
+
             {/* Recent Topics */}
             <div className="widget">
               <div className="widget-header">
                 <h3>Recent Topics</h3>
               </div>
               <div className="topics-list">
-                {recentActivity.map((post) => (
+                {recentActivity.slice(0, 5).map((post) => (
                   <Link
                     key={post.slug || post.id}
                     to={
@@ -190,7 +189,7 @@ export default function CommunitySection() {
                     <div className="topic-info">
                       <span className="topic-title">
                         {post.title}
-                        {post.is_members_only === 1 && (
+                        {post.is_members_only == 1 && (
                           <span className="exclusive-mini-badge">
                             <i className="bi bi-lock-fill"></i> Exclusive
                           </span>
@@ -294,14 +293,21 @@ export default function CommunitySection() {
                 <p>{featuredArticle.excerpt}</p>
                 <div className="featured-meta">
                   <span>
-                    <i className="bi bi-clock"></i> 6 min read
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    6 min read
                   </span>
                   <span>
-                    <i className="bi bi-eye"></i>{" "}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+                    </svg>
                     {featuredArticle.view_count || featuredArticle.views || 0}
                   </span>
                   <span>
-                    <i className="bi bi-chat"></i>{" "}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
                     {featuredArticle.comment_count || 0}
                   </span>
                 </div>
@@ -315,7 +321,17 @@ export default function CommunitySection() {
                 >
                   Read Full Insight →
                 </Link>
+
+                {/* Layered wave divider — new classname to avoid conflicts */}
+                <div className="fi-wave-divider">
+                  <svg data-name="Layered Waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" preserveAspectRatio="none">
+                    <path d="M0,130 C400,160 800,90 1200,70 L1200,200 L0,200 Z" fill="rgba(255, 255, 255, 0.15)"></path>
+                    <path d="M0,160 C500,180 900,110 1200,90 L1200,200 L0,200 Z" fill="rgba(255, 255, 255, 0.25)"></path>
+                    <path d="M0,200 C300,200 800,140 1200,110 L1200,200 L0,200 Z" fill="#f8f9fa"></path>
+                  </svg>
+                </div>
               </div>
+
             )}
 
             {/* Recent Activity */}
@@ -325,7 +341,7 @@ export default function CommunitySection() {
                   <h3>Recent Activity</h3>
                 </div>
                 <div className="activity-list">
-                  {recentActivity.map((activity) => (
+                  {recentActivity.slice(0, 10).map((activity) => (
                     <Link
                       key={activity.slug || activity.id}
                       to={
@@ -349,7 +365,7 @@ export default function CommunitySection() {
                         </span>
                         <h4>
                           {activity.title}
-                          {activity.is_members_only === 1 && (
+                          {activity.is_members_only == 1 && (
                             <span className="exclusive-mini-badge" style={{ marginLeft: '8px' }}>
                               <i className="bi bi-lock-fill"></i> Exclusive
                             </span>

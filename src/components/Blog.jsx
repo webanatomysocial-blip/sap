@@ -80,7 +80,7 @@ const Blogs = () => {
                           alt={blog.title}
                           loading="lazy"
                         />
-                        {blog.is_members_only === 1 && (
+                        {blog.is_members_only == 1 && (
                           <div className="exclusive-badge">
                             <i className="bi bi-lock-fill"></i> Exclusive
                           </div>
@@ -110,9 +110,9 @@ const Blogs = () => {
                         <h3>{blog.title}</h3>
                       </Link>
 
-                      {blog.excerpt && (
-                        <p className="blog-excerpt">{blog.excerpt}</p>
-                      )}
+                      <p className="blog-excerpt">
+                        {blog.excerpt || (blog.content ? blog.content.replace(/<[^>]*>/g, "").slice(0, 160) + "..." : "No description available.")}
+                      </p>
 
                       <div
                         className="latest-blog-stats"

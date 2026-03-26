@@ -61,6 +61,9 @@ public_html/
 │   ├── db.php
 │   └── ...
 │
+├── vendor/                 <-- CRITICAL: Upload the entire 'vendor' folder here
+│                               (Required for Emails to work)
+│
 ├── uploads/                <-- Critical: Image storage (See Step 5)
 │   ├── blogs/
 │   ├── contributors/

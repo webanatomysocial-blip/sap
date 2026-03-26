@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "../css/CommentSection.css";
 import { submitComment, getCommentsByBlogId } from "../services/api";
 import { useToast } from "../context/ToastContext";
@@ -73,7 +74,6 @@ const CommentItem = ({ comment, depth = 0, replyMap, onReply }) => {
 };
 
 const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
-  const { isLoggedIn } = useMemberAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
@@ -82,6 +82,14 @@ const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
   const [mathAnswer, setMathAnswer] = useState("");
   const [replyTo, setReplyTo] = useState(null); // The comment being replied to
   const { addToast } = useToast();
+  const { isLoggedIn, member } = useMemberAuth();
+
+  useEffect(() => {
+    if (isLoggedIn && member) {
+      setAuthorName(member.name || "");
+      setEmail(member.email || "");
+    }
+  }, [isLoggedIn, member]);
 
   const [mathQuestion, setMathQuestion] = useState(() => {
     const num1 = Math.floor(Math.random() * 10) + 1;
@@ -113,6 +121,10 @@ const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      addToast("Please login to post a comment.", "error");
+      return;
+    }
     if (!newComment.trim() || !authorName.trim() || !email.trim()) return;
 
     if (honeypot) return;
@@ -139,8 +151,11 @@ const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
           "success",
         );
         setNewComment("");
-        setAuthorName("");
-        setEmail("");
+        // Preserve authorName and email from member data
+        if (!isLoggedIn) {
+          setAuthorName("");
+          setEmail("");
+        }
         setMathAnswer("");
         setReplyTo(null);
 
@@ -212,87 +227,87 @@ const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
         )}
       </div>
 
-      {/* Main Comment Form */}
-      <form className="comment-form" onSubmit={handleSubmit}>
-        <h4>{replyTo ? `Reply to ${replyTo.author}` : "Leave a Comment"}</h4>
-        {replyTo && (
-          <button
-            type="button"
-            className="btn-cancel-reply"
-            onClick={() => setReplyTo(null)}
-          >
-            Cancel Reply
-          </button>
-        )}
-        <p className="reply-note">
-          <span className="required-field">*</span> Required fields are marked
-        </p>
-
-        <div style={{ display: "none" }}>
-          <input
-            type="text"
-            value={honeypot}
-            onChange={(e) => setHoneypot(e.target.value)}
-            tabIndex="-1"
-            autoComplete="off"
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Name *</label>
-            <input
-              type="text"
-              className="form-control"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Email *</label>
-            <input
-              type="email"
-              className="form-control"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      {!isLoggedIn ? (
+        <div className="login-to-comment-box">
+          <div className="login-message-content">
+            <i className="bi bi-lock-fill"></i>
+            <h4>Want to join the conversation?</h4>
+            <p>Please login to your account to leave a comment or reply.</p>
+            <Link to="/member/login" className="btn-primary login-redirect-btn">
+              Login to Comment
+            </Link>
           </div>
         </div>
+      ) : (
+        <>
+          {/* Main Comment Form */}
+          <form className="comment-form" onSubmit={handleSubmit}>
+            <h4>{replyTo ? `Reply to ${replyTo.author}` : "Leave a Comment"}</h4>
+            {replyTo && (
+              <button
+                type="button"
+                className="btn-cancel-reply"
+                onClick={() => setReplyTo(null)}
+              >
+                Cancel Reply
+              </button>
+            )}
 
-        <div className="form-group">
-          <label className="form-label">Comment</label>
-          <textarea
-            className="form-control"
-            rows="4"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            required
-          ></textarea>
-        </div>
+            <div className="logged-in-as">
+              <span className="user-icon">
+                <i className="bi bi-person-circle"></i>
+              </span>
+              <span>
+                Logged in as <strong>{member?.name || "Member"}</strong>
+              </span>
+            </div>
 
-        <div className="form-footer">
-          <div className="form-group captcha-group">
-            <label className="form-label">What is {mathQuestion.q}? *</label>
-            <input
-              type="text"
-              className="form-control"
-              value={mathAnswer}
-              onChange={(e) => setMathAnswer(e.target.value)}
-              required
-            />
-          </div>
+            <div style={{ display: "none" }}>
+              <input
+                type="text"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex="-1"
+                autoComplete="off"
+              />
+            </div>
 
-          <button type="submit" className="btn-primary btn-submit-comment">
-            {replyTo ? "Post Reply" : "Post Comment"}
-          </button>
-        </div>
-      </form>
+            <div className="form-group">
+              <label className="form-label">Comment</label>
+              <textarea
+                className="form-control"
+                rows="4"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts..."
+                required
+              ></textarea>
+            </div>
+
+            <div className="form-footer">
+              <div className="form-group captcha-group">
+                <label className="form-label">
+                  Security Check: {mathQuestion.q} = ?
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={mathAnswer}
+                  onChange={(e) => setMathAnswer(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn-primary btn-submit-comment">
+                {replyTo ? "Post Reply" : "Post Comment"}
+              </button>
+            </div>
+          </form>
+        </>
+      )}
 
       {/* Reply Modal */}
-      {replyTo && (
+      {replyTo && isLoggedIn && (
         <div className="comment-reply-overlay" onClick={() => setReplyTo(null)}>
           <div
             className="comment-reply-modal"
@@ -313,25 +328,10 @@ const CommentSection = ({ blogId, onCommentAdded, isExclusive }) => {
                   tabIndex="-1"
                 />
               </div>
-              <div className="form-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Name *"
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="Email *"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+              <div className="logged-in-as modal-user-info">
+                <span>
+                  Replying as <strong>{member?.name || "Member"}</strong>
+                </span>
               </div>
               <div className="form-group">
                 <textarea

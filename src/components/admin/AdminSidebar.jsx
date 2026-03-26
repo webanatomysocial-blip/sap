@@ -9,7 +9,6 @@ import { Link, useLocation } from "react-router-dom";
  *   permissions: { can_manage_blogs, can_manage_ads, can_manage_comments, can_manage_announcements }
  */
 const AdminSidebar = ({
-  onLogout,
   role = "admin",
   permissions = {},
   badges = {},
@@ -155,30 +154,29 @@ const AdminSidebar = ({
             </div>
             {item.badge > 0 && (
               <span
-                style={{
-                  background: "#ef4444",
-                  color: "#fff",
-                  borderRadius: "12px",
-                  padding: "2px 8px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  minWidth: "24px",
-                  textAlign: "center",
-                }}
-              >
-                {item.badge}
-              </span>
+                  style={{
+                    background: "#ef4444",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "2px 8px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    minWidth: "12px",
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.badge}
+                </span>
             )}
           </Link>
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button onClick={onLogout} className="btn-logout">
-          <i className="bi bi-box-arrow-right"></i>
-          Logout
-        </button>
-      </div>
     </aside>
   );
 };

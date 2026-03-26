@@ -59,6 +59,20 @@ try {
 
             $stmt = $pdo->prepare("UPDATE comments SET status = ?, rejection_reason = ? WHERE id = ?");
             $stmt->execute([$status, $reason, $id]);
+
+            // Notify user
+            $stmtUser = $pdo->prepare("SELECT user_name, email FROM comments WHERE id = ?");
+            $stmtUser->execute([$id]);
+            $comm = $stmtUser->fetch();
+            if ($comm) {
+                require_once 'services/NotificationService.php';
+                $ns = new NotificationService();
+                if ($status === 'approved') {
+                    $ns->notifyCommentApproved($comm['email'], $comm['user_name']);
+                } elseif ($status === 'rejected') {
+                    $ns->notifyCommentRejected($comm['email'], $comm['user_name'], $reason ?: 'Does not follow community guidelines.');
+                }
+            }
             
             echo json_encode(['status' => 'success', 'message' => 'Comment status updated']);
         }

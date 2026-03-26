@@ -38,21 +38,7 @@ $image = $defaultImage;
 $url = $defaultUrl;
 $type = "website";
 
-// 1. Static Pages Whitelist
-$staticPages = [
-    '/', '/blogs', '/about', '/contact', '/privacy-policy', '/terms-conditions', 
-    '/accessibility-statement', '/safety-movement', '/security-compliance-overview', 
-    '/responsible-ai-automation-statement', '/contact-us', '/become-a-contributor',
-    '/apply-contributor', '/admin', '/admin/blogs', '/admin/contributors', 
-    '/admin/announcements', '/admin/comments', '/admin/ads', '/product-reviews',
-    '/podcasts', '/videos', '/other-tools', '/sap-security', '/sap-grc', '/sap-iag',
-    '/sap-btp-security', '/sap-licensing', '/sap-cybersecurity', '/sap-s4hana-security',
-    '/sap-fiori-security', '/sap-public-cloud', '/sap-sac-security', '/sap-cis',
-    '/sap-successfactors-security', '/sap-security-other', '/sap-access-control',
-    '/sap-process-control'
-];
-
-// 2. Static Pages
+// 1. Static Pages Definition (Whitelist & Meta Data)
 $staticPages = [
     '/' => [
         'title' => 'Community for SAP Security & GRC Pros | SAP Security Expert',
@@ -101,7 +87,37 @@ $staticPages = [
         'description' => 'Contact SAPSecurityExpert for enquiries, partnerships, or support. Connect with SAP security professionals and get the assistance you need for your queries.',
         'keywords' => 'Contact SAP Security Expert, SAP Security Support, SAP Consulting',
         "image" => "/assets/sapsecurityexpert-black.png",
-    ]
+    ],
+    '/admin' => [
+        'title' => 'Admin Dashboard | SAP Security Expert',
+        'description' => 'Administrative dashboard for SAP Security Expert.',
+        'image' => "/assets/sapsecurityexpert-black.png",
+    ],
+    '/member/login' => [
+        'title' => 'Member Login | SAP Security Expert',
+        'description' => 'Sign in to access exclusive SAP security content.',
+        'image' => "/assets/sapsecurityexpert-black.png",
+    ],
+    '/member/signup' => [
+        'title' => 'Become a Member | SAP Security Expert',
+        'description' => 'Join our community of SAP security professionals.',
+        'image' => "/assets/sapsecurityexpert-black.png",
+    ],
+    // Whitelist entries for sub-admin paths (auto-serve index.html)
+    '/admin/blogs' => ['title' => 'Manage Blogs | Admin'],
+    '/admin/contributors' => ['title' => 'Manage Contributors | Admin'],
+    '/admin/announcements' => ['title' => 'Manage Announcements | Admin'],
+    '/admin/comments' => ['title' => 'Manage Comments | Admin'],
+    '/admin/ads' => ['title' => 'Manage Ads | Admin'],
+    '/become-a-contributor' => ['title' => 'Become a Contributor'],
+    '/apply-contributor' => ['title' => 'Apply to be a Contributor'],
+    '/videos' => ['title' => 'Videos | SAP Security Expert'],
+    '/privacy-policy' => ['title' => 'Privacy Policy'],
+    '/terms-conditions' => ['title' => 'Terms & Conditions'],
+    '/accessibility-statement' => ['title' => 'Accessibility Statement'],
+    '/safety-movement' => ['title' => 'Safety Movement'],
+    '/security-compliance-overview' => ['title' => 'Security & Compliance'],
+    '/responsible-ai-automation-statement' => ['title' => 'Responsible AI Statement']
 ];
 
 // 3. Categories (Manual Map)
@@ -265,8 +281,8 @@ if ($blog) {
 
 // Check Static Pages First (Exact Match)
 if (array_key_exists($cleanPath, $staticPages)) {
-    $title = $staticPages[$cleanPath]['title'];
-    $description = $staticPages[$cleanPath]['description'];
+    $title = $staticPages[$cleanPath]['title'] ?? $defaultTitle;
+    $description = $staticPages[$cleanPath]['description'] ?? $defaultDesc;
     if (isset($staticPages[$cleanPath]['keywords'])) {
         $keywords = $staticPages[$cleanPath]['keywords'];
     }

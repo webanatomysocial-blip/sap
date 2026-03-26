@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
 // import { API_BASE_URL } from "../../config";
@@ -11,8 +11,8 @@ import api from "../../services/api";
 const AdminComments = () => {
   const [comments, setComments] = useState([]);
   const [filter, setFilter] = useState("pending");
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingComment, setEditingComment] = useState(null);
-  const [viewingComment, setViewingComment] = useState(null);
   const [rejectingComment, setRejectingComment] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
@@ -22,7 +22,7 @@ const AdminComments = () => {
 
   useScrollLock(!!editingComment);
 
-  const fetchCommentsData = async () => {
+  const fetchCommentsData = useCallback(async () => {
     try {
       const res = await getComments();
       if (res.data) {
@@ -32,11 +32,26 @@ const AdminComments = () => {
       console.error("Fetch comments failed", error);
       addToast("Failed to fetch comments", "error");
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
-    fetchCommentsData();
-  }, []);
+    let isMounted = true;
+    const loadComments = async () => {
+      try {
+        const res = await getComments();
+        if (isMounted && res.data) {
+          setComments(res.data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Fetch comments failed", error);
+          addToast("Failed to fetch comments", "error");
+        }
+      }
+    };
+    loadComments();
+    return () => { isMounted = false; };
+  }, [addToast]);
 
   const handleStatusChange = async (id, newStatus, rejection_reason = null) => {
     try {
@@ -64,9 +79,6 @@ const AdminComments = () => {
     setEditText(comment.text);
   };
 
-  const handleView = (comment) => {
-    setViewingComment(comment);
-  };
 
   const handleSaveEdit = async () => {
     try {
@@ -113,8 +125,12 @@ const AdminComments = () => {
   };
 
   const filteredComments = comments.filter((c) => {
-    if (filter === "all") return true;
-    return c.status === filter;
+    const matchesFilter = filter === "all" || c.status === filter;
+    const matchesSearch = 
+      c.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.text.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
   const submitRejection = () => {
@@ -156,6 +172,15 @@ const AdminComments = () => {
           </button>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div className="search-box">
+            <i className="bi bi-search"></i>
+            <input
+              type="text"
+              placeholder="Search author, email or comment..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           <button className="btn-primary" onClick={fetchCommentsData}>
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -458,95 +483,6 @@ const AdminComments = () => {
         </div>
       )}
 
-      {/* View Comment Modal */}
-      {viewingComment && (
-        <div className="modal-overlay" onClick={() => setViewingComment(null)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>View Comment</h3>
-              <button
-                className="modal-close-btn"
-                onClick={() => setViewingComment(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="comment-view-details">
-                <div className="view-group">
-                  <label>Author</label>
-                  <p>{viewingComment.author}</p>
-                </div>
-                {viewingComment.email && (
-                  <div className="view-group">
-                    <label>Email</label>
-                    <p>{viewingComment.email}</p>
-                  </div>
-                )}
-                <div className="view-group">
-                  <label>Full Comment</label>
-                  <div className="full-comment-content">
-                    {viewingComment.text}
-                  </div>
-                </div>
-                <div className="view-meta-grid">
-                  <div className="view-group">
-                    <label>Post ID</label>
-                    <p>{viewingComment.post_id}</p>
-                  </div>
-                  <div className="view-group">
-                    <label>Date</label>
-                    <p>
-                      {new Date(viewingComment.date).toLocaleDateString(
-                        "en-US",
-                        { month: "long", day: "numeric", year: "numeric" },
-                      )}
-                    </p>
-                  </div>
-                  <div className="view-group">
-                    <label>Status</label>
-                    <span
-                      className={`status-badge status-${viewingComment.status}`}
-                    >
-                      {viewingComment.status}
-                    </span>
-                  </div>
-                </div>
-
-                {viewingComment.status === "rejected" &&
-                  viewingComment.rejection_reason && (
-                    <div
-                      className="view-group"
-                      style={{
-                        background: "#fff1f2",
-                        padding: "12px",
-                        borderRadius: "6px",
-                        border: "1px solid #fecaca",
-                        marginTop: "16px",
-                      }}
-                    >
-                      <label style={{ color: "#991b1b" }}>
-                        Rejection Reason
-                      </label>
-                      <p style={{ margin: "4px 0 0", color: "#b91c1c" }}>
-                        {viewingComment.rejection_reason}
-                      </p>
-                    </div>
-                  )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => setViewingComment(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Rejection Modal */}
       {rejectingComment && (
         <div

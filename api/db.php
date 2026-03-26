@@ -1,8 +1,10 @@
 <?php
 // api/db.php - MySQL/MariaDB Connection for cPanel
 // Optimized for SAP Security Expert Platform
-if (php_sapi_name() === 'cli-server') {
+// Enable errors for easier debugging
+if (true) {
     ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 }
 

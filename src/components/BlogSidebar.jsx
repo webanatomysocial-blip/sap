@@ -8,11 +8,25 @@ import { getCategories, getBlogs, getAdsByZone } from "../services/api";
 
 const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sidebarAd, setSidebarAd] = useState({
-    active: false,
-    image: "",
-    link: "",
-  });
+  const [sidebarAd, setSidebarAd] = useState(
+    propSidebarAd && propSidebarAd.active
+      ? propSidebarAd
+      : {
+          active: false,
+          image: "",
+          link: "",
+        },
+  );
+
+  // Syncing prop to state during render (officially supported)
+  const [prevPropAd, setPrevPropAd] = useState(propSidebarAd);
+  if (propSidebarAd !== prevPropAd) {
+    setPrevPropAd(propSidebarAd);
+    if (propSidebarAd && propSidebarAd.active) {
+      setSidebarAd(propSidebarAd);
+    }
+  }
+
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,17 +98,12 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
       });
   }, []);
 
-  // Fetch Ads (or use prop)
+  // Fetch Ads (if not provided by prop)
   useEffect(() => {
-    // If ad was passed as prop, use it; otherwise fetch
-    if (propSidebarAd && propSidebarAd.active) {
-      setSidebarAd(propSidebarAd);
-    } else {
+    if (!sidebarAd.active && (!propSidebarAd || !propSidebarAd.active)) {
       getAdsByZone("blog_sidebar")
         .then((res) => {
           const data = res.data;
-          // Laravel returns an array of ads or single object depending on endpoint implementation
-          // Assuming array from previous code
           if (Array.isArray(data) && data.length > 0) {
             const ad = data[0];
             setSidebarAd({
@@ -110,7 +119,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         })
         .catch((err) => console.error("Error fetching ads:", err));
     }
-  }, [propSidebarAd]);
+  }, [propSidebarAd, sidebarAd.active]);
 
   const filteredPosts = allPosts
     .filter((post) => {
@@ -177,7 +186,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
                 <li key={post.id} className="latest-post-item">
                   <Link to={`/${(post.category || "blogs").toLowerCase().replace(/\s+/g, "-")}/${post.slug || post.id}`}>
                     {highlightSearch(post.title)}
-                    {post.is_members_only === 1 && (
+                    {Number(post.is_members_only) === 1 && (
                       <span className="sidebar-exclusive-tag">
                         <i className="bi bi-lock-fill"></i> Exclusive
                       </span>

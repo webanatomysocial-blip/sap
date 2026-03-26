@@ -190,6 +190,11 @@ if ($path === '/admin/members') {
     exit;
 }
 
+if ($path === '/admin/reset-member-password') {
+    require __DIR__ . '/reset_member_password.php';
+    exit;
+}
+
 if ($path === '/admin/toggle-exclusive') {
     require __DIR__ . '/toggle_exclusive_content.php';
     exit;

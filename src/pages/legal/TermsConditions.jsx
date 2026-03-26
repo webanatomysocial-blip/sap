@@ -5,7 +5,12 @@ const TermsConditions = () => {
   return (
     <LegalLayout title="Terms & Conditions">
       <p style={{ color: "#666", marginBottom: "40px" }}>
-        Last Updated: {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+        Last Updated:{" "}
+        {new Date().toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })}
       </p>
 
       <section>
@@ -116,6 +121,12 @@ const TermsConditions = () => {
           For any inquiries regarding these Terms, please contact us at{" "}
           <a className="legal-links" href="mailto:hello@sapsecurityexpert.com">
             hello@sapsecurityexpert.com
+          </a>
+        </p>
+        <p>
+          Official Website:{" "}
+          <a className="legal-links" href="https://sapsecurityexpert.com">
+            sapsecurityexpert.com
           </a>
           .
         </p>

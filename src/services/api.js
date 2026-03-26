@@ -72,6 +72,7 @@ export const deleteContributor = (id) => api.post('/delete_contributor.php', { i
 // ── Members Management (Admin) ───────────────────────────────────────────────
 export const getAdminMembers = (status = 'all') => api.get(`/admin/members?status=${status}`);
 export const manageAdminMember = (data) => api.post('/admin/members', data);
+export const resetMemberPassword = (memberId) => api.post('/admin/reset-member-password', { member_id: memberId });
 
 // ── Admin Profile ─────────────────────────────────────────────────────────────
 export const getAdminProfile = () => api.get('/admin/profile');
@@ -126,5 +127,12 @@ export const memberSignup = (data) => api.post('/member/signup', data);
 export const updateMemberProfile = (formData) => api.post('/member/profile/update', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
 });
+
+// ── New Email/Verification System ────────────────────────────────────────────
+export const sendOTP = (email, type = 'signup') => api.post('/send_otp.php', { email, type });
+export const verifyOTP = (email, code, type = 'signup') => api.post('/verify_otp.php', { email, code, type });
+export const getCaptcha = () => api.get('/get_captcha.php');
+export const forgotPassword = (email) => api.post('/forgot_password.php', { email });
+export const resetWithToken = (email, token, password) => api.post('/reset_with_token.php', { email, token, password });
 
 export default api;

@@ -120,7 +120,7 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
                           alt={blog.title}
                           loading="lazy"
                         />
-                        {blog.is_members_only === 1 && (
+                        {blog.is_members_only == 1 && (
                           <div className="exclusive-badge">
                             <i className="bi bi-lock-fill"></i> Exclusive
                           </div>

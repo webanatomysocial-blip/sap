@@ -5,6 +5,7 @@ import { getAdminMembers, manageAdminMember } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
 import ActionMenu from "./ActionMenu";
+import ManageMemberModal from "./ManageMemberModal";
 import useScrollLock from "../../hooks/useScrollLock";
 import "../../css/AdminDashboard.css"; // Ensure standard admin CSS is used
 
@@ -16,16 +17,18 @@ const AdminManageUsers = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
-
+  const [managingMember, setManagingMember] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
 
-  useScrollLock(!!selectedMember || !!rejectingId);
+  useScrollLock(!!selectedMember || !!managingMember || !!rejectingId);
 
   useEffect(() => {
     fetchMembers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
 
   const fetchMembers = async () => {
@@ -38,6 +41,7 @@ const AdminManageUsers = () => {
         addToast(res.data?.message || "Failed to fetch members", "error");
       }
     } catch (err) {
+      console.error(err);
       addToast("Error fetching members", "error");
     } finally {
       setLoading(false);
@@ -85,6 +89,7 @@ const AdminManageUsers = () => {
             );
           }
         } catch (err) {
+          console.error(err);
           addToast(`Error trying to ${action} member.`, "error");
         }
       },
@@ -121,9 +126,16 @@ const AdminManageUsers = () => {
         addToast(res.data?.message || "Failed to reject member.", "error");
       }
     } catch (err) {
-      addToast("Error trying to reject member.", "error");
+      console.error(err);
     }
   };
+
+  const filteredMembers = members.filter(
+    (m) =>
+      (filterStatus === "all" || m.status === filterStatus) &&
+      (m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.email.toLowerCase().includes(searchTerm.toLowerCase())),
+  );
 
   if (role !== "admin") {
     return (
@@ -169,6 +181,15 @@ const AdminManageUsers = () => {
           </button>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div className="search-box">
+            <i className="bi bi-search"></i>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           <button onClick={fetchMembers} className="btn-primary">
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -183,10 +204,8 @@ const AdminManageUsers = () => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="text-center" style={{ width: "60px" }}>
-                    #
-                  </th>
                   <th className="col-name text-left">Name</th>
+                  <th className="text-left">Company & Position</th>
                   <th className="text-left">Contact</th>
                   <th className="col-status">Status</th>
                   <th className="col-date text-left">Reg. Date</th>
@@ -194,25 +213,27 @@ const AdminManageUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {members.length === 0 ? (
+                {filteredMembers.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center">
                       No members matching the filter.
                     </td>
                   </tr>
                 ) : (
-                  members.map((m, index) => (
+                  filteredMembers.map((m) => (
                     <tr key={m.id}>
-                      <td
-                        className="text-center"
-                        style={{ color: "#64748b", fontWeight: 500 }}
-                      >
-                        {index + 1}
-                      </td>
                       <td className="col-name text-left">
                         <strong>{m.name}</strong>
                         <br />
                         <small>{m.location || "N/A"}</small>
+                      </td>
+                      <td className="text-left">
+                        <div style={{ fontWeight: 600, color: "var(--slate-900)" }}>
+                          {m.company_name || "N/A"}
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+                          {m.job_role || "N/A"}
+                        </div>
                       </td>
                       <td className="text-left">
                         <div>
@@ -259,6 +280,18 @@ const AdminManageUsers = () => {
                             >
                               <i className="bi bi-check-circle"></i> Re-Approve
                             </button>
+                          )}
+
+                          {m.status === "approved" && (
+                            <>
+                              <div className="action-menu-separator"></div>
+                              <button
+                                className="action-menu-item"
+                                onClick={() => setManagingMember(m)}
+                              >
+                                <i className="bi bi-shield-lock"></i> Manage Login
+                              </button>
+                            </>
                           )}
 
                           {m.status === "pending" && (
@@ -603,6 +636,14 @@ const AdminManageUsers = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Manage Member Modal */}
+      {managingMember && (
+        <ManageMemberModal
+          member={managingMember}
+          onClose={() => setManagingMember(null)}
+        />
       )}
 
       {/* Rejection Modal */}

@@ -12,8 +12,15 @@ const Toast = ({ id, message, type, removeToast, duration }) => {
     }, 300); // Match animation duration
   };
 
-  // Auto-dismiss logic handled in Context for simplicity,
-  // but if we want pause-on-hover, we could do it here.
+  // Auto-dismiss logic
+  useEffect(() => {
+    if (duration) {
+      const timer = setTimeout(() => {
+        handleClose();
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [duration, id]);
 
   return (
     <div
@@ -26,7 +33,7 @@ const Toast = ({ id, message, type, removeToast, duration }) => {
         {type === "warning" && (
           <i className="bi bi-exclamation-triangle-fill"></i>
         )}
-        {type === "info" && <i className="bi bi-info-circle-fill"></i>}
+        {type === "info" && <i className="bi bi-exclamation-circle-fill"></i>}
       </div>
       <div className="toast-content">{message}</div>
       <button className="toast-close" onClick={handleClose} aria-label="Close">

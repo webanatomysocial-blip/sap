@@ -17,12 +17,6 @@ export const ToastProvider = ({ children }) => {
   const addToast = (message, type = "info", duration = 4000) => {
     const id = Date.now() + Math.random().toString(36).substr(2, 9);
     setToasts((prevToasts) => [...prevToasts, { id, message, type, duration }]);
-
-    if (duration) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
   };
 
   const removeToast = (id) => {

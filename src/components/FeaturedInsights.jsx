@@ -18,7 +18,6 @@ const categoryMapping = {
 
 export default function FeaturedInsights({ id }) {
   const [activeTab, setActiveTab] = useState("All");
-  const [stats, setStats] = useState({ views: {}, comments: {} });
   const [allBlogs, setAllBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -198,7 +197,7 @@ export default function FeaturedInsights({ id }) {
                 <span className="latest-blog-badge">
                   {getCategoryLabel(blog.category, blog.subCategory)}
                 </span>
-                {blog.is_members_only === 1 && (
+                {blog.is_members_only == 1 && (
                   <div className="exclusive-badge-overlay">
                     <i className="bi bi-lock-fill"></i> Exclusive
                   </div>

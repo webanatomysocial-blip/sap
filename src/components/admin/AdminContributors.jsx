@@ -23,6 +23,7 @@ const AdminContributors = () => {
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
 
@@ -45,6 +46,7 @@ const AdminContributors = () => {
 
   useEffect(() => {
     fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -146,6 +148,13 @@ const AdminContributors = () => {
     updateStatus(rejectingId, "rejected", rejectReason);
   };
 
+  const filteredApps = applications.filter(
+    (app) =>
+      (filterStatus === "all" || app.status === filterStatus) &&
+      (app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.email.toLowerCase().includes(searchTerm.toLowerCase())),
+  );
+
   return (
     <div className="admin-page-wrapper">
       <Helmet>
@@ -180,6 +189,15 @@ const AdminContributors = () => {
           </button>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div className="search-box">
+            <i className="bi bi-search"></i>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           <button onClick={fetchApplications} className="btn-primary">
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -194,9 +212,6 @@ const AdminContributors = () => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="text-center" style={{ width: "60px" }}>
-                    #
-                  </th>
                   <th className="col-name text-left">Name</th>
                   <th className="col-role text-left">Role</th>
                   <th className="col-status">Status</th>
@@ -205,30 +220,15 @@ const AdminContributors = () => {
                 </tr>
               </thead>
               <tbody>
-                {applications.filter(
-                  (app) =>
-                    filterStatus === "all" || app.status === filterStatus,
-                ).length === 0 ? (
+                {filteredApps.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center">
-                      No {filterStatus !== "all" ? filterStatus : ""}{" "}
-                      applications found.
+                    <td colSpan="5" className="text-center">
+                      No matching applications found.
                     </td>
                   </tr>
                 ) : (
-                  applications
-                    .filter(
-                      (app) =>
-                        filterStatus === "all" || app.status === filterStatus,
-                    )
-                    .map((app, index) => (
-                      <tr key={app.id}>
-                        <td
-                          className="text-center"
-                          style={{ color: "#64748b", fontWeight: 500 }}
-                        >
-                          {index + 1}
-                        </td>
+                  filteredApps.map((app) => (
+                    <tr key={app.id}>
                         <td className="col-name text-left">
                           <strong>{app.name}</strong>
                           <br />
@@ -581,7 +581,7 @@ const AdminContributors = () => {
                         return active.length > 0 ? active.join(", ") : "None";
                       }
                       return JSON.stringify(types);
-                    } catch (e) {
+                    } catch {
                       return selectedApp.contribution_types;
                     }
                   })()}
@@ -679,7 +679,7 @@ const AdminContributors = () => {
                       return Array.isArray(exp)
                         ? exp.join(", ")
                         : JSON.stringify(exp);
-                    } catch (e) {
+                    } catch {
                       return selectedApp.expertise;
                     }
                   })()}

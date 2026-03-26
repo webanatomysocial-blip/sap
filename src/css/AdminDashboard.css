@@ -1917,3 +1917,38 @@ th {
   margin-bottom: 20px;
   padding-bottom: 15px;
 }
+/* Search Box Styling */
+.search-box {
+  position: relative;
+  width: 300px;
+}
+
+.search-box i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-500);
+  font-size: 0.9rem;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border-radius: 8px;
+  border: 1px solid var(--slate-200);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  background: white;
+  color: var(--slate-900);
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+}
+
+.search-box input::placeholder {
+  color: var(--slate-400);
+}

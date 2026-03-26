@@ -1,48 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import "../css/ContactForm.css"; // Reuse existing styles or create new
+import "../css/ContactForm.css";
 import { HiOutlineMail } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
+import { getCaptcha } from "../services/api";
 
 const ContactUs = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    companyName: "",
-    email: "",
-    position: "",
-    location: "",
-    reason: "Advertise with you", // Default
-    description: "",
-    captcha: "", // Simple math check
-  });
+    const reasons = [
+        "Advertise with you",
+        "Questions about Contribution",
+        "Interested to be part of the Podcast/Interview",
+        "Interested in showcasing our product",
+        "Others",
+    ];
 
-  const { addToast } = useToast();
+    const [formData, setFormData] = useState({
+        name: "",
+        companyName: "",
+        email: "",
+        position: "",
+        location: "",
+        reason: "Advertise with you",
+        description: "",
+    });
 
-  const [captchaAns, setCaptchaAns] = useState("");
+    const { addToast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [captchaData, setCaptchaData] = useState({ question: "...", loading: true });
+    const [captchaAnsInput, setCaptchaAnsInput] = useState("");
 
-  const reasons = [
-    "Advertise with you",
-    "Questions about Contribution",
-    "Interested to be part of the Podcast/Interview",
-    "Interested in showcasing our product",
-    "Others",
-  ];
+    useEffect(() => {
+        fetchCaptcha();
+    }, []);
+
+  const fetchCaptcha = async () => {
+    try {
+      const res = await getCaptcha();
+      setCaptchaData({ question: res.data.question, loading: false });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (captchaAns !== "8") {
-      addToast("Incorrect Captcha. What is 5 + 3?", "error");
-      return;
-    }
+    setLoading(true);
 
-    addToast(
-      "Message sent successfully! We will contact you shortly.",
-      "success",
-    );
+    try {
+      const { api } = await import("../services/api");
+      const res = await api.post('/send_mail.php', {
+        ...formData,
+        captchaAns: captchaAnsInput
+      });
+
+      if (res.data.status === "success") {
+        addToast(
+          "Message sent successfully! We will contact you shortly.",
+          "success",
+        );
+        setFormData({
+            name: "", companyName: "", email: "", position: "", 
+            location: "", reason: "Others", description: ""
+        });
+        setCaptchaAnsInput("");
+      } else {
+        addToast(res.data.message || "Failed to send message.", "error");
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || "Error sending message.", "error");
+      fetchCaptcha();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,19 +178,19 @@ const ContactUs = () => {
 
         {/* Captcha */}
         <div className="form-group" style={{ width: "100%" }}>
-          <label className="form-label">Captcha: 5 + 3 = ?</label>
+          <label className="form-label">Captcha: {captchaData.question}</label>
           <input
-            type="tel"
+            type="number"
             className="form-control"
-            value={captchaAns}
-            onChange={(e) => setCaptchaAns(e.target.value)}
+            value={captchaAnsInput}
+            onChange={(e) => setCaptchaAnsInput(e.target.value)}
             required
-            placeholder="Enter the result"
+            placeholder="Enter result"
           />
         </div>
 
-        <button type="submit" className="btn-primary" style={{ width: "100%" }}>
-          Send Message
+        <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>
+          {loading ? "Sending..." : "Send Message"}
         </button>
       </form>
     </div>

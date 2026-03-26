@@ -15,11 +15,11 @@ try {
         require_once 'permission_check.php';
         checkPermission('can_manage_announcements');
         
-        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements ORDER BY date DESC");
+        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements ORDER BY created_at DESC, date DESC");
         $stmt->execute();
     } else {
         // Public view - Enforced via status and date
-        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements WHERE status IN ('approved', 'active', 'published') AND date <= ? ORDER BY date DESC LIMIT 10");
+        $stmt = $pdo->prepare("SELECT id, title, date, link, status, publish_date FROM announcements WHERE status IN ('approved', 'active', 'published') AND date <= ? ORDER BY date DESC, created_at DESC LIMIT 10");
         $stmt->execute([date('Y-m-d H:i:s')]);
     }
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);

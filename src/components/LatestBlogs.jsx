@@ -8,7 +8,6 @@ import "../css/LatestBlogs.css";
 
 export default function LatestBlogs() {
   const [blogs, setBlogs] = useState([]);
-  const [stats, setStats] = useState({ views: {}, comments: {} });
 
   useEffect(() => {
     // Fetch latest blogs from API
@@ -121,7 +120,7 @@ export default function LatestBlogs() {
                 <span className="latest-blog-badge">
                   {getCategoryLabel(blog.category, blog.subCategory)}
                 </span>
-                {blog.is_members_only === 1 && (
+                {blog.is_members_only == 1 && (
                   <div className="exclusive-badge-overlay">
                     <i className="bi bi-lock-fill"></i> Exclusive
                   </div>
@@ -129,7 +128,9 @@ export default function LatestBlogs() {
               </div>
               <div className="latest-blog-content">
                 <h3>{blog.title}</h3>
-                <p className="latest-blog-excerpt">{blog.excerpt}</p>
+                <p className="latest-blog-excerpt">
+                  {blog.excerpt || (blog.content ? blog.content.replace(/<[^>]*>/g, "").slice(0, 120) + "..." : "Explore more about this topic in our latest post.")}
+                </p>
                 <div className="latest-blog-meta">
                   <span className="latest-blog-author">
                     <i className="bi bi-person-circle"></i>{" "}

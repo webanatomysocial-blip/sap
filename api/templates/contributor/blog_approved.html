@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #eef2f6;
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #3b5998;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h2 {
+            color: #3b5998;
+            margin: 0;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 30px;
+            text-align: center;
+            border-top: 1px solid #eef2f6;
+            padding-top: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #3b5998;
+            color: #ffffff !important;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Your Blog is Published!</h2>
+        </div>
+        <p>Hello,</p>
+        <p>Great news! Your blog post <strong>"{{title}}"</strong> has been reviewed and published on <strong>SAP
+                Security Expert</strong>.</p>
+        <p>It is now live for all our readers to see. Thank you for your valuable contribution!</p>
+
+        <div style="text-align: center;">
+            <a href="{{site_url}}" class="btn">View Live Site</a>
+        </div>
+
+        <div class="footer">
+            &copy; 2026 SAP Security Expert. The leading community for SAP Security Professionals.<br>
+            <a href="{{site_url}}" style="color: #94a3b8;">sapsecurityexpert.com</a>
+        </div>
+    </div>
+</body>
+
+</html>

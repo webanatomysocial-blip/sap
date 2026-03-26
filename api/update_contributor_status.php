@@ -23,7 +23,23 @@ try {
     $stmt = $pdo->prepare("UPDATE contributors SET status = ?, rejection_reason = ? WHERE id = ?");
     $stmt->execute([$status, $reason, $id]);
 
-    // Optional: Send email notification logic here based on status
+    // Send email notification based on status
+    $stmtUser = $pdo->prepare("SELECT full_name, email FROM contributors WHERE id = ?");
+    $stmtUser->execute([$id]);
+    $user = $stmtUser->fetch();
+
+    if ($user) {
+        require_once 'services/NotificationService.php';
+        $ns = new NotificationService();
+        
+        if ($status === 'approved') {
+            $siteUrl = getenv('SITE_URL') ?: 'http://localhost:5173';
+            $loginUrl = $siteUrl . '/member/login';
+            $ns->notifyContributorApproved($user['email'], $user['full_name'], $loginUrl);
+        } elseif ($status === 'rejected') {
+            $ns->notifyContributorRejected($user['email'], $user['full_name'], $reason ?: 'Does not meet our current requirements.');
+        }
+    }
 
     echo json_encode(["status" => "success", "message" => "Status updated successfully"]);
 } catch (PDOException $e) {

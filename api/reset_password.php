@@ -65,24 +65,12 @@ try {
         exit;
     }
 
-    // 4. Hash and Update
+    // Hash and Update
     $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
+    $now = date('Y-m-d H:i:s');
     
-    $sql = "UPDATE users SET password = ? ";
-    $params = [$newHash];
-
-    // Handle timestamps for MySQL vs SQLite
-    if (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite') {
-        $sql .= ", updated_at = datetime('now') ";
-    } else {
-        $sql .= ", updated_at = NOW() ";
-    }
-
-    $sql .= " WHERE id = ?";
-    $params[] = $adminId;
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = ? WHERE id = ?");
+    $stmt->execute([$newHash, $now, $adminId]);
 
     echo json_encode([
         'status' => 'success',

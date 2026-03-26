@@ -39,7 +39,7 @@ const BlogList = ({
           ),
         );
       }
-    } catch (err) {
+    } catch {
       addToast("Failed to recalculate plagiarism score.", "error");
       setBlogs((prev) =>
         prev.map((b) => (b.id === blogId ? { ...b, plagiarism_score: -1 } : b)),
@@ -50,7 +50,7 @@ const BlogList = ({
   };
 
   const handleToggleExclusive = async (blog) => {
-    const newVal = blog.is_members_only === 1 ? 0 : 1;
+    const newVal = Number(blog.is_members_only) === 1 ? 0 : 1;
     setTogglingMap((prev) => ({ ...prev, [blog.id]: true }));
     try {
       const res = await toggleExclusiveContent({
@@ -73,7 +73,7 @@ const BlogList = ({
           "error",
         );
       }
-    } catch (err) {
+    } catch {
       addToast("Error updating exclusive content flag", "error");
     } finally {
       setTogglingMap((prev) => ({ ...prev, [blog.id]: false }));
@@ -242,7 +242,7 @@ const BlogList = ({
                     >
                       <input
                         type="checkbox"
-                        checked={blog.is_members_only === 1}
+                        checked={Number(blog.is_members_only) === 1}
                         onChange={() => handleToggleExclusive(blog)}
                         disabled={togglingMap[blog.id]}
                       />

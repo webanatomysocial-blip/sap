@@ -18,10 +18,13 @@ const AdminHome = () => {
 
   const [stats, setStats] = useState({
     contributors: 0,
+    pending_contributors: 0,
     pending_reviews: 0,
     pending_comments: 0,
     blogs: 0,
     total_views: 0,
+    approved_members: 0,
+    pending_members: 0,
   });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -70,8 +73,14 @@ const AdminHome = () => {
     },
     {
       icon: "bi-person-badge",
-      value: stats.approved_members || 0,
+      value: stats.approved_members,
       label: "Members",
+      color: "#1e293b",
+    },
+    {
+      icon: "bi-eye",
+      value: stats.total_views,
+      label: "Total Views",
       color: "#1e293b",
     },
   ];
@@ -90,7 +99,7 @@ const AdminHome = () => {
                 <i className={`bi ${card.icon}`}></i>
               </div>
               <div className="stat-info">
-                <span className="stat-value">{card.value}</span>
+                <span className="stat-value">{formatNum(card.value)}</span>
                 <span className="stat-label">{card.label}</span>
               </div>
             </div>

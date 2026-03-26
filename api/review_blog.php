@@ -84,6 +84,20 @@ try {
         
         $audit->log($_SESSION['admin_id'], 'blog_approve', 'blog', $id, "Status: " . $blog['submission_status']);
         
+        // Notify Author
+        $stmtAuthor = $pdo->prepare("
+            SELECT c.email FROM contributors c 
+            JOIN blogs b ON c.id = b.author_id 
+            WHERE b.id = ?
+        ");
+        $stmtAuthor->execute([$id]);
+        $author = $stmtAuthor->fetch();
+        if ($author) {
+            require_once 'services/NotificationService.php';
+            $ns = new NotificationService();
+            $ns->notifyBlogApproved($author['email'], $blog['title']);
+        }
+
         echo json_encode(['status' => 'success', 'message' => 'Blog approved and published']);
     } else {
         // Handle Reject
@@ -107,6 +121,20 @@ try {
             );
             $stmt->execute([$rejection_reason, $id]);
             echo json_encode(['status' => 'success', 'message' => 'Blog rejected.']);
+        }
+
+        // Notify Author
+        $stmtAuthor = $pdo->prepare("
+            SELECT c.email FROM contributors c 
+            JOIN blogs b ON c.id = b.author_id 
+            WHERE b.id = ?
+        ");
+        $stmtAuthor->execute([$id]);
+        $author = $stmtAuthor->fetch();
+        if ($author) {
+            require_once 'services/NotificationService.php';
+            $ns = new NotificationService();
+            $ns->notifyBlogRejected($author['email'], $blog['title'], $rejection_reason);
         }
 
         $audit->log($_SESSION['admin_id'], 'blog_reject', 'blog', $id, "Reason: " . $rejection_reason);

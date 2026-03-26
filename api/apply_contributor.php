@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once 'db.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if it's a multipart form data request (file upload) or JSON
@@ -26,6 +27,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     try {
+        // CAPTCHA VALIDATION
+        if (strpos($contentType, 'application/json') !== false) {
+            $captchaAns = $input['captchaAns'] ?? null;
+        } else {
+            $captchaAns = $_POST['captchaAns'] ?? null;
+        }
+        
+        $captchaExpected = isset($_SESSION['captcha_ans']) ? $_SESSION['captcha_ans'] : (isset($_COOKIE['captcha_ans']) ? $_COOKIE['captcha_ans'] : null);
+        
+        if ($captchaAns === null || (int)$captchaAns !== (int)$captchaExpected) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Captcha. Please try again.']);
+            exit;
+        }
+
 // Handle File Upload
         $imagePath = null; // Default to null if no image or upload fails
         
@@ -229,10 +245,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':image' => $imagePath
         ]);
         
+        $newId = $pdo->lastInsertId();
+
+        // Send Notifications
+        require_once 'services/NotificationService.php';
+        $ns = new NotificationService();
+        $ns->notifyContributorApplicationSubmitted($email, [
+            'name' => $input['fullName'] ?? 'Applicant',
+            'experience' => $input['yearsExperience'] ?? 'N/A',
+            'details' => $input['proposedTopics'] ?? 'See application'
+        ]);
+        
         echo json_encode([
             'status' => 'success',
             'message' => 'Application submitted successfully',
-            'id' => $pdo->lastInsertId()
+            'id' => $newId
         ]);
         
     } catch (PDOException $e) {

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
+import FundamentalsPage from "./pages/FundamentalsPage";
 import Blogs from "./components/Blog";
 import DynamicBlog from "./components/DynamicBlog";
 
@@ -45,6 +46,8 @@ import AdminAds from "./components/admin/AdminAds";
 import AdminBlogs from "./components/admin/AdminBlogs";
 import AdminBlogReview from "./components/admin/AdminBlogReview";
 import AdminManageUsers from "./components/admin/AdminManageUsers";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
@@ -59,6 +62,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="sap-security-fundamentals" element={<FundamentalsPage />} />
         <Route path="blogs" element={<Blogs />} />
         <Route path="blog" element={<Navigate to="/blogs" replace />} />
         <Route path="blogs/:blogId" element={<DynamicBlog />} />
@@ -137,6 +141,8 @@ function App() {
         {/* Members Only Auth Pages */}
         <Route path="member/login" element={<MemberLogin />} />
         <Route path="member/signup" element={<MemberSignup />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
 
         {/* Legal Routes */}
         <Route path="privacy-policy" element={<PrivacyPolicy />} />

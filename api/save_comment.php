@@ -1,6 +1,6 @@
 <?php
 // api/save_comment.php
-require 'db.php';
+require_once 'db.php';
 
 header("Content-Type: application/json");
 
@@ -77,6 +77,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ':user_name' => htmlspecialchars($author),
             ':email' => htmlspecialchars($email),
             ':content' => htmlspecialchars($text)
+        ]);
+
+        // Send Notifications
+        require_once 'services/NotificationService.php';
+        $ns = new NotificationService();
+        $ns->notifyCommentSubmitted($email, $author);
+
+        // Notify Admin
+        $blogTitle = "SAP Security Post"; // Fallback
+        $stmtBlog = $pdo->prepare("SELECT title FROM blogs WHERE id = ? OR slug = ?");
+        $stmtBlog->execute([$blogId, $blogId]);
+        $bData = $stmtBlog->fetch();
+        if ($bData) $blogTitle = $bData['title'];
+
+        $ns->notifyAdminNewComment([
+            'article_title' => $blogTitle,
+            'content' => $text,
+            'user_name' => $author,
+            'user_email' => $email
         ]);
 
         http_response_code(201);

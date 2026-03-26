@@ -21,6 +21,8 @@ const AdminBlogReview = () => {
   const [previewBlog, setPreviewBlog] = useState(null);
   const [recalculating, setRecalculating] = useState({});
   const [activeTab, setActiveTab] = useState("pending"); // "pending" | "rejected"
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
 
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
@@ -44,7 +46,7 @@ const AdminBlogReview = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, addToast]);
 
   useEffect(() => {
     fetchPending();
@@ -114,33 +116,13 @@ const AdminBlogReview = () => {
         addToast(res.data.message || "Failed to recalculate.", "error");
       }
     } catch (err) {
+      console.error(err);
       addToast("Error during recalculation.", "error");
     } finally {
       setRecalculating((prev) => ({ ...prev, [blogId]: false }));
     }
   };
 
-  const handleReject = (blog) => {
-    openConfirm({
-      title: "Reject Blog?",
-      message: `Reject "${blog.title}"? The contributor will need to resubmit.`,
-      confirmText: "Reject",
-      isDanger: true,
-      onConfirm: async () => {
-        setReviewingId(blog.id);
-        try {
-          await reviewBlog(blog.id, "reject", reason); // Passing reason if any
-          addToast("Blog rejected.", "error");
-          setPreviewBlog(null);
-          setBlogs((prev) => prev.filter((b) => b.id !== blog.id));
-        } catch (err) {
-          addToast(err.response?.data?.message || "Rejection failed.", "error");
-        } finally {
-          setReviewingId(null);
-        }
-      },
-    });
-  };
 
   const fmt = (d) => {
     if (!d) return "—";
@@ -155,8 +137,6 @@ const AdminBlogReview = () => {
     }
   };
 
-  const truncate = (s, max = 75) =>
-    s && s.length > max ? s.slice(0, max) + "…" : s || "—";
   const cap = (s) =>
     s ? s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—";
 
@@ -194,6 +174,35 @@ const AdminBlogReview = () => {
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
         </div>
+      </div>
+
+      <div className="admin-filter-bar" style={{ marginBottom: "20px", display: "flex", gap: "15px", alignItems: "center", background: "#fff", padding: "15px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <i className="bi bi-search" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }}></i>
+          <input
+            type="text"
+            placeholder="Search by title or author..."
+            className="form-control"
+            style={{ paddingLeft: "35px", width: "100%" }}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <select
+          className="form-control"
+          style={{ width: "200px" }}
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+          <option value="sap-grc">SAP GRC</option>
+          <option value="sap-iag">IAM</option>
+          <option value="sap-licensing">Licensing</option>
+          <option value="sap-public-cloud">Cloud</option>
+          <option value="sap-btp-security">Cybersecurity</option>
+          <option value="podcasts">Podcasts</option>
+          <option value="other-tools">Tools</option>
+        </select>
       </div>
 
       <div className="admin-card">
@@ -251,7 +260,16 @@ const AdminBlogReview = () => {
                 </tr>
               </thead>
               <tbody>
-                {blogs.map((blog) => (
+                {blogs
+                  .filter((b) => {
+                    const matchesSearch =
+                      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (b.author_name || "").toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesCategory =
+                      filterCategory === "All" || b.category === filterCategory;
+                    return matchesSearch && matchesCategory;
+                  })
+                  .map((blog) => (
                   <tr key={blog.id}>
                     <td className="text-left">
                       <div

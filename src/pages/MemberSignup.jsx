@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import "../css/ContactForm.css"; // Reuse existing clean form styles
 
 const MemberSignup = () => {
+  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Form
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,6 +15,7 @@ const MemberSignup = () => {
     job_role: "",
     password: "",
     confirmPassword: "",
+    otp: ""
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,6 +23,44 @@ const MemberSignup = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { sendOTP } = await import("../services/api");
+      const res = await sendOTP(formData.email);
+      if (res.data.status === "success") {
+        addToast("Verification code sent to your email.", "success");
+        setStep(2);
+      } else {
+        addToast(res.data.message || "Failed to send code.", "error");
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to send verification code.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { verifyOTP } = await import("../services/api");
+      const res = await verifyOTP(formData.email, formData.otp);
+      if (res.data.status === "success") {
+        addToast("Email verified successfully!", "success");
+        setStep(3);
+      } else {
+        addToast(res.data.message || "Invalid code.", "error");
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || "Verification failed.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -137,165 +177,199 @@ const MemberSignup = () => {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-              }}
-            >
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  className="form-control"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="John Doe"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="form-control"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="john@example.com"
-                />
-              </div>
-            </div>
+          <div className="signup-steps">
+            {step === 1 && (
+              <form onSubmit={handleSendOTP}>
+                <div className="form-group">
+                  <label className="form-label">Email Address *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="form-control"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <button type="submit" className="btn-primary" style={{width:'100%'}} disabled={loading || !formData.email}>
+                  {loading ? "Sending Code..." : "Verify Email with OTP"}
+                </button>
+              </form>
+            )}
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "20px"
-              }}
-            >
-              <div className="form-group">
-                <label className="form-label">Company Name *</label>
-                <input
-                  type="text"
-                  name="company_name"
-                  className="form-control"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g. Acme Corp"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Job Role *</label>
-                <input
-                  type="text"
-                  name="job_role"
-                  className="form-control"
-                  value={formData.job_role}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g. SAP Security Lead"
-                />
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-              }}
-            >
-              <div className="form-group">
-                <label className="form-label">Phone (Optional)</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  className="form-control"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+1 234 567 8900"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  className="form-control"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="City, Country"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Password *</label>
-              <input
-                type="password"
-                name="password"
-                className="form-control"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="Create a strong password"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Confirm Password *</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                className="form-control"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder="Repeat password"
-                style={{
-                  borderColor:
-                    formData.confirmPassword &&
-                    formData.password !== formData.confirmPassword
-                      ? "#ef4444"
-                      : "",
-                }}
-              />
-              {formData.confirmPassword &&
-                formData.password !== formData.confirmPassword && (
-                  <p
-                    style={{
-                      color: "#ef4444",
-                      fontSize: "0.85rem",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Passwords do not match.
+            {step === 2 && (
+              <form onSubmit={handleVerifyOTP}>
+                <div className="form-group">
+                  <label className="form-label">Verification Code *</label>
+                  <input
+                    type="text"
+                    name="otp"
+                    className="form-control"
+                    value={formData.otp}
+                    onChange={handleChange}
+                    required
+                    placeholder="6-digit code"
+                    maxLength="6"
+                  />
+                  <p style={{fontSize:'0.85rem', color:'#64748b', marginTop:'8px'}}>
+                    Sent to {formData.email}. <span onClick={() => setStep(1)} style={{color:'#3b82f6', cursor:'pointer'}}>Change email</span>
                   </p>
-                )}
-            </div>
+                </div>
+                <button type="submit" className="btn-primary" style={{width:'100%'}} disabled={loading || !formData.otp}>
+                  {loading ? "Verifying..." : "Verify Code"}
+                </button>
+              </form>
+            )}
 
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={
-                loading ||
-                !formData.name ||
-                !formData.email ||
-                !formData.password ||
-                formData.password !== formData.confirmPassword
-              }
-              style={{ width: "100%", marginTop: "20px" }}
-            >
-              {loading ? "Submitting Application..." : "Submit Application"}
-            </button>
+            {step === 3 && (
+              <form onSubmit={handleSubmit}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "20px",
+                  }}
+                >
+                  <div className="form-group">
+                    <label className="form-label">Full Name *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      className="form-control"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Verified Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={formData.email}
+                      disabled
+                      style={{background:'#f1f5f9'}}
+                    />
+                  </div>
+                </div>
 
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "20px",
+                    marginBottom: "20px"
+                  }}
+                >
+                  <div className="form-group">
+                    <label className="form-label">Company Name *</label>
+                    <input
+                      type="text"
+                      name="company_name"
+                      className="form-control"
+                      value={formData.company_name}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. Acme Corp"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Job Role *</label>
+                    <input
+                      type="text"
+                      name="job_role"
+                      className="form-control"
+                      value={formData.job_role}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. SAP Security Lead"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "20px",
+                  }}
+                >
+                  <div className="form-group">
+                    <label className="form-label">Phone (Optional)</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      className="form-control"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+1 234 567 8900"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Location *</label>
+                    <input
+                      type="text"
+                      name="location"
+                      className="form-control"
+                      value={formData.location}
+                      onChange={handleChange}
+                      required
+                      placeholder="City, Country"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Password *</label>
+                  <input
+                    type="password"
+                    name="password"
+                    className="form-control"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    placeholder="Create a strong password"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    className="form-control"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    placeholder="Repeat password"
+                    style={{
+                      borderColor:
+                        formData.confirmPassword &&
+                        formData.password !== formData.confirmPassword
+                          ? "#ef4444"
+                          : "",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={
+                    loading ||
+                    !formData.name ||
+                    !formData.password ||
+                    formData.password !== formData.confirmPassword
+                  }
+                  style={{ width: "100%", marginTop: "20px" }}
+                >
+                  {loading ? "Submitting Application..." : "Submit Application"}
+                </button>
+              </form>
+            )}
+            
             <div
               style={{
                 textAlign: "center",
@@ -318,7 +392,7 @@ const MemberSignup = () => {
                 </Link>
               </p>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>
