@@ -125,10 +125,10 @@ const Footer = () => {
           SAP Security Expert or the website{" "}
           <a
             href={
-              import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com"
+              import.meta.env.VITE_SITE_URL || "https://sap.kaphi.in"
             }
           >
-            {(import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com")
+            {(import.meta.env.VITE_SITE_URL || "https://sap.kaphi.in")
               .replace("https://", "")
               .replace("http://", "")}
           </a>

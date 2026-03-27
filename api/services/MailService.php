@@ -68,13 +68,13 @@ class MailService {
 
         // Auto-inject site URL and domain
         if (!isset($data['site_url'])) {
-            $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com/';
+            $siteUrl = getenv('SITE_URL') ?: 'https://sap.kaphi.in/';
             $siteUrl = rtrim($siteUrl, '/');
             $data['site_url'] = $siteUrl;
             
             // Extract domain for display if not set
             if (!isset($data['site_domain'])) {
-                $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
+                $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sap.kaphi.in';
                 $data['site_domain'] = $domain;
             }
         }

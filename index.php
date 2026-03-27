@@ -17,7 +17,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'sapsecurityexpert.com'; // Fallback to production if host is missing
+$host = $_SERVER['HTTP_HOST'] ?? 'sap.kaphi.in'; // Fallback to production if host is missing
 $baseUrl = $protocol . $host;
 
 // If we are on localhost, og:image might not load in preview tools unless we use a public tunnel or production fallback.

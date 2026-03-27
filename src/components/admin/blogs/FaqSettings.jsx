@@ -140,6 +140,8 @@ const FaqSettings = ({
                         handleFAQChange(index, "answer", content)
                       }
                       onImageUpload={rteImageUpload}
+                      minHeight="150px"
+                      maxHeight="500px"
                     />
                   </div>
                 </div>

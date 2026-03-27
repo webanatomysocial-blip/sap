@@ -37,7 +37,7 @@ const ResetPassword = () => {
             const res = await resetWithToken(email, token, password);
             if (res.data.status === "success") {
                 addToast("Password reset successfully!", "success");
-                navigate("/member/login");
+                navigate("/member/login", { state: { fromAuth: true } });
             } else {
                 addToast(res.data.message || "Failed to reset password.", "error");
             }

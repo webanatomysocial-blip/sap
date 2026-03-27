@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import "../../css/AdminDashboard.css"; // Ensure styling
 import { useConfirm } from "../../context/ConfirmationContext";
 
-const SimpleRTE = ({ value, onChange, onImageUpload }) => {
+const SimpleRTE = ({ value, onChange, onImageUpload, minHeight = "400px", maxHeight = "800px" }) => {
   const editorRef = useRef(null);
   const [isSourceView, setIsSourceView] = React.useState(false);
   const { openConfirm } = useConfirm();
@@ -579,6 +579,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
           onChange={handleSourceChange}
           onBlur={handleChange}
           placeholder="Type or paste HTML here..."
+          style={{ minHeight, maxHeight }}
         />
       ) : (
         <div
@@ -592,6 +593,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
           onKeyUp={saveSelection}
           onPaste={handlePaste}
           onDoubleClick={handleDoubleClick}
+          style={{ minHeight, maxHeight }}
         />
       )}
 
@@ -668,7 +670,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             gap: 6px;
         }
         .rte-content {
-            height: 500px;
+            min-height: 400px;
             overflow-y: auto;
             padding: 24px 32px;
             outline: none;
@@ -679,7 +681,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
         }
         .rte-source-textarea {
             width: 100%;
-            height: 500px;
+            min-height: 400px;
             overflow-y: auto;
             padding: 24px;
             font-family: 'Fira Code', 'Monaco', 'Courier New', Courier, monospace;
@@ -689,7 +691,7 @@ const SimpleRTE = ({ value, onChange, onImageUpload }) => {
             color: #e2e8f0;
             border: none;
             outline: none;
-            resize: none;
+            resize: vertical;
             white-space: pre-wrap;
             word-break: break-all;
         }

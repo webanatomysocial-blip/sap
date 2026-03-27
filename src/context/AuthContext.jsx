@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
 
 /**
  * AuthContext — provides { user, role, permissions, isAuthenticated, setAuth, clearAuth }
@@ -12,19 +13,27 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState("guest");
   const [permissions, setPermissions] = useState({});
 
-  // Rehydrate from localStorage on mount
+  // Rehydrate from localStorage on mount AND verify with backend
   useEffect(() => {
     const auth = localStorage.getItem("adminAuth");
     if (auth === "true") {
-      const savedUser = JSON.parse(localStorage.getItem("adminUser") || "null");
-      const savedRole = localStorage.getItem("userRole") || "admin";
-      const savedPerms = JSON.parse(
-        localStorage.getItem("userPermissions") || "{}",
-      );
-      setIsAuthenticated(true);
-      setUser(savedUser);
-      setRole(savedRole);
-      setPermissions(savedPerms);
+      const verifySession = async () => {
+        try {
+          const { data } = await axios.get("/api/verify_session.php");
+          if (data.status === "success") {
+            setUser(data.user);
+            setRole(data.role || data.user.role || "admin");
+            setPermissions(data.permissions || {});
+            setIsAuthenticated(true);
+          } else {
+            clearAuth();
+          }
+        } catch (err) {
+          console.error("Session verification failed", err);
+          clearAuth();
+        }
+      };
+      verifySession();
     }
   }, []);
 

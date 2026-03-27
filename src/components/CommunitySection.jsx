@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // Removed static metadata import
 import "../css/CommunitySection.css";
 import ads1 from "../assets/promotions/promo-1.png";
-import ads2 from "../assets/promotions/promo-2.png";
+import ads2 from "../assets/promotions/promo-1.png";
 import {
   getHomepageData,
   getPublicAnnouncements,

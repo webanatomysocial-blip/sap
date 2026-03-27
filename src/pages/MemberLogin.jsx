@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMemberAuth } from "../context/MemberAuthContext";
 import { useToast } from "../context/ToastContext";
 import { Helmet } from "react-helmet-async";
@@ -12,6 +12,7 @@ const MemberLogin = () => {
   const { login: authLogin } = useMemberAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +24,14 @@ const MemberLogin = () => {
       if (res.data.status === "success" && res.data.member) {
         authLogin(res.data.member, res.data.token);
         addToast("Welcome back!", "success");
-        navigate(-1);
+        
+        // Intelligent redirect: If coming from reset/forgot flow, go to home
+        if (location.state?.fromAuth) {
+          navigate("/", { replace: true });
+        } else {
+          // Fallback to home if no history
+          navigate("/", { replace: true });
+        }
       } else {
         addToast(res.data.message || "Invalid email or password", "error");
       }
