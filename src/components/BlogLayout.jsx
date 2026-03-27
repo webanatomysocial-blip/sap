@@ -42,6 +42,7 @@ const BlogLayout = ({
   metaDescription,
   metaKeywords,
   isMembersOnly = false,
+  relatedBlogs = [],
 }) => {
   const { isLoggedIn } = useMemberAuth();
   const progressBarRef = useRef(null);
@@ -162,7 +163,7 @@ const BlogLayout = ({
         title={metaTitle || title}
         description={
           metaDescription ||
-          `${title} - Written by ${author_name || "SAP Security Expert"}. Read more about ${title} on SAP Security Expert.`
+          `${title} - Written by ${author_name || "SAP Security Expert"}. Read more on SAP Security Expert.`
         }
         image={image}
         url={currentUrl}
@@ -461,7 +462,7 @@ const BlogLayout = ({
 
         {/* Right Sidebar */}
         <div className="blog-sidebar-column">
-          <BlogSidebar sidebarAd={sidebarAd} />
+          <BlogSidebar sidebarAd={sidebarAd} relatedBlogs={relatedBlogs} />
         </div>
       </div>
     </div>

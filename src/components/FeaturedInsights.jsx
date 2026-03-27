@@ -13,7 +13,6 @@ const categoryMapping = {
   "SAP Security": "sap-security",
   "SAP GRC & IAG": "sap-grc", // Updated label
   "SAP Cybersecurity": "sap-cybersecurity", // Updated label
-  "SAP Licensing": "sap-licensing", // Updated label
 };
 
 export default function FeaturedInsights({ id }) {
@@ -135,12 +134,11 @@ export default function FeaturedInsights({ id }) {
     const categoryLabels = {
       "sap-grc": "SAP GRC",
       "sap-iag": "IAG",
-      "sap-licensing": "Licensing",
       "sap-public-cloud": "Cloud",
       "sap-btp-security": "SAP BTP",
       "sap-cybersecurity": "Cybersecurity",
       podcasts: "Podcast",
-      "other-tools": "Tools",
+      "expert-recommendations": "Expert Recommendations",
       "sap-access-control": "SAP Access Control",
       "sap-process-control": "SAP Process Control",
       "sap-security": "SAP Security",
@@ -194,9 +192,6 @@ export default function FeaturedInsights({ id }) {
             >
               <div className="latest-blog-image">
                 <img src={blog.image} alt={blog.title} />
-                <span className="latest-blog-badge">
-                  {getCategoryLabel(blog.category, blog.subCategory)}
-                </span>
                 {blog.is_members_only == 1 && (
                   <div className="exclusive-badge-overlay">
                     <i className="bi bi-lock-fill"></i> Exclusive
@@ -204,6 +199,9 @@ export default function FeaturedInsights({ id }) {
                 )}
               </div>
               <div className="latest-blog-content">
+                <span className="featured-blog-badge">
+                  {getCategoryLabel(blog.category, blog.subCategory)}
+                </span>
                 <h3>{blog.title}</h3>
                 <p className="latest-blog-excerpt">{blog.excerpt}</p>
                 <div className="latest-blog-meta">

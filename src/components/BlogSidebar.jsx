@@ -6,8 +6,13 @@ import "../css/BlogSidebar.css";
 
 import { getCategories, getBlogs, getAdsByZone } from "../services/api";
 
-const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
+const BlogSidebar = ({ sidebarAd: propSidebarAd = {}, relatedBlogs = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const handleAdClick = (zone) => {
+    import("../services/api").then(({ trackAdClick }) => {
+      trackAdClick(zone).catch(() => {});
+    });
+  };
   const [sidebarAd, setSidebarAd] = useState(
     propSidebarAd && propSidebarAd.active
       ? propSidebarAd
@@ -18,14 +23,12 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
         },
   );
 
-  // Syncing prop to state during render (officially supported)
-  const [prevPropAd, setPrevPropAd] = useState(propSidebarAd);
-  if (propSidebarAd !== prevPropAd) {
-    setPrevPropAd(propSidebarAd);
+  // Sync prop changes via useEffect to avoid re-render loops
+  useEffect(() => {
     if (propSidebarAd && propSidebarAd.active) {
       setSidebarAd(propSidebarAd);
     }
-  }
+  }, [propSidebarAd]);
 
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -232,6 +235,7 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
             href={sidebarAd.link || "#"}
             target={sidebarAd.link ? "_blank" : "_self"}
             rel="noopener noreferrer"
+            onClick={() => handleAdClick("blog_sidebar")}
           >
             <img
               src={sidebarAd.image}
@@ -246,6 +250,30 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {} }) => {
               onError={(e) => (e.target.style.display = "none")}
             />
           </a>
+        </div>
+      )}
+
+      {/* Related Blogs Widget */}
+      {relatedBlogs && relatedBlogs.length > 0 && (
+        <div className="sidebar-widget latest-posts-widget" style={{ marginTop: "30px" }}>
+          <h3 className="widget-title">Related Blogs</h3>
+          <ul className="latest-posts-list">
+            {relatedBlogs.map((post) => {
+              const categorySlug = (post.category || "blogs").toLowerCase();
+              return (
+                <li key={post.id} className="latest-post-item">
+                  <Link to={`/${categorySlug}/${post.slug || post.id}`}>
+                    {post.title}
+                    {Number(post.is_members_only) === 1 && (
+                      <span className="sidebar-exclusive-tag">
+                        <i className="bi bi-lock-fill"></i> Exclusive
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </aside>

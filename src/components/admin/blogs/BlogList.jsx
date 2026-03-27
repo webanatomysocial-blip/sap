@@ -170,59 +170,19 @@ const BlogList = ({
                     {blog.status === "approved" ||
                     blog.status === "published" ? (
                       new Date(blog.date) > new Date() ? (
-                        <span
-                          style={{
-                            background: "#eff6ff",
-                            color: "#1e40af",
-                            padding: "4px 8px",
-                            borderRadius: "12px",
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
-                          }}
-                        >
+                        <span className="status-badge status-scheduled">
                           Scheduled
                         </span>
                       ) : (
-                        <span
-                          style={{
-                            background: "#dcfce7",
-                            color: "#166534",
-                            padding: "4px 8px",
-                            borderRadius: "12px",
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Live
-                        </span>
+                        <span className="status-badge status-live">Live</span>
                       )
                     ) : blog.submission_status === "submitted" ||
                       blog.submission_status === "edited" ? (
-                      <span
-                        style={{
-                          background: "#fef9c3",
-                          color: "#854d0e",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: "bold",
-                        }}
-                      >
+                      <span className="status-badge status-pending">
                         Pending
                       </span>
                     ) : (
-                      <span
-                        style={{
-                          background: "#f1f5f9",
-                          color: "#64748b",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Draft
-                      </span>
+                      <span className="status-badge status-draft">Draft</span>
                     )}
                   </td>
                   <td className="text-left">

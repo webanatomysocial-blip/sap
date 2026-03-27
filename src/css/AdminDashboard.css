@@ -830,10 +830,11 @@ td.col-status {
   text-align: center !important;
 }
 .status-approved,
-.status-published {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
+.status-published,
+.status-live {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
   white-space: nowrap;
 }
 
@@ -841,6 +842,20 @@ td.col-status {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
+.status-draft {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.status-scheduled {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
   white-space: nowrap;
 }
 

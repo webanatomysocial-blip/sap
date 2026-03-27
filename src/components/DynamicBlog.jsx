@@ -14,6 +14,7 @@ export default function DynamicBlog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [commentsCount, setCommentsCount] = useState(0);
+  const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [sidebarAd, setSidebarAd] = useState({
     active: false,
     image: "",
@@ -85,6 +86,29 @@ export default function DynamicBlog() {
             post_id: postId,
             visitor_token: visitorToken,
           }).catch((err) => console.error("View tracking failed:", err));
+        }
+
+        // Fetch related blogs if present
+        if (postData.related_blogs) {
+          let relatedIds = [];
+          try {
+            relatedIds = typeof postData.related_blogs === 'string' 
+              ? JSON.parse(postData.related_blogs) 
+              : postData.related_blogs;
+          } catch (e) { console.error("JSON parse error for related_blogs", e); }
+
+          if (Array.isArray(relatedIds) && relatedIds.length > 0) {
+            import("../services/api").then(({ getBlogs }) => {
+              getBlogs().then(res => {
+                const allBlogs = Array.isArray(res.data) ? res.data : res.data.data || [];
+                // Use robust ID comparison (convert both to String)
+                const filtered = allBlogs.filter(b => 
+                  relatedIds.some(id => String(id) === String(b.id))
+                );
+                setRelatedBlogs(filtered);
+              }).catch(err => console.error("Error fetching all blogs for related", err));
+            }).catch(err => console.error("Dynamic import failed", err));
+          }
         }
       })
       .catch((err) => {
@@ -178,6 +202,7 @@ export default function DynamicBlog() {
         author_website={blog.author_website}
         category={blog.category}
         sidebarAd={sidebarAd}
+        relatedBlogs={relatedBlogs}
         dynamicRecentPosts={[]}
         viewCount={blog.view_count || 0}
         commentCount={commentsCount}

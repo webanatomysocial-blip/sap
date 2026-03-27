@@ -83,12 +83,11 @@ export default function LatestBlogs() {
     const categoryLabels = {
       "sap-grc": "SAP GRC",
       "sap-iag": "IAM",
-      "sap-licensing": "Licensing",
       "sap-public-cloud": "Cloud",
       "sap-btp-security": "Cybersecurity",
       "sap-cybersecurity": "Cybersecurity",
       podcasts: "Podcast",
-      "other-tools": "Tools",
+      "expert-recommendations": "Expert Recommendations",
       "sap-access-control": "SAP Access Control",
     };
 

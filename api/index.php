@@ -130,6 +130,10 @@ if ($path === '/ads' || $path === '/admin/ads') {
     require __DIR__ . '/manage_ads.php';
     exit;
 }
+if ($path === '/ads/click') {
+    require __DIR__ . '/ads_click.php';
+    exit;
+}
 if ($path === '/announcements' || $path === '/admin/announcements') {
     require __DIR__ . '/manage_announcements.php';
     exit;

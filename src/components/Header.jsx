@@ -98,9 +98,7 @@ const Header = () => {
           <Link to="/sap-cybersecurity" className="nav-link">
             SAP Cybersecurity
           </Link>
-          <Link to="/sap-licensing" className="nav-link">
-            SAP Licensing
-          </Link>
+
 
           {/* Resources Dropdown */}
           <div className="nav-item">
@@ -112,7 +110,7 @@ const Header = () => {
               <Link to="/product-reviews">Product Reviews</Link>
               <Link to="/podcasts">Podcasts</Link>
               <Link to="/videos">Videos</Link>
-              <Link to="/other-tools">Expert Recommendations</Link>
+              <Link to="/expert-recommendations">Expert Recommendations</Link>
             </div>
           </div>
 
@@ -356,9 +354,7 @@ const Header = () => {
           <Link to="/sap-cybersecurity" onClick={closeMenu}>
             SAP Cybersecurity
           </Link>
-          <Link to="/sap-licensing" onClick={closeMenu}>
-            SAP Licensing
-          </Link>
+
 
           {/* Mobile Resources Dropdown */}
           <div className="mobile-dropdown">
@@ -385,7 +381,7 @@ const Header = () => {
                 <Link to="/videos" onClick={closeMenu}>
                   Videos
                 </Link>
-                <Link to="/other-tools" onClick={closeMenu}>
+                <Link to="/expert-recommendations" onClick={closeMenu}>
                   Expert Recommendations
                 </Link>
               </div>

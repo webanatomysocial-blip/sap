@@ -25,11 +25,10 @@ import SapIag from "./pages/categories/SapIag";
 import SapGrc from "./pages/categories/SapGrc";
 
 import SapCybersecurity from "./pages/categories/SapCybersecurity";
-import SapLicensing from "./pages/categories/SapLicensing";
 import ProductReviews from "./pages/categories/ProductReviews";
 import Podcasts from "./pages/categories/Podcasts";
 import Videos from "./pages/categories/Videos";
-import OtherTools from "./pages/categories/OtherTools";
+import ExpertRecommendations from "./pages/categories/ExpertRecommendations";
 import Contact from "./pages/Contact";
 import ContactUs from "./pages/ContactUs";
 import BecomeContributor from "./components/BecomeContributor";
@@ -117,8 +116,7 @@ function App() {
         <Route path="sap-cybersecurity" element={<SapCybersecurity />} />
         <Route path="sap-cybersecurity/:blogId" element={<DynamicBlog />} />
 
-        <Route path="sap-licensing" element={<SapLicensing />} />
-        <Route path="sap-licensing/:blogId" element={<DynamicBlog />} />
+
 
         {/* Resources Routes */}
         <Route path="product-reviews" element={<ProductReviews />} />
@@ -130,8 +128,8 @@ function App() {
         <Route path="videos" element={<Videos />} />
         <Route path="videos/:blogId" element={<DynamicBlog />} />
 
-        <Route path="other-tools" element={<OtherTools />} />
-        <Route path="other-tools/:blogId" element={<DynamicBlog />} />
+        <Route path="expert-recommendations" element={<ExpertRecommendations />} />
+        <Route path="expert-recommendations/:blogId" element={<DynamicBlog />} />
 
         <Route path="become-a-contributor" element={<BecomeContributor />} />
         <Route path="apply-contributor" element={<ContributorApplication />} />

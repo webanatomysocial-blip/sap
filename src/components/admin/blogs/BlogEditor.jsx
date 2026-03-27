@@ -10,9 +10,38 @@ const BlogEditor = ({
   uploading,
   imageVersion,
   authors = [], // Received from AdminBlogs
+  blogs = [], // List for related blogs selection
   children, // For sub-sections (SEO, CTA, FAQ)
   onSave,
+  onSaveDraft,
 }) => {
+  const [blogSearch, setBlogSearch] = React.useState("");
+
+  const handleToggleRelated = (id) => {
+    const current = formData.related_blogs || [];
+    if (current.includes(id)) {
+      handleInputChange({
+        target: {
+          name: "related_blogs",
+          value: current.filter((i) => i !== id),
+        },
+      });
+    } else {
+      handleInputChange({
+        target: { name: "related_blogs", value: [...current, id] },
+      });
+    }
+  };
+
+  const selectedBlogs = blogs.filter((b) =>
+    (formData.related_blogs || []).includes(b.id),
+  );
+  const unselectedBlogs = blogs.filter(
+    (b) =>
+      !(formData.related_blogs || []).includes(b.id) &&
+      b.id !== formData.id && // Don't relate to self
+      b.title.toLowerCase().includes(blogSearch.toLowerCase()),
+  );
   return (
     <div
       className="blog-editor-layout"
@@ -126,14 +155,34 @@ const BlogEditor = ({
               padding: "14px",
               fontSize: "1rem",
               fontWeight: "700",
-              marginBottom: "24px",
+              marginBottom: "12px",
             }}
           >
             <i
-              className="bi bi-cloud-arrow-up"
+              className="bi bi-send-check"
               style={{ marginRight: "8px" }}
             ></i>{" "}
-            Save Blog Post
+            Publish Blog Post
+          </button>
+
+          <button
+            className="btn-secondary btn-full"
+            onClick={onSaveDraft}
+            style={{
+              padding: "12px",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+              marginBottom: "24px",
+              background: "#f1f5f9",
+              color: "#475569",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <i
+              className="bi bi-file-earmark-text"
+              style={{ marginRight: "8px" }}
+            ></i>{" "}
+            Save as Draft
           </button>
 
           <div className="form-group">
@@ -162,12 +211,96 @@ const BlogEditor = ({
               <option value="sap-iag">SAP IAG</option>
               <option value="sap-grc">SAP GRC</option>
               <option value="sap-cybersecurity">Cybersecurity</option>
-              <option value="sap-licensing">SAP Licensing</option>
               <option value="product-reviews">Product Reviews</option>
               <option value="podcasts">Podcasts</option>
               <option value="videos">Videos</option>
-              <option value="other-tools">Other Tools</option>
+              <option value="expert-recommendations">Expert Recommendations</option>
             </select>
+          </div>
+
+          <div className="admin-card" style={{ marginTop: "24px" }}>
+            <h3
+              style={{
+                marginBottom: "15px",
+                color: "#1e293b",
+                fontSize: "1.1rem",
+                paddingBottom: "10px",
+                borderBottom: "1px solid #e2e8f0",
+              }}
+            >
+              Related Blogs
+            </h3>
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Search blogs..."
+                className="form-control"
+                style={{ fontSize: "0.85rem", marginBottom: "12px", border: "1px solid #e2e8f0" }}
+                value={blogSearch}
+                onChange={(e) => setBlogSearch(e.target.value)}
+              />
+              <div
+                style={{
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  WebkitOverflowScrolling: "touch",
+                  overscrollBehavior: "contain",
+                }}
+                data-lenis-prevent="true"
+              >
+                {unselectedBlogs.slice(0, 10).map((b) => (
+                  <div
+                    key={b.id}
+                    onClick={() => handleToggleRelated(b.id)}
+                    style={{
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      borderBottom: "1px solid #e2e8f0",
+                      background: "white",
+                    }}
+                  >
+                    + {b.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "15px" }}>
+              <label style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                Selected ({selectedBlogs.length})
+              </label>
+              <div
+                style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}
+              >
+                {selectedBlogs.map((b) => (
+                  <div
+                    key={b.id}
+                    style={{
+                      padding: "4px 10px",
+                      background: "#3b82f6",
+                      color: "white",
+                      borderRadius: "4px",
+                      fontSize: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {b.title.substring(0, 20)}...
+                    <span
+                      onClick={() => handleToggleRelated(b.id)}
+                      style={{ cursor: "pointer", fontWeight: "bold" }}
+                    >
+                      ×
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

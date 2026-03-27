@@ -152,10 +152,11 @@ const AdminAds = () => {
             <thead>
               <tr>
                 <th className="text-left">Zone / Placement</th>
-                <th className="text-left">Preview</th>
-                <th className="text-left">Link Destination</th>
-                <th className="col-status">Status</th>
-                <th className="text-center">Actions</th>
+                 <th className="text-left">Preview</th>
+                 <th className="text-left">Link Destination</th>
+                 <th className="text-center">Click Count</th>
+                 <th className="col-status">Status</th>
+                 <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -196,8 +197,23 @@ const AdminAds = () => {
                       ) : (
                         <span style={{ color: "#94a3b8" }}>No link set</span>
                       )}
-                    </td>
-                    <td className="col-status">
+                     </td>
+                     <td className="text-center">
+                       <span
+                         style={{
+                           display: "inline-block",
+                           padding: "6px 12px",
+                           background: "#f1f5f9",
+                           color: "#475569",
+                           borderRadius: "6px",
+                           fontWeight: "600",
+                           fontSize: "0.9rem",
+                         }}
+                       >
+                         {ad.clicks || 0}
+                       </span>
+                     </td>
+                     <td className="col-status">
                       <span
                         className={`status-badge ${
                           ad.active ? "status-active" : "status-rejected"

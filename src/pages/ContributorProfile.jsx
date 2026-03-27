@@ -54,7 +54,6 @@ const ContributorProfile = () => {
     sapIag: "SAP IAG / Audit",
     sapBtp: "SAP BTP Security",
     sapCyber: "Cybersecurity",
-    sapLicensing: "SAP Licensing",
   };
 
   return (

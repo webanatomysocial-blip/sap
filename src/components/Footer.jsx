@@ -60,9 +60,7 @@ const Footer = () => {
               <li>
                 <Link to="/sap-btp-security">BTP Security</Link>
               </li>
-              <li>
-                <Link to="/sap-licensing">SAP Licensing</Link>
-              </li>
+
               <li>
                 <Link to="/sap-cybersecurity">SAP Cybersecurity</Link>
               </li>
@@ -79,7 +77,7 @@ const Footer = () => {
                 <Link to="/product-reviews">Product Reviews</Link>
               </li>
               <li>
-                <Link to="/other-tools">Other Tools</Link>
+                <Link to="/expert-recommendations">Expert Recommendations</Link>
               </li>
               <li>
                 <Link to="/become-a-contributor">Become a Contributor</Link>

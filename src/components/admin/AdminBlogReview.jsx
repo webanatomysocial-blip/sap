@@ -197,11 +197,10 @@ const AdminBlogReview = () => {
           <option value="All">All Categories</option>
           <option value="sap-grc">SAP GRC</option>
           <option value="sap-iag">IAM</option>
-          <option value="sap-licensing">Licensing</option>
           <option value="sap-public-cloud">Cloud</option>
           <option value="sap-btp-security">Cybersecurity</option>
           <option value="podcasts">Podcasts</option>
-          <option value="other-tools">Tools</option>
+          <option value="expert-recommendations">Expert Recommendations</option>
         </select>
       </div>
 

@@ -28,11 +28,11 @@ $staticPages = [
     '/sap-iag',
     '/sap-grc',
     '/sap-cybersecurity',
-    '/sap-licensing',
+
     '/product-reviews',
     '/podcasts',
     '/videos',
-    '/other-tools',
+    '/expert-recommendations',
     '/contact-us',
     '/privacy-policy',
     '/terms-conditions'

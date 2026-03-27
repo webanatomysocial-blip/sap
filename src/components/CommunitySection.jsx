@@ -13,6 +13,11 @@ import {
 } from "../services/api";
 
 export default function CommunitySection() {
+  const handleAdClick = (zone) => {
+    import("../services/api").then(({ trackAdClick }) => {
+      trackAdClick(zone).catch(() => {});
+    });
+  };
 
   const [contributorCount, setContributorCount] = useState(0);
   const [memberCount, setMemberCount] = useState(0);
@@ -189,12 +194,12 @@ export default function CommunitySection() {
                     <div className="topic-info">
                       <span className="topic-title">
                         {post.title}
-                        {post.is_members_only == 1 && (
-                          <span className="exclusive-mini-badge">
-                            <i className="bi bi-lock-fill"></i> Exclusive
-                          </span>
-                        )}
                       </span>
+                      {post.is_members_only == 1 && (
+                        <div className="exclusive-mini-badge-v2">
+                          <i className="bi bi-lock-fill"></i> Exclusive
+                        </div>
+                      )}
                       <span className="topic-meta">
                         By {post.author_name || "Guest Author"}
                       </span>
@@ -214,17 +219,16 @@ export default function CommunitySection() {
             {/* Promotion */}
             <div className="widget promo-widget">
               {adsConfig.community_left.active ? (
-                <a
-                  href={adsConfig.community_left.link || "#"}
-                  target={adsConfig.community_left.link ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                >
-                  <img
-                    src={adsConfig.community_left.image}
-                    alt="Promotion 1"
-                    onError={(e) => (e.target.style.display = "none")}
-                  />
-                </a>
+                <div className="promo-box">
+                  <a
+                    href={adsConfig.community_left.link || "#"}
+                    target={adsConfig.community_left.link ? "_blank" : "_self"}
+                    rel="noreferrer"
+                    onClick={() => handleAdClick("community_left")}
+                  >
+                    <img src={adsConfig.community_left.image} alt="Ad 1" />
+                  </a>
+                </div>
               ) : (
                 <img src={ads1} alt="Promotion 1" />
               )}
@@ -351,25 +355,32 @@ export default function CommunitySection() {
                       }
                       className="activity-item"
                     >
-                      {/* Handle optional image safely */}
-                      {activity.image && (
-                        <img src={activity.image} alt={activity.title} />
-                      )}
+                      <div className="activity-img-wrapper" style={{ flexShrink: 0 }}>
+                        <img 
+                          src={activity.image || "https://placehold.co/600x400?text=No+Image"} 
+                          alt={activity.title}
+                          onError={(e) => {
+                            e.target.src = "https://placehold.co/600x400?text=No+Image";
+                          }}
+                        />
+                      </div>
                       <div className="activity-content">
-                        <span className="activity-badge">
-                          {activity.category
-                            ? activity.category
-                                .replace("sap-", "")
-                                .toUpperCase()
-                            : "BLOG"}
-                        </span>
-                        <h4>
-                          {activity.title}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <span className="activity-badge">
+                            {activity.category
+                              ? activity.category
+                                  .replace("sap-", "")
+                                  .toUpperCase()
+                              : "BLOG"}
+                          </span>
                           {activity.is_members_only == 1 && (
-                            <span className="exclusive-mini-badge" style={{ marginLeft: '8px' }}>
+                            <span className="exclusive-mini-badge-inline">
                               <i className="bi bi-lock-fill"></i> Exclusive
                             </span>
                           )}
+                        </div>
+                        <h4>
+                          {activity.title}
                         </h4>
                         <p>
                           {activity.excerpt
@@ -489,17 +500,16 @@ export default function CommunitySection() {
             {/* Promotion */}
             <div className="widget promo-widget">
               {adsConfig.community_right.active ? (
-                <a
-                  href={adsConfig.community_right.link || "#"}
-                  target={adsConfig.community_right.link ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                >
-                  <img
-                    src={adsConfig.community_right.image}
-                    alt="Promotion 2"
-                    onError={(e) => (e.target.style.display = "none")}
-                  />
-                </a>
+                <div className="promo-box">
+                  <a
+                    href={adsConfig.community_right.link || "#"}
+                    target={adsConfig.community_right.link ? "_blank" : "_self"}
+                    rel="noreferrer"
+                    onClick={() => handleAdClick("community_right")}
+                  >
+                    <img src={adsConfig.community_right.image} alt="Ad 2" />
+                  </a>
+                </div>
               ) : (
                 <img src={ads2} alt="Promotion 2" />
               )}

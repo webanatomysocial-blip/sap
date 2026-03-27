@@ -12,7 +12,7 @@ const SEO = ({
   schemaData,
 }) => {
   const siteTitle = "SAP Security Expert";
-  const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
+  const fullTitle = title || siteTitle;
   const domain =
     import.meta.env.VITE_SITE_URL || "https://sapsecurityexpert.com";
 

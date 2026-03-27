@@ -171,6 +171,7 @@ class BlogService {
         $cta_button_text = $data['cta_button_text'] ?? null;
         $cta_button_link = $data['cta_button_link'] ?? null;
         $is_members_only = isset($data['is_members_only']) ? (int)$data['is_members_only'] : 0;
+        $requestedStatus = $data['status'] ?? null;
 
         // Auto-generate slug if title is present but slug is missing
         if (empty($slug) && !empty($title)) {
@@ -191,7 +192,7 @@ class BlogService {
 
         if ($id) {
             // Update Logic
-            $stmt = $this->pdo->prepare("SELECT author_id, author, submission_status, status, plagiarism_score FROM blogs WHERE id = ?");
+            $stmt = $this->pdo->prepare("SELECT author_id, author, submission_status, status, plagiarism_score, publish_date, slug FROM blogs WHERE id = ?");
             $stmt->execute([$id]);
             $existing = $stmt->fetch();
 
@@ -249,8 +250,18 @@ class BlogService {
                 return ['status' => 'success', 'message' => $msg, 'plagiarism_score' => $finalPlag];
             } else {
                 // Traditional Update (for drafts or initial admin creation/approval)
-                $targetStatus = $isAdmin ? 'approved' : 'draft';
-                $subStatus = $isAdmin ? 'approved' : 'submitted';
+                $targetStatus = $isAdmin ? ($requestedStatus ?: 'approved') : 'draft';
+                $subStatus = $isAdmin ? $targetStatus : 'submitted';
+
+                // First Published Date Logic
+                $publishDateUpdate = "";
+                $publishDateParam = [];
+                if (in_array($targetStatus, ['approved', 'published'])) {
+                    if (empty($existing['publish_date'])) {
+                        $publishDateUpdate = "publish_date = CURRENT_TIMESTAMP, date = COALESCE(NULLIF(?, ''), CURRENT_DATE), ";
+                        $publishDateParam[] = $date;
+                    }
+                }
 
                 $sql = "UPDATE blogs SET 
                         title=?, slug=?, excerpt=?, content=?, date=COALESCE(NULLIF(?, ''), CURRENT_DATE), image=?, category=?, tags=?, faqs=?,
@@ -258,7 +269,8 @@ class BlogService {
                         meta_title=?, meta_description=?, meta_keywords=?,
                         status=?, submission_status=?, rejection_feedback = NULL,
                         author_id = ?, author = ?, seo_score = ?, plagiarism_score = ?, plagiarism_status = 'completed',
-                        is_members_only = ?, updated_at = CURRENT_TIMESTAMP,
+                        is_members_only = ?, related_blogs = ?, updated_at = CURRENT_TIMESTAMP, 
+                        $publishDateUpdate
                         draft_title=NULL, draft_content=NULL, draft_excerpt=NULL, draft_image=NULL, 
                         draft_category=NULL, draft_faqs=NULL, draft_meta_title=NULL, draft_meta_description=NULL,
                         draft_meta_keywords=NULL, draft_cta_title=NULL, draft_cta_description=NULL,
@@ -268,13 +280,17 @@ class BlogService {
                 $plagScore = $plagRes['score'];
                 $finalPlag = ($plagScore === -1) ? $existingPlagScore : $plagScore;
 
-                $params = [
+                $relatedBlogs = $data['related_blogs'] ?? null;
+                if (is_array($relatedBlogs)) $relatedBlogs = json_encode($relatedBlogs);
+
+                $params = array_merge([
                     $title, $slug, $excerpt, $content, $date, $image, $category, $tags, json_encode($faqs),
                     $cta_title, $cta_description, $cta_button_text, $cta_button_link,
                     $meta_title, $meta_description, $meta_keywords,
                     $targetStatus, $subStatus,
-                    $author_id, $authorName, $seoScore, $finalPlag, $is_members_only, $id
-                ];
+                    $author_id, $authorName, $seoScore, $finalPlag, $is_members_only, $relatedBlogs
+                ], $publishDateParam, [$id]);
+
                 $this->pdo->prepare($sql)->execute($params);
                 $this->invalidateHomepage();
                 $msg = 'Blog updated';
@@ -284,21 +300,30 @@ class BlogService {
         } else {
             // Insert Logic
             $id = !empty($data['id']) ? $data['id'] : uniqid('blog_');
-            $targetStatus = $isAdmin ? 'approved' : 'draft';
-            $subStatus = $isAdmin ? 'approved' : 'submitted';
+            $targetStatus = $isAdmin ? ($requestedStatus ?: 'approved') : 'draft';
+            $subStatus = $isAdmin ? $targetStatus : 'submitted';
+            
+            $publishDateVal = null;
+            if (in_array($targetStatus, ['approved', 'published'])) {
+                $publishDateVal = gmdate('Y-m-d H:i:s');
+            }
 
             $sql = "INSERT INTO blogs 
                     (id, title, slug, excerpt, content, author, author_id, date, image, category, tags, faqs,
                      cta_title, cta_description, cta_button_text, cta_button_link,
-                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status, is_members_only, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_DATE), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status, is_members_only, related_blogs, publish_date, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_DATE), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             $plagRes = checkPlagiarismScore($content, $id, $this->pdo);
             $plagScore = $plagRes['score'];
             $finalPlag = ($plagScore === -1) ? 0 : $plagScore; // New blog fallback is 0 (Not Checked)
+            $relatedBlogsInsert = $data['related_blogs'] ?? null;
+            if (is_array($relatedBlogsInsert)) $relatedBlogsInsert = json_encode($relatedBlogsInsert);
+
             $params = [
                 $id, $title, $slug, $excerpt, $content, $authorName, $author_id, $date, $image, $category, $tags, json_encode($faqs),
                 $cta_title, $cta_description, $cta_button_text, $cta_button_link,
-                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag, $is_members_only
+                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag, $is_members_only, $relatedBlogsInsert,
+                $publishDateVal
             ];
             $this->pdo->prepare($sql)->execute($params);
             $this->invalidateHomepage();

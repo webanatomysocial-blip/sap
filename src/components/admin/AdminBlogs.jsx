@@ -43,13 +43,14 @@ const AdminBlogs = () => {
     cta_description: "",
     cta_button_text: "",
     cta_button_link: "",
+    related_blogs: [],
   };
 
   const [formData, setFormData] = useState(initialFormState);
   const [uploading, setUploading] = useState(false);
   const [imageVersion, setImageVersion] = useState(Date.now());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState("active"); // "active" | "rejected"
+  const [activeTab, setActiveTab] = useState("live"); // "live" | "drafts" | "pending" | "rejected"
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -103,7 +104,9 @@ const AdminBlogs = () => {
     if (wordCount < 600) score -= 20;
 
     if (!data.image) score -= 10;
-    return Math.max(0, score);
+    if (data.meta_description && data.meta_description.length >= 120) score += 5;
+    if (data.meta_keywords && data.meta_keywords.split(",").length >= 3) score += 5;
+    return Math.min(100, Math.max(0, score));
   };
 
   const getScoreColor = (score) => {
@@ -205,6 +208,7 @@ const AdminBlogs = () => {
         typeof faqsSource === "string"
           ? JSON.parse(faqsSource || "[]")
           : faqsSource || [],
+      related_blogs: safeJsonParse(blog.related_blogs),
     });
     setView("editor");
   };
@@ -230,7 +234,7 @@ const AdminBlogs = () => {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (status = "approved") => {
     if (
       !formData.title ||
       !formData.category ||
@@ -242,14 +246,26 @@ const AdminBlogs = () => {
       );
       return;
     }
-    const now = new Date();
-    const formattedDate = now.toISOString().slice(0, 19).replace("T", " ");
-    const payload = { ...formData, date: formattedDate };
+    const payload = {
+      ...formData,
+      related_blogs: JSON.stringify(formData.related_blogs || []),
+      seo_score: getSeoScore(formData),
+    };
     delete payload.author;
-    // author_id is now explicitly part of the form state
+
+    // Fix: If date is missing (new blog), use now. If date exists, preserve it.
+    if (!payload.date) {
+      const now = new Date();
+      payload.date = now.toISOString().slice(0, 19).replace("T", " ");
+    }
+
+    const finalPayload = {
+      ...payload,
+      status,
+    };
 
     try {
-      const res = await saveBlog(payload);
+      const res = await saveBlog(finalPayload);
       if (res.data.status === "success") {
         fetchBlogs();
         setView("list");
@@ -310,16 +326,28 @@ const AdminBlogs = () => {
         {view === "list" && (
           <div className="status-filter-tabs" style={{ margin: 0 }}>
             <button
-              className={activeTab === "active" ? "active" : ""}
-              onClick={() => setActiveTab("active")}
+              className={activeTab === "live" ? "active" : ""}
+              onClick={() => setActiveTab("live")}
             >
-              All Blogs
+              Live
+            </button>
+            <button
+              className={activeTab === "drafts" ? "active" : ""}
+              onClick={() => setActiveTab("drafts")}
+            >
+              Drafts
+            </button>
+            <button
+              className={activeTab === "pending" ? "active" : ""}
+              onClick={() => setActiveTab("pending")}
+            >
+              Pending
             </button>
             <button
               className={activeTab === "rejected" ? "active" : ""}
               onClick={() => setActiveTab("rejected")}
             >
-              Rejected Content
+              Rejected
             </button>
           </div>
         )}
@@ -380,11 +408,10 @@ const AdminBlogs = () => {
             <option value="All">All Categories</option>
             <option value="sap-grc">SAP GRC</option>
             <option value="sap-iag">IAM</option>
-            <option value="sap-licensing">Licensing</option>
             <option value="sap-public-cloud">Cloud</option>
             <option value="sap-btp-security">Cybersecurity</option>
             <option value="podcasts">Podcasts</option>
-            <option value="other-tools">Tools</option>
+            <option value="expert-recommendations">Expert Recommendations</option>
           </select>
         </div>
       )}
@@ -392,11 +419,22 @@ const AdminBlogs = () => {
       {view === "list" ? (
         <BlogList
           blogs={blogs
-            .filter((b) =>
-              activeTab === "rejected"
-                ? b.submission_status === "rejected"
-                : b.submission_status !== "rejected",
-            )
+            .filter((b) => {
+              if (activeTab === "live")
+                return (
+                  (b.status === "approved" || b.status === "published") &&
+                  b.submission_status !== "rejected"
+                );
+              if (activeTab === "drafts") return b.status === "draft";
+              if (activeTab === "pending")
+                return (
+                  b.submission_status === "submitted" ||
+                  b.submission_status === "edited"
+                );
+              if (activeTab === "rejected")
+                return b.submission_status === "rejected";
+              return true;
+            })
             .filter((b) => {
               const matchesSearch =
                 b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -422,7 +460,9 @@ const AdminBlogs = () => {
           handleImageUpload={handleImageUpload}
           uploading={uploading}
           imageVersion={imageVersion}
-          onSave={handleSave}
+          blogs={blogs}
+          onSave={() => handleSave("approved")}
+          onSaveDraft={() => handleSave("draft")}
         >
           <SeoSettings
             formData={formData}

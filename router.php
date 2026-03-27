@@ -10,6 +10,36 @@ if (php_sapi_name() === 'cli-server') {
     if ($path !== '/' && file_exists($fullPath) && !is_dir($fullPath)) {
         return false; // Serve static file directly
     }
+
+    // Also check in /dist folder for built assets (Vite build)
+    $distPath = __DIR__ . '/dist' . $path;
+    if ($path !== '/' && file_exists($distPath) && !is_dir($distPath)) {
+        // Correct MIME types for built assets
+        $ext = pathinfo($distPath, PATHINFO_EXTENSION);
+        $mimeTypes = [
+            'js' => 'application/javascript',
+            'css' => 'text/css',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'svg' => 'image/svg+xml',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'ico' => 'image/x-icon',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+            'ttf' => 'font/ttf'
+        ];
+
+        if (isset($mimeTypes[$ext])) {
+            header('Content-Type: ' . $mimeTypes[$ext]);
+        } else {
+            header('Content-Type: ' . (mime_content_type($distPath) ?: 'application/octet-stream'));
+        }
+
+        readfile($distPath);
+        exit;
+    }
 }
 
 // Route API requests — direct file dispatch (e.g. /api/check_plagiarism.php)

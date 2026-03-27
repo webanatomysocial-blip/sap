@@ -28,18 +28,13 @@ export const categories = [
     subcategories: [],
   },
   {
-    name: "SAP Licensing",
-    slug: "sap-licensing",
-    subcategories: [],
-  },
-  {
     name: "Resources",
     slug: "product-reviews", // Fallback or general
     subcategories: [
       { name: "Product Reviews", slug: "product-reviews" },
       { name: "Podcasts", slug: "podcasts" },
       { name: "Videos", slug: "videos" },
-      { name: "Expert Recommendations", slug: "other-tools" },
+      { name: "Expert Recommendations", slug: "expert-recommendations" },
     ],
   },
 ];

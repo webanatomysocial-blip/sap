@@ -56,9 +56,17 @@ function deleteImage($imagePath) {
 function calculateSeoScore($blog) {
     $score = 100;
 
-    $metaTitleLength = strlen(trim($blog['meta_title'] ?? ''));
-    $metaDescLength = strlen(trim($blog['meta_description'] ?? ''));
-    $contentLength = str_word_count(strip_tags($blog['content'] ?? ''));
+    $metaTitle = trim($blog['meta_title'] ?? '');
+    $metaTitleLength = mb_strlen($metaTitle);
+    
+    $metaDesc = trim($blog['meta_description'] ?? '');
+    $metaDescLength = mb_strlen($metaDesc);
+    
+    $content = $blog['content'] ?? '';
+    // Consistent with JS: strip tags, split by whitespace
+    $textOnly = strip_tags($content);
+    $words = preg_split('/\s+/', trim($textOnly), -1, PREG_SPLIT_NO_EMPTY);
+    $wordCount = is_array($words) ? count($words) : 0;
 
     if ($metaTitleLength < 50 || $metaTitleLength > 70) {
         $score -= 15;
@@ -68,15 +76,28 @@ function calculateSeoScore($blog) {
         $score -= 15;
     }
 
-    if ($contentLength < 600) {
+    if ($wordCount < 600) {
         $score -= 20;
     }
 
     if (empty($blog['image'])) {
         $score -= 10;
     }
+    
+    // Bonuses from frontend AdminBlogs.jsx
+    if ($metaDescLength >= 120) {
+        $score += 5;
+    }
+    
+    $keywords = trim($blog['meta_keywords'] ?? '');
+    if (!empty($keywords)) {
+        // frontend logic: data.meta_keywords.split(",").length >= 3
+        if (count(explode(',', $keywords)) >= 3) {
+            $score += 5;
+        }
+    }
 
-    return max($score, 0);
+    return max(0, min(100, $score));
 }
 
 /**

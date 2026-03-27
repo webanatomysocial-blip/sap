@@ -109,6 +109,7 @@ export const bulkRecalculatePlagiarism = () => api.post('/bulk_recalculate_plagi
 // ── Ads Management (Admin) ───────────────────────────────────────────────────
 export const getAds = () => api.get('/admin/ads');
 export const saveAd = (data) => api.post('/admin/ads', data);
+export const trackAdClick = (zone) => api.post('/ads/click', { zone });
 
 // ── Comments Management (Admin) ───────────────────────────────────────────────
 export const getComments = () => api.get('/admin/comments');
@@ -134,5 +135,6 @@ export const verifyOTP = (email, code, type = 'signup') => api.post('/verify_otp
 export const getCaptcha = () => api.get('/get_captcha.php');
 export const forgotPassword = (email) => api.post('/forgot_password.php', { email });
 export const resetWithToken = (email, token, password) => api.post('/reset_with_token.php', { email, token, password });
+export const resetPasswordOTP = (data) => api.post('/reset_password_otp.php', data);
 
 export default api;

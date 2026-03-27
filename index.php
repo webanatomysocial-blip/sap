@@ -25,7 +25,7 @@ $baseUrl = $protocol . $host;
 
 $defaultTitle = "SAP Security Expert";
 $defaultDesc = "The leading community for SAP Security, GRC, and BTP professionals. Get the latest insights, tutorials, and best practices.";
-$defaultKeywords = "SAP Security, SAP GRC, SAP BTP, SAP Licensing, SAP Cybersecurity, SAP IAG, SAP Public Cloud";
+$defaultKeywords = "SAP Security, SAP GRC, SAP BTP, SAP Cybersecurity, SAP IAG, SAP Public Cloud";
 
 $defaultAbsImage = getAbsoluteUrl("/assets/sapsecurityexpert-black.png", $baseUrl);
 $defaultImage = $defaultAbsImage;
@@ -43,7 +43,7 @@ $staticPages = [
     '/' => [
         'title' => 'Community for SAP Security & GRC Pros | SAP Security Expert',
         'description' => 'SAP Security Expert is the leading community for SAP Security, GRC, and BTP professionals to learn, share knowledge, collaborate, and grow in their careers.',
-        'keywords' => 'SAP Security, SAP GRC, SAP BTP, SAP Licensing, SAP Cybersecurity, SAP Community',
+        'keywords' => 'SAP Security, SAP GRC, SAP BTP, SAP Cybersecurity, SAP Community',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
     '/blogs' => [
@@ -76,10 +76,10 @@ $staticPages = [
         'keywords' => 'SAP Tool Reviews, GRC Software Reviews, SAP Security Products',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
-    '/other-tools' => [
-        'title' => 'SAP Security Other Tools & Resources | sapsecurityExpert',
-        'description' => 'SAP security tools and resources on SAPSecurityExpert to improve protection, simplify workflows, and support stronger risk management across your SAP environment.',
-        'keywords' => 'SAP Utilities, SAP Security Scripts, Admin Tools',
+    '/expert-recommendations' => [
+        'title' => 'SAP Security Expert Recommendations & Resources | sapsecurityExpert',
+        'description' => 'SAP security expert recommendations and resources on SAPSecurityExpert to improve protection, simplify workflows, and support stronger risk management across your SAP environment.',
+        'keywords' => 'SAP Utilities, SAP Security Scripts, Admin Tools, Expert Recommendations',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
     '/contact-us' => [
@@ -146,12 +146,7 @@ $categories = [
         'keywords' => 'SAP Cybersecurity, Threat Detection, Enterprise Security',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
-    'sap-licensing' => [
-        'title' => 'SAP Licensing Cost Optimization Management | sapsecurityexpert',
-        'description' => 'Optimize SAP licensing costs with sapsecurityexpert. Improve compliance, reduce risk, and manage licenses effectively to maximize your SAP investment.',
-        'keywords' => 'SAP Licensing, USMM, SLAW, License Optimization',
-        "image" => "/assets/sapsecurityexpert-black.png",
-    ],
+
     'sap-iag' => [
         'title' => 'SAP IAG Identity Access Governance | sapsecurityexpert',
         'description' => 'Secure identity access with SAP IAG and sapsecurityexpert. Control permissions, improve compliance, minimize risk, and safeguard critical business applications.',
@@ -245,7 +240,7 @@ if (empty($cleanSlug)) {
 if ($cleanSlug) {
     try {
         $stmt = $pdo->prepare("
-            SELECT title, meta_title, meta_description, meta_keywords, image, slug, excerpt, author, date, is_members_only
+            SELECT title, meta_title, meta_description, meta_keywords, image, slug, excerpt, author, date, is_members_only, faqs
             FROM blogs
             WHERE slug = ? AND status IN ('approved', 'published')
             LIMIT 1
@@ -257,14 +252,22 @@ if ($cleanSlug) {
 if ($blog) {
             // Dynamic SEO Mapping (Strictly from DB)
             $title = !empty($blog['meta_title']) ? $blog['meta_title'] : $blog['title'];
-            $description = !empty($blog['meta_description']) ? $blog['meta_description'] : (!empty($blog['excerpt']) ? $blog['excerpt'] : $defaultDesc);
+            
+            // Description logic: meta_desc -> excerpt -> fallback title
+            $authorName = $blog['author'] ?? "SAP Security Expert";
+            $description = !empty($blog['meta_description']) 
+                ? $blog['meta_description'] 
+                : (!empty($blog['excerpt']) 
+                    ? $blog['excerpt'] 
+                    : $blog['title'] . " - Written by " . $authorName . ". Read more on SAP Security Expert.");
+                    
             $keywords = !empty($blog['meta_keywords']) ? $blog['meta_keywords'] : $defaultKeywords;
             
-            // Dynamic Image (No static fallback for blogs)
+            // Dynamic Image
             if (!empty($blog['image'])) {
                 $image = getAbsoluteUrl($blog['image'], $baseUrl);
             } else {
-                $image = $defaultAbsImage; // Minimum fallback
+                $image = $defaultAbsImage;
             }
 
             $authorName = $blog['author'] ?? "SAP Security Expert";
@@ -273,6 +276,58 @@ if ($blog) {
             $url = getAbsoluteUrl($cleanPath, $baseUrl);
             $type = "article";
             $found = true;
+
+            // Prepare JSON-LD (Schema.org)
+            $articleSchema = [
+                "@context" => "https://schema.org",
+                "@type" => "BlogPosting",
+                "headline" => $title,
+                "description" => $description,
+                "image" => [$image],
+                "datePublished" => $publishDate,
+                "dateModified" => $publishDate,
+                "author" => [
+                    "@type" => "Person",
+                    "name" => $authorName
+                ],
+                "publisher" => [
+                    "@type" => "Organization",
+                    "name" => "SAP Security Expert",
+                    "logo" => [
+                        "@type" => "ImageObject",
+                        "url" => $baseUrl . "/assets/sapsecurityexpert-black.png"
+                    ]
+                ],
+                "mainEntityOfPage" => [
+                    "@type" => "WebPage",
+                    "@id" => $url
+                ]
+            ];
+
+            $schemas = [$articleSchema];
+
+            // Add FAQ Schema if exists
+            if (!empty($blog['faqs'])) {
+                $faqsArr = json_decode($blog['faqs'], true);
+                if (is_array($faqsArr) && count($faqsArr) > 0) {
+                    $schemas[] = [
+                        "@context" => "https://schema.org",
+                        "@type" => "FAQPage",
+                        "mainEntity" => array_map(function($f) {
+                            return [
+                                "@type" => "Question",
+                                "name" => $f['question'] ?? '',
+                                "acceptedAnswer" => [
+                                    "@type" => "Answer",
+                                    "text" => $f['answer'] ?? ''
+                                ]
+                            ];
+                        }, $faqsArr)
+                    ];
+                }
+            }
+
+            $jsonLd = "\n    <script type=\"application/ld+json\">" . json_encode($schemas, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "</script>\n";
         }
     } catch (Exception $e) {
         // Silently fail to default
@@ -306,8 +361,10 @@ else if (array_key_exists(ltrim($cleanPath, '/'), $categories)) {
 }
 
 
-// Read index.html
-if (file_exists('index.html')) {
+// Read index.html (Prefer dist/index.html if build exists)
+if (file_exists('dist/index.html')) {
+    $html = file_get_contents('dist/index.html');
+} elseif (file_exists('index.html')) {
     $html = file_get_contents('index.html');
 } else {
     // Fallback creates a basic HTML shell if index.html is missing
@@ -365,6 +422,7 @@ $ogTags = "
     <meta name=\"twitter:image\" content=\"" . htmlspecialchars($image) . "\">
     <meta name=\"google-adsense-account\" content=\"ca-pub-5501267075758433\">
 " . ($type === 'article' && !empty($publishDate) ? "    <meta property=\"article:published_time\" content=\"" . htmlspecialchars($publishDate) . "\">\n" : "") . "
+" . ($jsonLd ?? "") . "
 ";
 
 // Inject before </head>

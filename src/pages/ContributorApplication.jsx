@@ -42,7 +42,6 @@ const ContributorApplication = () => {
       sapIag: false,
       sapBtp: false,
       sapCyber: false,
-      sapLicensing: false,
       otherExpertise: false,
     },
     otherExpertiseText: "",
@@ -413,21 +412,7 @@ const ContributorApplication = () => {
                       <div className="box-indicator"></div>
                       <span>IAM / Cloud Security</span>
                     </label>
-                    <label className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.expertise.sapLicensing}
-                        onChange={(e) =>
-                          handleCheckboxGroupChange(
-                            "expertise",
-                            "sapLicensing",
-                            e.target.checked,
-                          )
-                        }
-                      />
-                      <div className="box-indicator"></div>
-                      <span>Data Security & Privacy</span>
-                    </label>
+
                   </div>
                 </div>
 

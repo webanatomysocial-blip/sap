@@ -136,6 +136,22 @@
   overflow: hidden;
 }
 
+.featured-blog-badge {
+  display: inline-block;
+  /* background: rgba(30, 41, 59, 0.05); Very subtle slate background */
+  color: #64748b; /* Main brand coral color */
+  /* padding: 4px 12px; */
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  /* border-left: 3px solid #ee5e42; Accents the tag */
+  transition: all 0.3s ease;
+}
+
+
 .insight-excerpt {
   font-size: 0.9rem;
   color: #64748b;
