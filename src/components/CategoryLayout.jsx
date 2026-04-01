@@ -38,16 +38,23 @@ const CategoryLayout = ({ categorySlug, displayName }) => {
 
     return blogs
       .filter((blog) => {
-        // Date check for public scheduling
-        const isLive = new Date(blog.date || blog.created_at) <= new Date();
+        // Date check for public scheduling - allow today (midnight local)
+        const postDate = new Date(blog.date || blog.created_at);
+        const now = new Date();
+        const isLive = postDate.setHours(0,0,0,0) <= now.setHours(23,59,59,999);
         if (!isLive) return false;
 
-        // Parent category logic: sap-security shows its sub-categories
+        // Status safety check
+        if (!['approved', 'published', 'active'].includes(blog.status)) return false;
+
+        // Parent category logic: sap-security shows its sub-categories AND itself
         if (categorySlug === "sap-security") {
           return (
             blog.category === "sap-security" ||
             blog.category === "sap-btp-security" ||
-            blog.category === "sap-public-cloud"
+            blog.category === "sap-public-cloud" ||
+            blog.category === "sap-fiori-security" ||
+            blog.category === "sap-s4hana-security"
           );
         }
         if (categorySlug === "sap-grc") {

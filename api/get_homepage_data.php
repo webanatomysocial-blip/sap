@@ -45,15 +45,15 @@ try {
                    b.category,
                    b.view_count,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN 'Raghu Boddu'
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN 'Raghu Boddu'
                      ELSE COALESCE(c.full_name, b.author)
                    END AS author_name,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN '/assets/raghu_boddu.png'
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN '/assets/raghu_boddu.png'
                      ELSE COALESCE(c.image, '/assets/placeholder.webp')
                    END AS author_image,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN COALESCE(u.bio, 'Founder & Security Expert at SAP Security Expert. Author of books on SAP Access Control, Process Control, and IAG.')
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN COALESCE(u.bio, 'Founder & Security Expert at SAP Security Expert. Author of books on SAP Access Control, Process Control, and IAG.')
                      ELSE COALESCE(c.short_bio, 'Contributor')
                    END AS author_bio,
         (SELECT COUNT(*) FROM comments c2 WHERE c2.post_id = b.slug AND c2.status = 'approved') AS comment_count
@@ -75,15 +75,15 @@ try {
                    b.view_count,
                    (SELECT COUNT(*) FROM comments c2 WHERE c2.post_id = b.slug AND c2.status = 'approved') AS comment_count,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN 'Raghu Boddu'
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN 'Raghu Boddu'
                      ELSE COALESCE(c.full_name, b.author)
                    END AS author_name,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN '/assets/raghu_boddu.png'
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN '/assets/raghu_boddu.png'
                      ELSE COALESCE(c.image, '/assets/placeholder.webp')
                    END AS author_image,
                    CASE
-                     WHEN u.role = 'admin' OR b.author_id IS NULL THEN COALESCE(u.bio, 'Founder & Security Expert at SAP Security Expert. Author of books on SAP Access Control, Process Control, and IAG.')
+                     WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN COALESCE(u.bio, 'Founder & Security Expert at SAP Security Expert. Author of books on SAP Access Control, Process Control, and IAG.')
                      ELSE COALESCE(c.short_bio, 'Contributor')
                    END AS author_bio
             FROM blogs b

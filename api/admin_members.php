@@ -57,14 +57,19 @@ try {
             $stmt = $pdo->prepare("UPDATE members SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$id]);
 
-            // Notify user
+            // Sync to contributors
             $stmtUser = $pdo->prepare("SELECT email, name FROM members WHERE id = ?");
             $stmtUser->execute([$id]);
             $member = $stmtUser->fetch();
             if ($member) {
+                $pdo->prepare("UPDATE contributors SET status = 'approved' WHERE LOWER(email) = LOWER(?)")
+                    ->execute([$member['email']]);
+
                 require_once 'services/NotificationService.php';
                 $ns = new NotificationService();
-                $ns->notifyMemberApproved($member['email'], $member['name']);
+                $ns->notifyMemberApproved($member['email'], $member['name'], [
+                    'username' => $member['email']
+                ]);
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Member approved successfully.']);
@@ -77,11 +82,14 @@ try {
                 $stmt->execute([$id]);
             }
 
-            // Notify user
+            // Sync to contributors
             $stmtUser = $pdo->prepare("SELECT email, name FROM members WHERE id = ?");
             $stmtUser->execute([$id]);
             $member = $stmtUser->fetch();
             if ($member) {
+                $pdo->prepare("UPDATE contributors SET status = 'rejected', rejection_reason = ? WHERE LOWER(email) = LOWER(?)")
+                    ->execute([$reason, $member['email']]);
+
                 require_once 'services/NotificationService.php';
                 $ns = new NotificationService();
                 $ns->notifyMemberRejected($member['email'], $member['name'], $reason ?: 'No reason provided.');
@@ -89,8 +97,20 @@ try {
 
             echo json_encode(['status' => 'success', 'message' => 'Member rejected.']);
         } elseif ($action === 'delete') {
+            // Optional: When deleting a member, should we delete their contributor record?
+            // To be safe and clean, let's at least try if they are linked.
+            $stmtUser = $pdo->prepare("SELECT email FROM members WHERE id = ?");
+            $stmtUser->execute([$id]);
+            $memberEmail = $stmtUser->fetchColumn();
+
             $stmt = $pdo->prepare("DELETE FROM members WHERE id = ?");
             $stmt->execute([$id]);
+            
+            if ($memberEmail) {
+                $pdo->prepare("DELETE FROM contributors WHERE LOWER(email) = LOWER(?)")
+                    ->execute([$memberEmail]);
+            }
+            
             echo json_encode(['status' => 'success', 'message' => 'Member deleted.']);
         }
         exit;

@@ -52,6 +52,12 @@ export default function DynamicBlog() {
           throw new Error("Blog not found");
         }
 
+        // DRAFT PROTECTION: If the post is a draft, do not show it publicly
+        if (postData.status === 'draft') {
+          console.warn("DEBUG: Attempted access to draft blog. Blocking.");
+          throw new Error("Blog not found");
+        }
+
         // ROUTING VALIDATION
         const pathSegments = location.pathname.split("/").filter(Boolean);
         const urlCategory = pathSegments[0];

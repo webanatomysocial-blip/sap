@@ -19,15 +19,14 @@
         </div>
         <p>Hello <strong>{{name}}</strong>,</p>
         <p>Congratulations! Your application to become a contributor has been <strong>approved</strong>.</p>
-        <p>You can now log in to your contributor dashboard to write, manage and submit your blogs for review.</p>
+        <p>You can now log in to your contributor dashboard to write, manage, and submit your blogs for review.</p>
         
-        <p><strong>Your Contributor Benefits:</strong></p>
-        <ul>
-            <li>Write and submit new blogs for review</li>
-            <li>Manage your published and draft content</li>
-            <li>Access exclusive contributor resources</li>
-            <li>Build your expert profile in our community</li>
-        </ul>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <p style="margin-top: 0; font-weight: 700; color: #1e293b;">Your Login Details:</p>
+            <p style="margin-bottom: 8px;"><strong>Username/Email:</strong> {{username}}</p>
+            <p style="margin-bottom: 0;"><strong>Password:</strong> {{password}}</p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 10px;"><em>Note: For security, we recommend changing your password after your first login.</em></p>
+        </div>
         
         <div style="text-align: center;">
             <a href="{{login_url}}" class="btn">Contributor Login</a>

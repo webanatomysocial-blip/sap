@@ -55,18 +55,34 @@ try {
 
         if ($exists) {
             // Fetch current image to delete if changing
-            $stmt = $pdo->prepare("SELECT image FROM ads WHERE zone = ?");
+            $stmt = $pdo->prepare("SELECT image, link FROM ads WHERE zone = ?");
             $stmt->execute([$zone]);
             $current = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($current && !empty($current['image']) && $current['image'] !== $image && !empty($image)) {
-                 deleteImage($current['image']);
+            $resetClicks = false;
+            // Detect change to reset click count
+            if ($current) {
+                if ($current['image'] !== $image && !empty($image)) {
+                    if (!empty($current['image'])) {
+                        deleteImage($current['image']);
+                    }
+                    $resetClicks = true;
+                }
+                if ($current['link'] !== $link) {
+                    $resetClicks = true;
+                }
             }
 
-            $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ?, status = ? WHERE zone = ?");
-            $stmt->execute([$image, $link, $active, $active ? 'active' : 'inactive', $zone]);
+            if ($resetClicks) {
+                // Reset clicks to 0 if ad content changed
+                $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ?, status = ?, clicks = 0 WHERE zone = ?");
+                $stmt->execute([$image, $link, $active, $active ? 'active' : 'inactive', $zone]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE ads SET image = ?, link = ?, active = ?, status = ? WHERE zone = ?");
+                $stmt->execute([$image, $link, $active, $active ? 'active' : 'inactive', $zone]);
+            }
         } else {
-            $stmt = $pdo->prepare("INSERT INTO ads (zone, image, link, active, status) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO ads (zone, image, link, active, status, clicks) VALUES (?, ?, ?, ?, ?, 0)");
             $stmt->execute([$zone, $image, $link, $active, $active ? 'active' : 'inactive']);
         }
 

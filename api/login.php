@@ -42,6 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user && password_verify($password, $user['password'])) {
 
+            // NEW: Restrict this endpoint to 'admin' role only.
+            // Contributors must login via /members/login now.
+            if ($user['role'] !== 'admin') {
+                http_response_code(403);
+                echo json_encode([
+                    'status'  => 'error',
+                    'message' => 'Contributors must login via the Member Login page.',
+                ]);
+                exit;
+            }
+
             // HARDENING: Check is_active (if column exists)
             if (isset($user['is_active']) && $user['is_active'] == 0) {
                 http_response_code(403);

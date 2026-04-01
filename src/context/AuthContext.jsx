@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 /**
  * AuthContext — provides { user, role, permissions, isAuthenticated, setAuth, clearAuth }
@@ -12,30 +13,55 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState("guest");
   const [permissions, setPermissions] = useState({});
+  const location = useLocation();
 
-  // Rehydrate from localStorage on mount AND verify with backend
+  const verifySession = async (adminAuth, memberAuth) => {
+    try {
+      const { data } = await axios.get("/api/verify_session.php");
+      if (data.status === "success" && data.authenticated) {
+        setAuth({
+          user: data.user,
+          role: data.role || data.user.role || "admin",
+          permissions: data.permissions || {},
+          csrf_token: data.csrf_token,
+        });
+      } else {
+        // Only clear admin auth if we thought we were an admin
+        if (adminAuth === "true") clearAuth();
+      }
+    } catch (err) {
+      console.error("Session verification failed", err);
+      if (adminAuth === "true") clearAuth();
+    }
+  };
+
+  // 1. Rehydrate from localStorage on mount AND verify with backend
   useEffect(() => {
-    const auth = localStorage.getItem("adminAuth");
-    if (auth === "true") {
-      const verifySession = async () => {
-        try {
-          const { data } = await axios.get("/api/verify_session.php");
-          if (data.status === "success") {
-            setUser(data.user);
-            setRole(data.role || data.user.role || "admin");
-            setPermissions(data.permissions || {});
-            setIsAuthenticated(true);
-          } else {
-            clearAuth();
-          }
-        } catch (err) {
-          console.error("Session verification failed", err);
-          clearAuth();
-        }
-      };
-      verifySession();
+    const adminAuth = localStorage.getItem("adminAuth");
+    const memberAuth = localStorage.getItem("memberAuth");
+
+    // Always try to verify session if there is any existing auth state
+    if (adminAuth === "true" || memberAuth === "true") {
+      verifySession(adminAuth, memberAuth);
     }
   }, []);
+
+  // 2. Navigation-based verification: If navigating to /admin but not authenticated, 
+  // check if we can auto-login via member session.
+  useEffect(() => {
+    const memberAuth = localStorage.getItem("memberAuth");
+    const adminAuth = localStorage.getItem("adminAuth");
+    
+    if (
+      location.pathname.startsWith("/admin") && 
+      !isAuthenticated && 
+      memberAuth === "true" &&
+      adminAuth !== "true" // Only if we haven't already failed/cleared admin auth in this session? 
+                           // Actually, better to always try if pathname is /admin.
+    ) {
+      verifySession(adminAuth, memberAuth);
+    }
+  }, [location.pathname, isAuthenticated]);
 
   const setAuth = ({ user, role, permissions, csrf_token }) => {
     setIsAuthenticated(true);

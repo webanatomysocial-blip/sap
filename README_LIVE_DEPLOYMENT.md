@@ -79,7 +79,7 @@ public_html/
 ### Upload Steps:
 
 1. Open the File Manager in your hosting panel (or use FTP).
-2. Navigate to your domain's root folder (`public_html` or `sap.kaphi.in/`).
+2. Navigate to your domain's root folder (`public_html` or `sapsecurityexpert.com/`).
 3. Upload everything INSIDE your local `dist/` folder (but **do not upload the index.html file**, delete it if you do).
    - _Why? Because `index.php` replaces `index.html` to inject dynamic SEO tags for social media sharing._
 4. Upload the local `api/` folder.
@@ -121,13 +121,13 @@ The application handles dynamic image uploads (blog headers, contributor photos,
 
 ## 6. Final Verification
 
-1. **Test Frontend Routing**: Visit your live domain (e.g., `https://sap.kaphi.in/`). Navigate through the pages to ensure the React app loads correctly.
+1. **Test Frontend Routing**: Visit your live domain (e.g., `https://sapsecurityexpert.com/`). Navigate through the pages to ensure the React app loads correctly.
 2. **Test SEO Routing**:
-   - Go to a specific blog post URL (e.g., `https://sap.kaphi.in/blogs/fiori-security-best-practices`).
+   - Go to a specific blog post URL (e.g., `https://sapsecurityexpert.com/blogs/fiori-security-best-practices`).
    - Right-click the page and select **"View Page Source"**.
    - Look for the `<meta property="og:title"...>` tags. If they display the actual blog title (not a generic fallback), your `index.php` and `.htaccess` routing is working perfectly.
 3. **Test API & Database**:
-   - Go to `https://sap.kaphi.in/admin`.
+   - Go to `https://sapsecurityexpert.com/admin`.
    - Attempt to log in to ensure `api/login.php` connects to the database.
 4. **Test Image Uploads**:
    - Inside the admin panel, create a draft blog post and upload a header image.

@@ -72,6 +72,15 @@ try {
         exit;
     }
 
+    // NEW: Check if this is an existing contributor/admin in the users table
+    $userCheck = $pdo->prepare("SELECT id FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1");
+    $userCheck->execute([$email]);
+    if ($userCheck->fetch()) {
+        http_response_code(409);
+        echo json_encode(['status' => 'error', 'message' => 'You already have a contributor account with this email. Please Go to the Login page and use your existing credentials.']);
+        exit;
+    }
+
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     $stmt = $pdo->prepare("

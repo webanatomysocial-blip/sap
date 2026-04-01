@@ -49,12 +49,28 @@ try {
     $newPass = 'Sap@' . $suffix;
 
     $hashed = password_hash($newPass, PASSWORD_BCRYPT);
-    $stmt   = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-    $stmt->execute([$hashed, $userId]);
+    $pdo->beginTransaction();
+
+    // 1. Update users table (Dashboard)
+    $stmtUser = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+    $stmtUser->execute([$hashed, $userId]);
+
+    // 2. Sync to members table (Frontend)
+    // Fetch the email first from users table
+    $stmtEmail = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+    $stmtEmail->execute([$userId]);
+    $email = $stmtEmail->fetchColumn();
+
+    if ($email) {
+        $stmtMember = $pdo->prepare("UPDATE members SET password_hash = ? WHERE LOWER(email) = LOWER(?)");
+        $stmtMember->execute([$hashed, $email]);
+    }
+
+    $pdo->commit();
 
     echo json_encode([
         'status'      => 'success',
-        'message'     => 'Password reset successfully',
+        'message'     => 'Password reset successfully for both dashboard and member login',
         'new_password'=> $newPass,
     ]);
 

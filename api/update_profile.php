@@ -131,43 +131,42 @@ try {
     $role = $_SESSION['role'] ?? 'user';
     $isContributor = $role === 'contributor';
     $contributorId = null;
-
-    if ($isContributor) {
-        $stmt = $pdo->prepare("SELECT contributor_id FROM users WHERE id = ?");
-        $stmt->execute([$adminId]);
-        $contributorId = $stmt->fetchColumn();
-    }
     
     // Prepare User Update
     $userUpdates = [];
     $userParams = [];
 
-    // 1. Admin/User role can update name, email, and metadata. Contributors are LOCKED for name/email.
-    if (!$isContributor) {
-        $userUpdates[] = "full_name = ?";
-        $userParams[] = $fullName;
-        $userUpdates[] = "email = ?";
-        $userParams[] = $email;
-        if ($bio !== null) {
-            $userUpdates[] = "bio = ?";
-            $userParams[] = $bio;
-        }
-        if ($designation !== null) {
-            $userUpdates[] = "designation = ?";
-            $userParams[] = $designation;
-        }
-        if ($linkedin !== null) {
-            $userUpdates[] = "linkedin = ?";
-            $userParams[] = $linkedin;
-        }
-        if ($twitter_handle !== null) {
-            $userUpdates[] = "twitter_handle = ?";
-            $userParams[] = $twitter_handle;
-        }
-        if ($personal_website !== null) {
-            $userUpdates[] = "personal_website = ?";
-            $userParams[] = $personal_website;
-        }
+    // 0. Fetch existing email and contributor_id for synchronization before anything else
+    $stmt = $pdo->prepare("SELECT email, contributor_id FROM users WHERE id = ?");
+    $stmt->execute([$adminId]);
+    $userData = $stmt->fetch();
+    $oldEmail = $userData['email'];
+    $contributorId = $userData['contributor_id'];
+
+    // 1. All roles can update name, email, and metadata.
+    $userUpdates[] = "full_name = ?";
+    $userParams[] = $fullName;
+    $userUpdates[] = "email = ?";
+    $userParams[] = $email;
+    if ($bio !== null) {
+        $userUpdates[] = "bio = ?";
+        $userParams[] = $bio;
+    }
+    if ($designation !== null) {
+        $userUpdates[] = "designation = ?";
+        $userParams[] = $designation;
+    }
+    if ($linkedin !== null) {
+        $userUpdates[] = "linkedin = ?";
+        $userParams[] = $linkedin;
+    }
+    if ($twitter_handle !== null) {
+        $userUpdates[] = "twitter_handle = ?";
+        $userParams[] = $twitter_handle;
+    }
+    if ($personal_website !== null) {
+        $userUpdates[] = "personal_website = ?";
+        $userParams[] = $personal_website;
     }
 
     // 2. Profile Image Sync
@@ -179,12 +178,7 @@ try {
     }
 
     // 3. Timestamp
-    $isSqlite = (getenv('DB_CONNECTION') === 'sqlite' || !isset($_ENV['DB_CONNECTION']) || $_ENV['DB_CONNECTION'] === 'sqlite');
-    if ($isSqlite) {
-        $userUpdates[] = "updated_at = CURRENT_TIMESTAMP";
-    } else {
-        $userUpdates[] = "updated_at = CURRENT_TIMESTAMP";
-    }
+    $userUpdates[] = "updated_at = CURRENT_TIMESTAMP";
 
     // 4. Execute User Updates
     if (!empty($userUpdates)) {
@@ -195,9 +189,10 @@ try {
     }
 
     // 5. Contributor Profile Sync (Metadata)
-    if ($isContributor && $contributorId) {
-        $contribUpdates = [];
-        $contribParams = [];
+    // Link to contributor table if contributor_id exists, regardless of session role
+    if ($contributorId) {
+        $contribUpdates = ["full_name = ?"];
+        $contribParams = [$fullName];
 
         if ($profileImage) {
             $contribUpdates[] = "image = ?";
@@ -229,6 +224,38 @@ try {
             $contribParams[] = $contributorId;
             $stmt = $pdo->prepare($sql);
             $stmt->execute($contribParams);
+        }
+    }
+
+    // --- Sync to members table if applicable ---
+    // Use $oldEmail to find the member record (in case email was just updated)
+    $memberStmt = $pdo->prepare("SELECT id FROM members WHERE email = ? LIMIT 1");
+    $memberStmt->execute([$oldEmail]);
+    $member = $memberStmt->fetch();
+
+    if ($member) {
+        // Fetch COMPLETE latest data from users table to ensure perfect sync
+        $latestUserStmt = $pdo->prepare("SELECT full_name, email, profile_image, designation FROM users WHERE id = ?");
+        $latestUserStmt->execute([$adminId]);
+        $u = $latestUserStmt->fetch();
+
+        if ($u) {
+            $memberUpdates = ["name = ?", "email = ?"];
+            $memberParams = [$u['full_name'], $u['email']];
+            
+            if ($u['profile_image']) {
+                $memberUpdates[] = "profile_image = ?";
+                $memberParams[] = $u['profile_image'];
+            }
+            if ($u['designation']) {
+                $memberUpdates[] = "job_role = ?";
+                $memberParams[] = $u['designation'];
+            }
+            
+            $sql = "UPDATE members SET " . implode(', ', $memberUpdates) . " WHERE id = ?";
+            $memberParams[] = $member['id'];
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($memberParams);
         }
     }
 

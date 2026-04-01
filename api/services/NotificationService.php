@@ -11,6 +11,11 @@ class NotificationService {
         $this->mailService = MailService::getInstance();
     }
 
+    private function getLoginUrl() {
+        $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
+        return rtrim($siteUrl, '/') . '/member/login';
+    }
+
     // --- Member Notifications ---
 
     public function notifyMemberSignupSubmitted($userEmail, $userName) {
@@ -26,9 +31,17 @@ class NotificationService {
         ]);
     }
 
-    public function notifyMemberApproved($userEmail, $userName) {
+    public function notifyMemberApproved($userEmail, $userName, $credentials = [], $loginUrl = null) {
+        $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
+        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
+
         $this->mailService->send($userEmail, "Your Account Has Been Approved", "member/signup_approved", [
-            'name' => $userName
+            'name' => $userName,
+            'login_url' => $loginUrl ?: ($siteUrl . '/member/login'),
+            'username' => $credentials['username'] ?? $userEmail,
+            'password' => $credentials['password'] ?? 'Your existing password',
+            'site_url' => $siteUrl,
+            'site_domain' => $domain
         ]);
     }
 
@@ -55,10 +68,17 @@ class NotificationService {
         ]);
     }
 
-    public function notifyContributorApproved($userEmail, $userName, $loginUrl) {
+    public function notifyContributorApproved($userEmail, $userName, $credentials = []) {
+        $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
+        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
+
         $this->mailService->send($userEmail, "Contributor Access Approved", "contributor/contributor_approved", [
             'name' => $userName,
-            'login_url' => $loginUrl
+            'login_url' => $this->getLoginUrl(),
+            'username' => $credentials['username'] ?? $userEmail,
+            'password' => $credentials['password'] ?? 'Your existing password',
+            'site_url' => $siteUrl,
+            'site_domain' => $domain
         ]);
     }
 
@@ -80,9 +100,10 @@ class NotificationService {
         ]);
     }
 
-    public function notifyBlogApproved($authorEmail, $blogTitle) {
+    public function notifyBlogApproved($authorEmail, $blogTitle, $postUrl = null) {
         $this->mailService->send($authorEmail, "Your Blog Has Been Published", "contributor/blog_approved", [
-            'title' => $blogTitle
+            'title' => $blogTitle,
+            'post_url' => $postUrl ?: (getenv('SITE_URL') ?: 'https://sapsecurityexpert.com')
         ]);
     }
 

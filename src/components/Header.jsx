@@ -23,6 +23,7 @@ const Header = () => {
   const {
     isLoggedIn: isMemberLoggedIn,
     member,
+    isContributor,
     logout: memberLogout,
   } = useMemberAuth();
   const navigate = useNavigate();
@@ -167,6 +168,17 @@ const Header = () => {
                     >
                       <LuUser className="dropdown-icon" /> Profile Settings
                     </button>
+                    {isContributor && (
+                      <button
+                        className="member-dropdown-item"
+                        onClick={() => {
+                          setIsMemberDropdownOpen(false);
+                          navigate("/admin");
+                        }}
+                      >
+                        <LuSettings className="dropdown-icon" /> Dashboard
+                      </button>
+                    )}
                     <button
                       className="member-dropdown-item"
                       onClick={() => {
@@ -244,6 +256,17 @@ const Header = () => {
                 >
                   <LuUser size={18} /> Profile Settings
                 </button>
+                {isContributor && (
+                  <button
+                    className="mobile-profile-btn"
+                    onClick={() => {
+                      closeMenu();
+                      navigate("/admin");
+                    }}
+                  >
+                    <LuSettings size={18} /> Dashboard
+                  </button>
+                )}
                 <button
                   className="mobile-profile-btn"
                   onClick={() => {

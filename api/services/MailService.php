@@ -28,30 +28,33 @@ if (!$found) {
 
 require_once __DIR__ . '/../db.php';
 
-class MailService {
+class MailService
+{
     private static $instance = null;
     private $mailer;
     private $pdo;
 
-    private function __construct() {
+    private function __construct()
+    {
         global $pdo;
         $this->pdo = $pdo;
         $this->mailer = new PHPMailer(true);
-        
+
         // SMTP Settings
         $this->mailer->isSMTP();
-        $this->mailer->Host       = getenv('SMTP_HOST');
-        $this->mailer->SMTPAuth   = true;
-        $this->mailer->Username   = getenv('SMTP_USER');
-        $this->mailer->Password   = getenv('SMTP_PASS');
+        $this->mailer->Host = getenv('SMTP_HOST');
+        $this->mailer->SMTPAuth = true;
+        $this->mailer->Username = getenv('SMTP_USER');
+        $this->mailer->Password = getenv('SMTP_PASS');
         $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $this->mailer->Port       = getenv('SMTP_PORT');
-        
+        $this->mailer->Port = getenv('SMTP_PORT');
+
         $this->mailer->setFrom(getenv('SMTP_FROM'), getenv('SMTP_FROM_NAME'));
         $this->mailer->isHTML(true);
     }
 
-    public static function getInstance() {
+    public static function getInstance()
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
@@ -61,20 +64,21 @@ class MailService {
     /**
      * Send email using a template
      */
-    public function send($to, $subject, $templatePath, $data = []) {
+    public function send($to, $subject, $templatePath, $data = [])
+    {
         $fullTemplatePath = __DIR__ . '/../templates/' . $templatePath . '.html';
         $status = 'failed';
         $error = null;
 
         // Auto-inject site URL and domain
         if (!isset($data['site_url'])) {
-            $siteUrl = getenv('SITE_URL') ?: 'https://sap.kaphi.in/';
+            $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com/';
             $siteUrl = rtrim($siteUrl, '/');
             $data['site_url'] = $siteUrl;
-            
+
             // Extract domain for display if not set
             if (!isset($data['site_domain'])) {
-                $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sap.kaphi.in';
+                $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
                 $data['site_domain'] = $domain;
             }
         }
@@ -92,7 +96,7 @@ class MailService {
             $this->mailer->clearAddresses();
             $this->mailer->addAddress($to);
             $this->mailer->Subject = $subject;
-            $this->mailer->Body    = $body;
+            $this->mailer->Body = $body;
             $this->mailer->AltBody = strip_tags($body);
 
             $this->mailer->send();
@@ -108,7 +112,8 @@ class MailService {
         }
     }
 
-    private function logToFile($message) {
+    private function logToFile($message)
+    {
         $logFile = __DIR__ . '/../logs/mail.log';
         if (!is_dir(dirname($logFile))) {
             mkdir(dirname($logFile), 0777, true);
@@ -116,7 +121,8 @@ class MailService {
         file_put_contents($logFile, date('[Y-m-d H:i:s] ') . $message . PHP_EOL, FILE_APPEND);
     }
 
-    private function logToDb($recipient, $subject, $status, $error) {
+    private function logToDb($recipient, $subject, $status, $error)
+    {
         try {
             $stmt = $this->pdo->prepare("INSERT INTO email_logs (recipient, subject, status, error_message, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
             $stmt->execute([$recipient, $subject, $status, $error]);

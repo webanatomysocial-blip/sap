@@ -7,7 +7,7 @@ $templatePath = 'member/signup_approved';
 $fullTemplatePath = __DIR__ . '/api/templates/' . $templatePath . '.html';
 
 if (!isset($data['site_url'])) {
-    $siteUrl = getenv('SITE_URL') ?: 'https://sap.kaphi.in/';
+    $siteUrl = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com/';
     $data['site_url'] = rtrim($siteUrl, '/');
 }
 

@@ -154,6 +154,13 @@ const SeoSettings = ({
           onChange={handleInputChange}
           className="form-control"
           placeholder="keyword1, keyword2, keyword3"
+          style={{
+            borderColor:
+              (formData.meta_keywords || "").split(",").filter((k) => k.trim())
+                .length >= 3
+                ? "#22c55e"
+                : "#ef4444",
+          }}
         />
       </div>
     </div>

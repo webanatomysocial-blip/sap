@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMemberAuth } from "../context/MemberAuthContext";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { Helmet } from "react-helmet-async";
 import "../css/ContactForm.css"; // Reuse existing clean form styles
@@ -9,7 +10,8 @@ const MemberLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login: authLogin } = useMemberAuth();
+  const { login: memberLogin } = useMemberAuth();
+  const { setAuth: adminSetAuth } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,11 +20,26 @@ const MemberLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { memberLogin } = await import("../services/api");
-      const res = await memberLogin({ email, password });
+      const { memberLogin: apiMemberLogin } = await import("../services/api");
+      const res = await apiMemberLogin({ email, password });
 
       if (res.data.status === "success" && res.data.member) {
-        authLogin(res.data.member, res.data.token);
+        // 1. Log in as a member (frontend)
+        memberLogin(res.data.member, res.data.token, res.data.is_contributor);
+
+        // 2. If it's a contributor, also log in to the admin/dashboard side
+        if (res.data.is_contributor) {
+            adminSetAuth({
+                user: res.data.admin_user,
+                role: res.data.admin_user.role,
+                permissions: res.data.permissions,
+                csrf_token: res.data.csrf_token
+            });
+            addToast("Welcome back! Redirecting to Dashboard...", "success");
+            navigate("/admin", { replace: true });
+            return;
+        }
+
         addToast("Welcome back!", "success");
         
         // Intelligent redirect: If coming from reset/forgot flow, go to home
@@ -73,16 +90,16 @@ const MemberLogin = () => {
           boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
         }}
       >
-        <div className="form-group">
-          <label className="form-label">Email Address *</label>
+        <div className="form-group" style={{ marginBottom: "20px" }}>
+          <label className="form-label">Email or Username *</label>
           <input
-            type="email"
+            type="text"
             className="form-control"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoFocus
-            placeholder="you@example.com"
+            placeholder="Username or you@example.com"
           />
         </div>
 

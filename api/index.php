@@ -183,6 +183,10 @@ if ($path === '/member/login') {
     require __DIR__ . '/member_login.php';
     exit;
 }
+if ($path === '/member/profile') {
+    require __DIR__ . '/member_get_profile.php';
+    exit;
+}
 if ($path === '/member/profile/update') {
     require __DIR__ . '/member_update_profile.php';
     exit;

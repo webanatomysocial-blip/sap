@@ -74,7 +74,8 @@ try {
         $slug = $_GET['slug'] ?? null;
 
         if ($id || $slug) {
-            $blog = $blogService->getBlog($id ?: $slug, $currentUserId, $role, $currentDateTime);
+            $author_only = isset($_GET['author_only']) && $_GET['author_only'] == '1';
+            $blog = $blogService->getBlog($id ?: $slug, $currentUserId, $role, $currentDateTime, $author_only);
             if (!$blog) {
                 http_response_code(404);
                 echo json_encode(['error' => 'Blog post not found']);
@@ -84,7 +85,8 @@ try {
             exit;
         }
 
-        $blogs = $blogService->getBlogs($currentUserId, $role, $currentDateTime);
+        $author_only = isset($_GET['author_only']) && $_GET['author_only'] == '1';
+        $blogs = $blogService->getBlogs($currentUserId, $role, $currentDateTime, $author_only);
         echo json_encode($blogs);
         exit;
     }

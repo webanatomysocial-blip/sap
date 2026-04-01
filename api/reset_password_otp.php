@@ -41,20 +41,22 @@ try {
     $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
     // 3. Update password in members table (column is password_hash)
-    $stmt = $pdo->prepare("UPDATE members SET password_hash = ? WHERE email = ?");
-    $stmt->execute([$passwordHash, $email]);
+    $stmtMem = $pdo->prepare("UPDATE members SET password_hash = ? WHERE LOWER(email) = LOWER(?)");
+    $stmtMem->execute([$passwordHash, $email]);
+    $memUpdated = $stmtMem->rowCount() > 0;
 
-    if ($stmt->rowCount() === 0) {
-        // Also check users table (admins/contributors) - column is password
-        $stmtUser = $pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
-        $stmtUser->execute([$passwordHash, $email]);
-        
-        if ($stmtUser->rowCount() === 0) {
-            http_response_code(404);
-            echo json_encode(['status' => 'error', 'message' => 'Account not found.']);
-            exit;
-        }
+    // 4. Update password in users table (column is password)
+    $stmtUser = $pdo->prepare("UPDATE users SET password = ? WHERE LOWER(email) = LOWER(?)");
+    $stmtUser->execute([$passwordHash, $email]);
+    $userUpdated = $stmtUser->rowCount() > 0;
+
+    if (!$memUpdated && !$userUpdated) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Account not found.']);
+        exit;
     }
+
+    // 5. Also sync to contributors table if needed (though it doesn't store password, it might store hash if you added it? No, it doesn't.)
 
     // 4. Clear the verification status (optional, but good practice to prevent re-use)
     // The OTPService->isVerified check prevents it anyway, but we could mark the code as 'expired' manually.

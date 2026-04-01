@@ -39,7 +39,8 @@ api.interceptors.request.use((config) => {
 
 // ── Public endpoints ─────────────────────────────────────────────────────────
 export const getPosts = (page = 1) => api.get(`/posts?page=${page}`);
-export const getPostBySlug = (slug) => api.get(`/posts/${slug}`);
+export const getPostBySlug = (slug, params = {}) => api.get(`/posts/${slug}`, { params });
+export const getMemberProfile = () => api.get('/member/profile');
 export const getCommentsByBlogId = (blogId) => api.get(`/get_comments.php?blogId=${blogId}`);
 export const submitComment = (data) => api.post('/save_comment.php', data);
 export const applyContributor = (data) => api.post('/contributors/apply', data, {
@@ -56,7 +57,7 @@ export const getHomepageData = () => api.get('/get_homepage_data.php');
 export const getCategories = () => api.get('/get_categories.php');
 
 // ── Blog Management (Admin) ──────────────────────────────────────────────────
-export const getBlogs = () => api.get('/posts');
+export const getBlogs = (params = {}) => api.get('/posts', { params });
 export const saveBlog = (data) => api.post('/posts', data);
 export const deleteBlog = (id) => api.delete(`/posts/${id}`);
 export const toggleExclusiveContent = (data) => api.post('/admin/toggle-exclusive', data);

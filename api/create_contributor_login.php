@@ -37,16 +37,20 @@ if (strlen($password) < 8) {
 }
 
 try {
-    // Verify contributor exists
-    $stmt = $pdo->prepare("SELECT id FROM contributors WHERE id = ?");
+    // Verify contributor exists and get their info
+    $stmt = $pdo->prepare("SELECT id, full_name, email FROM contributors WHERE id = ?");
     $stmt->execute([$contributorId]);
-    if (!$stmt->fetch()) {
+    $contributorInfo = $stmt->fetch();
+    if (!$contributorInfo) {
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Contributor not found']);
         exit;
     }
 
-    // Ensure contributor does not already have a login
+    $email = $contributorInfo['email'];
+    $name  = $contributorInfo['full_name'];
+
+    // Ensure contributor does not already have a login in users table
     $stmt = $pdo->prepare("SELECT id FROM users WHERE contributor_id = ?");
     $stmt->execute([$contributorId]);
     if ($stmt->fetch()) {
@@ -79,22 +83,24 @@ try {
 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    // Insert user
+    // Insert/Update User and Member in a transaction
+    $pdo->beginTransaction();
+
+    // 1. Insert into users
     $stmt = $pdo->prepare(
-        "INSERT INTO users (username, password, role, contributor_id, is_active)
-         VALUES (?, ?, 'contributor', ?, 1)"
+        "INSERT INTO users (username, password, role, contributor_id, email, full_name, is_active)
+         VALUES (?, ?, 'contributor', ?, ?, ?, 1)"
     );
-    $stmt->execute([$username, $hashedPassword, $contributorId]);
+    $stmt->execute([$username, $hashedPassword, $contributorId, $email, $name]);
     $newUserId = (int)$pdo->lastInsertId();
 
-    // Sanitize permissions
+    // 2. Insert/Update permissions
     $canBlogs         = isset($permissions['can_manage_blogs'])         && $permissions['can_manage_blogs']         ? 1 : 0;
     $canAds           = isset($permissions['can_manage_ads'])           && $permissions['can_manage_ads']           ? 1 : 0;
     $canComments      = isset($permissions['can_manage_comments'])      && $permissions['can_manage_comments']      ? 1 : 0;
     $canAnnouncements = isset($permissions['can_manage_announcements']) && $permissions['can_manage_announcements'] ? 1 : 0;
     $canReview        = isset($permissions['can_review_blogs'])         && $permissions['can_review_blogs']         ? 1 : 0;
 
-    // Insert permissions row
     $stmt = $pdo->prepare(
         "INSERT INTO user_permissions
          (user_id, can_manage_blogs, can_manage_ads, can_manage_comments, can_manage_announcements, can_review_blogs)
@@ -102,9 +108,35 @@ try {
     );
     $stmt->execute([$newUserId, $canBlogs, $canAds, $canComments, $canAnnouncements, $canReview]);
 
+    // 3. Sync to members table: ensure this contributor is also an approved member
+    $checkMember = $pdo->prepare("SELECT id FROM members WHERE email = ?");
+    $checkMember->execute([$email]);
+    $memberRow = $checkMember->fetch();
+
+    if ($memberRow) {
+        // Update existing member: ensure same password and approved status
+        $stmt = $pdo->prepare("UPDATE members SET password_hash = ?, status = 'approved', name = ? WHERE id = ?");
+        $stmt->execute([$hashedPassword, $name, $memberRow['id']]);
+    } else {
+        // Create new approved member
+        $stmt = $pdo->prepare("INSERT INTO members (name, email, password_hash, status, approved_at) VALUES (?, ?, ?, 'approved', ?)");
+        $stmt->execute([$name, $email, $hashedPassword, date('Y-m-d H:i:s')]);
+    }
+
+    $pdo->commit();
+
+    // Send notification email
+    require_once 'services/NotificationService.php';
+    $ns = new NotificationService();
+    $credentials = [
+        'username' => $username,
+        'password' => $password
+    ];
+    $ns->notifyContributorApproved($email, $name, $credentials);
+
     echo json_encode([
         'status'  => 'success',
-        'message' => 'Contributor login created successfully',
+        'message' => 'Contributor login created and synced with member account successfully',
         'user_id' => $newUserId,
     ]);
 

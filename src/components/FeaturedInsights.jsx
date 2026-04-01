@@ -29,15 +29,13 @@ export default function FeaturedInsights({ id }) {
         const blogData = Array.isArray(data) ? data : data.data || [];
 
         const mappedBlogs = blogData
-          .filter(
-            (b) =>
-              (b.status === "published" ||
-                b.status === "active" ||
-                b.status === "approved") &&
-              // Use local date for better user-facing responsiveness
-              new Date(b.date || b.created_at).setHours(0, 0, 0, 0) <=
-                new Date().setHours(0, 0, 0, 0),
-          )
+          .filter((b) => {
+            const isApproved = ["published", "active", "approved"].includes(b.status.toLowerCase());
+            const postDate = new Date(b.date || b.created_at);
+            const now = new Date();
+            const isLive = postDate.setHours(0,0,0,0) <= now.setHours(23,59,59,999);
+            return isApproved && isLive;
+          })
           .map((b) => ({
             ...b,
             image:
@@ -89,6 +87,7 @@ export default function FeaturedInsights({ id }) {
         }
         if (categoryKey === "sap-security") {
           return (
+            blog.category === "sap-security" ||
             blog.category === "sap-btp-security" ||
             blog.category === "sap-public-cloud" ||
             blog.category === "sap-s4hana-security" ||

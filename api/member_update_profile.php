@@ -119,6 +119,58 @@ try {
     // Update session
     $_SESSION['member_name'] = $name;
 
+    $userStmt = $pdo->prepare("SELECT id, role, contributor_id FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
+    $userStmt->execute([$_SESSION['member_email']]);
+    $user = $userStmt->fetch();
+
+    if ($user) {
+        // Fetch COMPLETE latest data from members table to ensure perfect sync
+        $latestMemStmt = $pdo->prepare("SELECT name, email, profile_image, job_role FROM members WHERE id = ?");
+        $latestMemStmt->execute([$memberId]);
+        $m = $latestMemStmt->fetch();
+
+        if ($m) {
+            $userUpdates = ["full_name = ?", "email = ?"];
+            $userParams = [$m['name'], $m['email']];
+            
+            if ($m['profile_image']) {
+                $userUpdates[] = "profile_image = ?";
+                $userParams[] = $m['profile_image'];
+                $userUpdates[] = "avatar = ?";
+                $userParams[] = $m['profile_image'];
+            }
+            if ($m['job_role']) {
+                $userUpdates[] = "designation = ?";
+                $userParams[] = $m['job_role'];
+            }
+
+            $sql = "UPDATE users SET " . implode(', ', $userUpdates) . " WHERE id = ?";
+            $userParams[] = $user['id'];
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($userParams);
+
+            // Also sync to contributors table if it's a contributor
+            if ($user['contributor_id']) {
+                $contribUpdates = ["full_name = ?", "email = ?"];
+                $contribParams = [$m['name'], $m['email']];
+                
+                if ($m['profile_image']) {
+                    $contribUpdates[] = "image = ?";
+                    $contribParams[] = $m['profile_image'];
+                }
+                if ($m['job_role']) {
+                    $contribUpdates[] = "designation = ?";
+                    $contribParams[] = $m['job_role'];
+                }
+
+                $sql = "UPDATE contributors SET " . implode(', ', $contribUpdates) . " WHERE id = ?";
+                $contribParams[] = $user['contributor_id'];
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($contribParams);
+            }
+        }
+    }
+
     echo json_encode([
         'status'  => 'success',
         'message' => 'Profile updated successfully',

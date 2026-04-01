@@ -69,8 +69,19 @@ try {
     $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
     $now = date('Y-m-d H:i:s');
     
+    // 1. Update users table
     $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = ? WHERE id = ?");
     $stmt->execute([$newHash, $now, $adminId]);
+
+    // 2. Sync to members table if applicable
+    $stmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+    $stmt->execute([$adminId]);
+    $email = $stmt->fetchColumn();
+
+    if ($email) {
+        $stmt = $pdo->prepare("UPDATE members SET password_hash = ? WHERE LOWER(email) = LOWER(?)");
+        $stmt->execute([$newHash, $email]);
+    }
 
     echo json_encode([
         'status' => 'success',

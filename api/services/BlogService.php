@@ -17,7 +17,7 @@ class BlogService {
         $this->cache->invalidate('homepage_data_public');
     }
 
-    public function getBlogs($currentUserId, $role, $currentDateTime) {
+    public function getBlogs($currentUserId, $role, $currentDateTime, $authorOnly = false) {
         $isLoggedIn = !empty($currentUserId);
         $isAdmin = ($role === 'admin');
         $isContributor = ($role === 'contributor');
@@ -25,27 +25,35 @@ class BlogService {
         $sql = "SELECT b.*, 
                        b.view_count,
                        (SELECT COUNT(*) FROM comments c_count WHERE c_count.post_id = b.slug AND c_count.status = 'approved') as comment_count,
-                       u.id as author_id, u.username as author_username, u.role as author_role,
-                       COALESCE(c.full_name, u.full_name, u.username) as author_name,
-                       COALESCE(c.image, u.profile_image) as author_image,
-                       COALESCE(c.short_bio, u.bio) as author_bio,
-                       COALESCE(c.designation, u.designation) as author_designation,
-                       COALESCE(c.linkedin, u.linkedin) as author_linkedin,
-                       COALESCE(c.twitter_handle, u.twitter_handle) as author_twitter,
-                       COALESCE(c.personal_website, u.personal_website) as author_website
-                FROM blogs b
-                LEFT JOIN users u ON b.author_id = u.id
-                LEFT JOIN contributors c ON u.contributor_id = c.id";
+                        u.id as author_id, u.username as author_username, u.role as author_role,
+                        CASE 
+                            WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN 'Raghu Boddu'
+                            ELSE COALESCE(c.full_name, u.full_name, u.username, b.author)
+                        END as author_name,
+                        CASE 
+                            WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN '/assets/raghu_boddu.png'
+                            ELSE COALESCE(c.image, u.profile_image)
+                        END as author_image,
+                        COALESCE(c.short_bio, u.bio) as author_bio,
+                        COALESCE(c.designation, u.designation) as author_designation,
+                        COALESCE(c.linkedin, u.linkedin) as author_linkedin,
+                        COALESCE(c.twitter_handle, u.twitter_handle) as author_twitter,
+                        COALESCE(c.personal_website, u.personal_website) as author_website
+                 FROM blogs b
+                 LEFT JOIN users u ON b.author_id = u.id
+                 LEFT JOIN contributors c ON u.contributor_id = c.id";
         $params = [];
 
-        if (!$isLoggedIn) {
-            // Public: Only approved/published blogs, respect scheduling
-            $sql .= " WHERE b.status IN ('approved', 'published') AND b.date <= ?";
-            $params[] = $currentDateTime ?: gmdate('Y-m-d H:i:s'); 
-        } elseif ($isContributor) {
-            // Contributor: Only their own blogs
+        if ($isContributor && $authorOnly) {
+            // Management view: strictly filter by author
             $sql .= " WHERE b.author_id = ?";
             $params[] = $currentUserId;
+        } elseif (!$isLoggedIn || ($isContributor && !$authorOnly)) {
+            // Public view (Guest or Contributor-visitor): show all approved
+            $sql .= " WHERE b.status IN ('approved', 'published') AND b.date <= ?";
+            $params[] = $currentDateTime ?: gmdate('Y-m-d H:i:s');
+        } elseif ($isAdmin) {
+            // Admin: see everything, no filter added
         }
 
         $sql .= " ORDER BY b.created_at DESC";
@@ -64,7 +72,7 @@ class BlogService {
         return $blogs;
     }
 
-    public function getBlog($idOrSlug, $currentUserId, $role, $currentDateTime) {
+    public function getBlog($idOrSlug, $currentUserId, $role, $currentDateTime, $authorOnly = false) {
         $isLoggedIn = !empty($currentUserId);
         $isAdmin = ($role === 'admin');
         $isContributor = ($role === 'contributor');
@@ -73,8 +81,14 @@ class BlogService {
                        b.view_count,
                        (SELECT COUNT(*) FROM comments c_count WHERE c_count.post_id = b.slug AND c_count.status = 'approved') as comment_count,
                        u.id as author_id, u.username as author_username, u.role as author_role, u.email as author_email,
-                       COALESCE(c.full_name, u.full_name, u.username) as author_name,
-                       COALESCE(c.image, u.profile_image) as author_image,
+                       CASE 
+                           WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN 'Raghu Boddu'
+                           ELSE COALESCE(c.full_name, u.full_name, u.username, b.author)
+                       END as author_name,
+                       CASE 
+                           WHEN u.role = 'admin' OR b.author_id IS NULL OR b.author_id = 1 THEN '/assets/raghu_boddu.png'
+                           ELSE COALESCE(c.image, u.profile_image)
+                       END as author_image,
                        COALESCE(c.short_bio, u.bio) as author_bio,
                        COALESCE(c.designation, u.designation) as author_designation,
                        COALESCE(c.linkedin, u.linkedin) as author_linkedin,
@@ -86,14 +100,15 @@ class BlogService {
                 WHERE (b.slug = ? OR b.id = ?)";
         $params = [$idOrSlug, $idOrSlug];
 
-        if (!$isLoggedIn) {
-            // Relaxed date check for single blog view: if they have the link and it's published, show it.
-            // Or use a slightly more forgiving date check to account for sync delays.
-            $sql .= " AND b.status IN ('approved', 'published')";
-            // Removed strict date check for single post to fix "blogs not opening" due to timezone mismatch
-        } elseif ($isContributor) {
+        if ($isContributor && $authorOnly) {
+            // Management/Preview: strictly filter by author
             $sql .= " AND b.author_id = ?";
             $params[] = $currentUserId;
+        } elseif (!$isLoggedIn || ($isContributor && !$authorOnly)) {
+            // Public View: Only approved/published blogs
+            $sql .= " AND b.status IN ('approved', 'published')";
+        } elseif ($isAdmin) {
+            // Admin: no extra filters
         }
 
         $stmt = $this->pdo->prepare($sql);

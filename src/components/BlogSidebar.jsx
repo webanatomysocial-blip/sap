@@ -126,11 +126,13 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {}, relatedBlogs = [] }) => {
 
   const filteredPosts = allPosts
     .filter((post) => {
+      const postDate = new Date(post.date || post.created_at);
+      const now = new Date();
       const isLive =
         (post.status === "published" ||
           post.status === "active" ||
           post.status === "approved") &&
-        new Date(post.date || post.created_at) <= new Date();
+        postDate.setHours(0,0,0,0) <= now.setHours(23,59,59,999);
       if (!isLive) return false;
 
       return post.title
@@ -255,20 +257,33 @@ const BlogSidebar = ({ sidebarAd: propSidebarAd = {}, relatedBlogs = [] }) => {
 
       {/* Related Blogs Widget */}
       {relatedBlogs && relatedBlogs.length > 0 && (
-        <div className="sidebar-widget latest-posts-widget" style={{ marginTop: "30px" }}>
+        <div className="sidebar-widget related-blogs-highlight" style={{ marginTop: "30px" }}>
           <h3 className="widget-title">Related Blogs</h3>
           <ul className="latest-posts-list">
             {relatedBlogs.map((post) => {
-              const categorySlug = (post.category || "blogs").toLowerCase();
+              const categorySlug = (post.category || "blogs").toLowerCase().replace(/\s+/g, "-");
+              const displayImage = post.image || post.featured_image;
               return (
-                <li key={post.id} className="latest-post-item">
-                  <Link to={`/${categorySlug}/${post.slug || post.id}`}>
-                    {post.title}
-                    {Number(post.is_members_only) === 1 && (
-                      <span className="sidebar-exclusive-tag">
-                        <i className="bi bi-lock-fill"></i> Exclusive
-                      </span>
-                    )}
+                <li key={post.id} className="latest-post-item related-post-item">
+                  <Link to={`/${categorySlug}/${post.slug || post.id}`} className="related-post-link">
+                    <div className="related-post-img-wrapper">
+                      <img 
+                        src={displayImage || "https://placehold.co/80x60?text=SAP"} 
+                        alt={post.title} 
+                        className="related-post-img"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/80x60?text=SAP";
+                        }}
+                      />
+                    </div>
+                    <div className="related-post-content">
+                      <span className="related-post-title">{post.title}</span>
+                      {Number(post.is_members_only) === 1 && (
+                        <span className="sidebar-exclusive-tag">
+                          <i className="bi bi-lock-fill"></i> Exclusive
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 </li>
               );

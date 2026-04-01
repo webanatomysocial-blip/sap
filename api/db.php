@@ -18,7 +18,7 @@ if (!headers_sent()) {
     header('Referrer-Policy: strict-origin-when-cross-origin'); // Limit referrer info leakage
 
     // ── CORS Whitelist ────────────────────────────────────────────────────────
-    $domain = getenv('SITE_URL') ?: 'https://sap.kaphi.in';
+    $domain = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
     $allowedOrigins = [
         $domain,
         str_replace('https://', 'https://www.', $domain),
@@ -48,14 +48,18 @@ if (!headers_sent()) {
 require_once __DIR__ . '/utils.php';
 
 // 2. Load Environment Variables (Simple Implementation for cPanel compatibility)
-function loadEnv($path) {
-    if (!file_exists($path)) return [];
+function loadEnv($path)
+{
+    if (!file_exists($path))
+        return [];
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $env = [];
     foreach ($lines as $line) {
         $line = trim($line);
-        if (empty($line) || strpos($line, '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
+        if (empty($line) || strpos($line, '#') === 0)
+            continue;
+        if (strpos($line, '=') === false)
+            continue;
         list($name, $value) = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value);
@@ -74,9 +78,9 @@ $config = loadEnv($envFile);
 $connection = $config['DB_CONNECTION'] ?? 'mysql'; // Default to mysql
 
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
+    PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
 try {
@@ -90,7 +94,7 @@ try {
     } else {
         // MySQL Connection (Existing Logic)
         $host = $config['DB_HOST'] ?? 'localhost';
-        $db   = $config['DB_NAME'] ?? '';
+        $db = $config['DB_NAME'] ?? '';
         $user = $config['DB_USER'] ?? '';
         $pass = $config['DB_PASS'] ?? '';
         $charset = $config['DB_CHARSET'] ?? 'utf8mb4';
@@ -128,11 +132,11 @@ try {
         // Non-blocking exclusive lock — if another process is running this, skip gracefully.
         if (flock($lockHandle, LOCK_EX | LOCK_NB)) {
             $lastRun = @fread($lockHandle, 20); // @-suppress in case file was just created
-            $shouldRun = empty(trim($lastRun)) || (time() - (int)trim($lastRun)) >= 60;
+            $shouldRun = empty(trim($lastRun)) || (time() - (int) trim($lastRun)) >= 60;
             if ($shouldRun) {
                 ftruncate($lockHandle, 0);
                 rewind($lockHandle);
-                fwrite($lockHandle, (string)time());
+                fwrite($lockHandle, (string) time());
                 $now = gmdate('Y-m-d H:i:s');
                 $pdo->prepare("UPDATE blogs SET status = 'published' WHERE status = 'scheduled' AND publish_date <= ?")
                     ->execute([$now]);

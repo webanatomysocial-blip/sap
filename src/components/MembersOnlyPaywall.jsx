@@ -43,8 +43,9 @@ const MembersOnlyPaywall = ({ children }) => {
             Exclusive Members-Only Content
           </h2>
           <p className="members-paywall-subtext">
-            Join our expert community to access premium SAP security insights,
-            technical guides, and members-only analysis.
+            Become part of our expert community to unlock exclusive SAP Security
+            & GRC insights, in-depth technical guides, and members-only
+            intelligence.
           </p>
           <div className="members-paywall-actions">
             <button

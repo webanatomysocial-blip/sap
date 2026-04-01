@@ -8,7 +8,8 @@ import "../../css/admin-profile.css";
 
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
-import { LuChevronDown, LuUser, LuKey, LuLogOut } from "react-icons/lu";
+import { LuChevronDown, LuUser, LuKey, LuLogOut, LuGlobe } from "react-icons/lu";
+import { Link } from "react-router-dom";
 import ProfileEditModal from "./ProfileEditModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import {
@@ -132,8 +133,13 @@ const AdminLayout = () => {
   };
 
   const handleLogout = () => {
+    const isContributor = role === "contributor";
     clearAuth();
-    navigate("/admin");
+    if (isContributor) {
+      navigate("/");
+    } else {
+      navigate("/admin");
+    }
     addToast("Logged out successfully", "success");
   };
 
@@ -215,9 +221,14 @@ const AdminLayout = () => {
           <div className="header-title">
             <h2>{getPageTitle()}</h2>
           </div>
+          <div className="header-actions">
+            <Link to="/" className="btn-go-website">
+              <LuGlobe />
+              <span>Go to Website</span>
+            </Link>
 
-          <div
-            className="header-user"
+            <div
+              className="header-user"
             onClick={() => setShowDropdown((prev) => !prev)}
             ref={dropdownRef}
             style={{
@@ -313,7 +324,8 @@ const AdminLayout = () => {
               </div>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
         <div className="admin-content">
           {/* Route through Outlet for both admin and contributor */}

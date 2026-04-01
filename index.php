@@ -1,14 +1,17 @@
 <?php
 // Function to ensure absolute URL
 if (!function_exists('getAbsoluteUrl')) {
-    function getAbsoluteUrl($path, $baseUrl) {
-        if (strpos($path, 'http') === 0) return $path;
+    function getAbsoluteUrl($path, $baseUrl)
+    {
+        if (strpos($path, 'http') === 0)
+            return $path;
         return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
     }
 }
 
 if (!function_exists('getOptimizedOgImage')) {
-    function getOptimizedOgImage($url) {
+    function getOptimizedOgImage($url)
+    {
         return $url;
     }
 }
@@ -17,7 +20,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'sap.kaphi.in'; // Fallback to production if host is missing
+$host = $_SERVER['HTTP_HOST'] ?? 'sapsecurityexpert.com'; // Fallback to production if host is missing
 $baseUrl = $protocol . $host;
 
 // If we are on localhost, og:image might not load in preview tools unless we use a public tunnel or production fallback.
@@ -124,7 +127,7 @@ $staticPages = [
 $categories = [
     'sap-btp-security' => [
         'title' => 'SAP BTP Cloud Security Guide for Experts | sapsecurityexpert',
-        'description' => 'Explore SAP BTP cloud security with sapsecurityexpert. Learn expert strategies, best practices, and controls to protect data, manage access, and ensure compliance.', 
+        'description' => 'Explore SAP BTP cloud security with sapsecurityexpert. Learn expert strategies, best practices, and controls to protect data, manage access, and ensure compliance.',
         'keywords' => 'SAP BTP, SAP BTP Security, IAS, IPS, Cloud Security',
         "image" => "/assets/sapsecurityexpert-black.png",
     ],
@@ -212,8 +215,10 @@ $categories = [
 
 // ROUTING LOGIC
 $cleanPath = trim($path, '/');
-if ($cleanPath === "") $cleanPath = "/"; // Handle root
-else $cleanPath = "/" . $cleanPath; // normalize
+if ($cleanPath === "")
+    $cleanPath = "/"; // Handle root
+else
+    $cleanPath = "/" . $cleanPath; // normalize
 $found = false;
 $type = "website";
 
@@ -249,20 +254,20 @@ if ($cleanSlug) {
         $stmt->execute([$cleanSlug]);
         $blog = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($blog) {
+        if ($blog) {
             // Dynamic SEO Mapping (Strictly from DB)
             $title = !empty($blog['meta_title']) ? $blog['meta_title'] : $blog['title'];
-            
+
             // Description logic: meta_desc -> excerpt -> fallback title
             $authorName = $blog['author'] ?? "SAP Security Expert";
-            $description = !empty($blog['meta_description']) 
-                ? $blog['meta_description'] 
-                : (!empty($blog['excerpt']) 
-                    ? $blog['excerpt'] 
+            $description = !empty($blog['meta_description'])
+                ? $blog['meta_description']
+                : (!empty($blog['excerpt'])
+                    ? $blog['excerpt']
                     : $blog['title'] . " - Written by " . $authorName . ". Read more on SAP Security Expert.");
-                    
+
             $keywords = !empty($blog['meta_keywords']) ? $blog['meta_keywords'] : $defaultKeywords;
-            
+
             // Dynamic Image
             if (!empty($blog['image'])) {
                 $image = getAbsoluteUrl($blog['image'], $baseUrl);
@@ -272,7 +277,7 @@ if ($blog) {
 
             $authorName = $blog['author'] ?? "SAP Security Expert";
             $publishDate = $blog['date'] ?? null;
-            
+
             $url = getAbsoluteUrl($cleanPath, $baseUrl);
             $type = "article";
             $found = true;
@@ -313,7 +318,7 @@ if ($blog) {
                     $schemas[] = [
                         "@context" => "https://schema.org",
                         "@type" => "FAQPage",
-                        "mainEntity" => array_map(function($f) {
+                        "mainEntity" => array_map(function ($f) {
                             return [
                                 "@type" => "Question",
                                 "name" => $f['question'] ?? '',
@@ -346,18 +351,18 @@ if (array_key_exists($cleanPath, $staticPages)) {
     }
     $url = getAbsoluteUrl($cleanPath, $baseUrl);
     $found = true;
-} 
+}
 // Check Category Pages (Exact Match on slug)
 else if (array_key_exists(ltrim($cleanPath, '/'), $categories)) {
-     $catKey = ltrim($cleanPath, '/');
-     $title = $categories[$catKey]['title'];
-     $description = $categories[$catKey]['description'];
-     $keywords = $categories[$catKey]['keywords'];
-     if (!empty($categories[$catKey]['image'])) {
-         $image = getAbsoluteUrl($categories[$catKey]['image'], $baseUrl);
-     }
-     $url = getAbsoluteUrl($cleanPath, $baseUrl);
-     $found = true;
+    $catKey = ltrim($cleanPath, '/');
+    $title = $categories[$catKey]['title'];
+    $description = $categories[$catKey]['description'];
+    $keywords = $categories[$catKey]['keywords'];
+    if (!empty($categories[$catKey]['image'])) {
+        $image = getAbsoluteUrl($categories[$catKey]['image'], $baseUrl);
+    }
+    $url = getAbsoluteUrl($cleanPath, $baseUrl);
+    $found = true;
 }
 
 
@@ -396,9 +401,12 @@ $headEnd = '</head>';
 // Determine Image MIME Type
 $ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
 $mime = 'image/jpeg';
-if ($ext === 'png') $mime = 'image/png';
-elseif ($ext === 'webp') $mime = 'image/webp';
-elseif ($ext === 'gif') $mime = 'image/gif';
+if ($ext === 'png')
+    $mime = 'image/png';
+elseif ($ext === 'webp')
+    $mime = 'image/webp';
+elseif ($ext === 'gif')
+    $mime = 'image/gif';
 
 $ogTags = "
     <!-- Dynamic SEO Tags via index.php (Refined) -->

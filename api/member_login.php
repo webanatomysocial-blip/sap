@@ -19,63 +19,170 @@ $password = $input['password'] ?? '';
 
 if (!$email || !$password) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Email and password are required.']);
+    echo json_encode(['status' => 'error', 'message' => 'Email/Username and password are required.']);
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM members WHERE email = ? LIMIT 1");
+    // ── 1. Discover the Account (Separate Lookups for Stability) ────────────
+    $member = null;
+    $user = null;
+    $contributor = null;
+
+    // Search by Member email
+    $stmt = $pdo->prepare("SELECT * FROM members WHERE LOWER(email) = LOWER(?) LIMIT 1");
     $stmt->execute([$email]);
     $member = $stmt->fetch();
 
-    if (!$member || !password_verify($password, $member['password_hash'])) {
+    // Search by User email or username
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?) LIMIT 1");
+    $stmt->execute([$email, $email]);
+    $user = $stmt->fetch();
+
+    // If still no contributor found, try by contributor email
+    $stmt = $pdo->prepare("SELECT * FROM contributors WHERE LOWER(email) = LOWER(?) LIMIT 1");
+    $stmt->execute([$email]);
+    $contributor = $stmt->fetch();
+
+    // Cross-link if possible
+    if ($user && !$contributor && $user['contributor_id']) {
+        $stmt = $pdo->prepare("SELECT * FROM contributors WHERE id = ?");
+        $stmt->execute([$user['contributor_id']]);
+        $contributor = $stmt->fetch();
+    }
+    if ($member && !$contributor) {
+        $stmt = $pdo->prepare("SELECT * FROM contributors WHERE LOWER(email) = LOWER(?)");
+        $stmt->execute([$member['email']]);
+        $contributor = $stmt->fetch();
+    }
+
+    if (!$member && !$user && !$contributor) {
         http_response_code(401);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid email/username or password.']);
         exit;
     }
 
+    // ── 2. Password Verification ──────────────────────────────────────────
+    $passwordHash = ($member ? $member['password_hash'] : null) ?: ($user ? $user['password'] : null);
+    
+    if (!$passwordHash || !password_verify($password, $passwordHash)) {
+        // Double check fallback if they used username for an account that only has email hash in members
+        $isValid = false;
+        if ($user && password_verify($password, $user['password'])) $isValid = true;
+        if ($member && password_verify($password, $member['password_hash'])) $isValid = true;
+
+        if (!$isValid) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid email/username or password.']);
+            exit;
+        }
+    }
+
+    // ── 3. Lazy Migration ──────────────────────────────────────────────────
+    if (!$member) {
+        $newEmail = ($user ? $user['email'] : null) ?: ($contributor ? $contributor['email'] : $email);
+        $newName = ($contributor ? $contributor['full_name'] : null) ?: ($user ? $user['username'] : 'Member');
+        
+        $pdo->prepare("INSERT INTO members (name, email, password_hash, status, approved_at) VALUES (?, ?, ?, 'approved', CURRENT_TIMESTAMP)")
+            ->execute([$newName, $newEmail, $passwordHash]);
+        
+        $newMemberId = $pdo->lastInsertId();
+        $stmt = $pdo->prepare("SELECT * FROM members WHERE id = ?");
+        $stmt->execute([$newMemberId]);
+        $member = $stmt->fetch();
+    }
+
+    // Ensure Dashboard User exists for approved contributors
+    if (!$user && $contributor && $contributor['status'] === 'approved') {
+        $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', explode('@', $contributor['email'])[0]));
+        $username = $baseUsername;
+        $tries = 0;
+        while ($tries < 5) {
+            $check = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+            $check->execute([$username]);
+            if (!$check->fetch()) break;
+            $username = $baseUsername . rand(1000, 9999);
+            $tries++;
+        }
+        $pdo->prepare("INSERT INTO users (username, password, role, contributor_id, email, full_name, is_active) VALUES (?, ?, 'contributor', ?, ?, ?, 1)")
+            ->execute([$username, $passwordHash, $contributor['id'], $contributor['email'], $contributor['full_name']]);
+        
+        $newUserId = $pdo->lastInsertId();
+        $pdo->prepare("INSERT INTO user_permissions (user_id, can_manage_blogs) VALUES (?, 1)")->execute([$newUserId]);
+        
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$newUserId]);
+        $user = $stmt->fetch();
+    }
+
+    // ── 4. Account Status Check ─────────────────────────────────────────────
     if ($member['status'] === 'pending') {
         http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Your account is pending admin approval. Please wait.']);
+        echo json_encode(['status' => 'error', 'message' => 'Your account is pending approval.']);
         exit;
     }
 
-    if ($member['status'] === 'rejected') {
-        http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Your account has been rejected. Contact the administrator.']);
-        exit;
-    }
-
-    // Generate a simple session token (stored client-side)
-    $token = bin2hex(random_bytes(32));
-
+    // ── 5. Setup Sessions ──────────────────────────────────────────────────
     if (session_status() === PHP_SESSION_NONE) {
+        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        // Backward compatible positional arguments for older PHP versions if needed
+        session_set_cookie_params(0, '/', '', $secure, true); 
         session_start();
     }
+    session_regenerate_id(true);
+
     $_SESSION['member_logged_in'] = true;
     $_SESSION['member_id'] = $member['id'];
     $_SESSION['member_email'] = $member['email'];
     $_SESSION['member_name'] = $member['name'];
 
+    $isContributor = false;
+    $adminData = null;
+    $permissions = [];
+
+    if ($user && $user['is_active'] == 1) {
+        $isContributor = true;
+        $_SESSION['admin_id'] = $user['id'];
+        $_SESSION['admin_user'] = $user['username'];
+        $_SESSION['admin_logged_in'] = true;
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['is_active'] = 1;
+
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+
+        $permStmt = $pdo->prepare("SELECT * FROM user_permissions WHERE user_id = ?");
+        $permStmt->execute([$user['id']]);
+        $perms = $permStmt->fetch();
+        if ($perms) {
+            $permissions = [
+                'can_manage_blogs' => (bool)$perms['can_manage_blogs'],
+                'can_review_blogs' => (bool)($perms['can_review_blogs'] ?? 0),
+                'can_manage_comments' => (bool)($perms['can_manage_comments'] ?? 0),
+            ];
+        }
+        $_SESSION['permissions'] = $permissions;
+        $adminData = ['id' => $user['id'], 'username' => $user['username'], 'role' => $user['role']];
+    }
+
     echo json_encode([
-        'status'  => 'success',
-        'message' => 'Login successful',
-        'token'   => $token,
-        'member'  => [
-            'id'            => $member['id'],
-            'name'          => $member['name'],
-            'email'         => $member['email'],
-            'phone'         => $member['phone'],
-            'location'      => $member['location'],
-            'company_name'  => $member['company_name'],
-            'job_role'      => $member['job_role'],
-            'profile_image' => $member['profile_image'] ?? null,
-        ],
+        'status' => 'success',
+        'is_contributor' => $isContributor,
+        'csrf_token' => $_SESSION['csrf_token'] ?? null,
+        'admin_user' => $adminData,
+        'permissions' => $permissions,
+        'member' => [
+            'id' => $member['id'],
+            'name' => $member['name'],
+            'email' => $member['email'],
+            'profile_image' => $member['profile_image'] ?? null
+        ]
     ]);
 
 } catch (Exception $e) {
     error_log('[member_login] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server error. Please try again.']);
+    echo json_encode(['status' => 'error', 'message' => 'Login technical error. Please try again.']);
 }
 ?>

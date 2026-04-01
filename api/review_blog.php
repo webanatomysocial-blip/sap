@@ -37,7 +37,7 @@ if (!$id || !in_array($action, ['approve', 'reject'], true)) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, submission_status, title FROM blogs WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, submission_status, title, slug, category FROM blogs WHERE id = ?");
     $stmt->execute([$id]);
     $blog = $stmt->fetch();
 
@@ -86,8 +86,10 @@ try {
         
         // Notify Author
         $stmtAuthor = $pdo->prepare("
-            SELECT c.email FROM contributors c 
-            JOIN blogs b ON c.id = b.author_id 
+            SELECT c.email 
+            FROM contributors c 
+            JOIN users u ON c.id = u.contributor_id
+            JOIN blogs b ON u.id = b.author_id 
             WHERE b.id = ?
         ");
         $stmtAuthor->execute([$id]);
@@ -95,7 +97,11 @@ try {
         if ($author) {
             require_once 'services/NotificationService.php';
             $ns = new NotificationService();
-            $ns->notifyBlogApproved($author['email'], $blog['title']);
+            $siteUrl = rtrim(getenv('SITE_URL') ?: 'https://sapsecurityexpert.com', '/');
+            $categorySlug = strtolower(str_replace(' ', '-', $blog['category'] ?? 'others'));
+            $postUrl = "$siteUrl/$categorySlug/{$blog['slug']}";
+            
+            $ns->notifyBlogApproved($author['email'], $blog['title'], $postUrl);
         }
 
         echo json_encode(['status' => 'success', 'message' => 'Blog approved and published']);
@@ -125,8 +131,10 @@ try {
 
         // Notify Author
         $stmtAuthor = $pdo->prepare("
-            SELECT c.email FROM contributors c 
-            JOIN blogs b ON c.id = b.author_id 
+            SELECT c.email 
+            FROM contributors c 
+            JOIN users u ON c.id = u.contributor_id
+            JOIN blogs b ON u.id = b.author_id 
             WHERE b.id = ?
         ");
         $stmtAuthor->execute([$id]);

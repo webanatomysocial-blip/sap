@@ -73,7 +73,7 @@ const AdminBlogs = () => {
 
   const fetchBlogs = async () => {
     try {
-      const res = await getBlogs();
+      const res = await getBlogs(role === "contributor" ? { author_only: 1 } : {});
       if (res.data) {
         const parsedData = res.data.map((blog) => ({
           ...blog,
