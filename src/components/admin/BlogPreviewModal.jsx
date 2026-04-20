@@ -9,10 +9,12 @@ const BlogPreviewModal = ({
   blog,
   onClose,
   onApprove,
+  onSaveAsDraft,
   onReject,
   isReviewing,
 }) => {
   const [rejectMode, setRejectMode] = useState(false);
+  const [draftMode, setDraftMode] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
 
@@ -88,6 +90,7 @@ const BlogPreviewModal = ({
   const handleRejectClick = () => {
     if (!rejectMode) {
       setRejectMode(true);
+      setDraftMode(false);
       return;
     }
 
@@ -98,6 +101,22 @@ const BlogPreviewModal = ({
 
     setRejectError("");
     onReject(rejectReason);
+  };
+
+  const handleDraftClick = () => {
+    if (!draftMode) {
+      setDraftMode(true);
+      setRejectMode(false);
+      return;
+    }
+
+    if (!rejectReason.trim()) {
+      setRejectError("Feedback is mandatory to move back to draft.");
+      return;
+    }
+
+    setRejectError("");
+    onSaveAsDraft(rejectReason);
   };
 
   const seoScore = previewData.seo_score || 0;
@@ -705,11 +724,11 @@ const BlogPreviewModal = ({
                   </div>
                 )}
 
-                {rejectMode && (
+                {(rejectMode || draftMode) && (
                   <div
                     style={{
-                      background: "#fee2e2",
-                      border: "2px solid #fca5a5",
+                      background: draftMode ? "#f0f9ff" : "#fee2e2",
+                      border: draftMode ? "2px solid #bae6fd" : "2px solid #fca5a5",
                       borderRadius: "20px",
                       padding: "24px",
                       animation: "modalFadeIn 0.3s ease-out",
@@ -718,23 +737,24 @@ const BlogPreviewModal = ({
                     <h4
                       style={{
                         margin: "0 0 8px",
-                        color: "#991b1b",
+                        color: draftMode ? "#0369a1" : "#991b1b",
                         fontSize: "1rem",
                         fontWeight: "800",
                       }}
                     >
-                      Rejection Reasons
+                      {draftMode ? "Draft Feedback" : "Rejection Reasons"}
                     </h4>
                     <p
                       style={{
                         margin: "0 0 16px",
                         fontSize: "0.85rem",
-                        color: "#b91c1c",
+                        color: draftMode ? "var(--slate-600)" : "#b91c1c",
                         fontWeight: "500",
                       }}
                     >
-                      Provide detailed feedback to help the author improve the
-                      post.
+                      {draftMode
+                        ? "Explain what needs to be changed before the blog can be approved."
+                        : "Provide detailed feedback to help the author improve the post."}
                     </p>
                     <textarea
                       value={rejectReason}
@@ -746,7 +766,11 @@ const BlogPreviewModal = ({
                       className="form-control"
                       style={{
                         minHeight: "120px",
-                        borderColor: rejectError ? "#ef4444" : "#fca5a5",
+                        borderColor: rejectError
+                          ? "#ef4444"
+                          : draftMode
+                            ? "var(--primary-color)"
+                            : "#fca5a5",
                       }}
                       autoFocus
                     />
@@ -764,6 +788,19 @@ const BlogPreviewModal = ({
                     )}
                   </div>
                 )}
+                {(rejectMode || draftMode) && (
+                  <button
+                    className="btn-secondary btn-md"
+                    onClick={() => {
+                      setRejectMode(false);
+                      setDraftMode(false);
+                      setRejectError("");
+                    }}
+                    style={{ width: "100%", marginTop: "-16px" }}
+                  >
+                    Cancel Action
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -777,9 +814,7 @@ const BlogPreviewModal = ({
             disabled={isReviewing}
           >
             Close
-          </button>
-
-          {previewData.submission_status !== "rejected" && (
+          </button>          {previewData.submission_status !== "rejected" && !draftMode && (
             <button
               className="btn-danger btn-md"
               onClick={handleRejectClick}
@@ -794,17 +829,31 @@ const BlogPreviewModal = ({
             </button>
           )}
 
-          <button
-            className="btn-success btn-md"
-            onClick={onApprove}
-            disabled={isReviewing || rejectMode}
-            style={{
-              opacity: rejectMode ? 0.5 : 1,
-              minWidth: "160px",
-            }}
-          >
-            {isReviewing && !rejectMode ? "Approving..." : "Approve & Publish"}
-          </button>
+          {!rejectMode && (
+            <button
+              className="btn-primary btn-md"
+              onClick={handleDraftClick}
+              disabled={isReviewing}
+              style={{ minWidth: "120px" }}
+            >
+              {isReviewing && draftMode
+                ? "Saving..."
+                : draftMode
+                  ? "Confirm Move to Draft"
+                  : "Move to Draft"}
+            </button>
+          )}
+
+          {!rejectMode && !draftMode && (
+            <button
+              className="btn-success btn-md"
+              onClick={onApprove}
+              disabled={isReviewing}
+              style={{ minWidth: "120px" }}
+            >
+              {isReviewing ? "Approving..." : "Approve"}
+            </button>
+          )}
         </div>
       </div>
     </div>

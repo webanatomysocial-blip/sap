@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ActionMenu from "./ActionMenu"; // Keeping for non-list uses if any, but List uses it too
+import ActionMenu from "./ActionMenu";
 import "../../css/AdminDashboard.css";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
@@ -10,6 +10,7 @@ import {
   deleteBlog,
   uploadBlogImage,
   bulkRecalculatePlagiarism,
+  getAuthors,
 } from "../../services/api";
 
 // Refactored Sub-components
@@ -21,6 +22,7 @@ import FaqSettings from "./blogs/FaqSettings";
 
 const AdminBlogs = () => {
   const [blogs, setBlogs] = useState([]);
+  const [authors, setAuthors] = useState([]);
   const [view, setView] = useState("list"); // 'list' | 'editor'
   const { addToast } = useToast();
   const { openConfirm } = useConfirm();
@@ -44,6 +46,7 @@ const AdminBlogs = () => {
     cta_button_text: "",
     cta_button_link: "",
     related_blogs: [],
+    author_id: "", // Admin-only: assign contributor as author
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -57,6 +60,7 @@ const AdminBlogs = () => {
 
   useEffect(() => {
     fetchBlogs();
+    if (isAdmin) fetchAuthors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,6 +72,15 @@ const AdminBlogs = () => {
       return Array.isArray(parsed) ? parsed : fallback;
     } catch {
       return fallback;
+    }
+  };
+
+  const fetchAuthors = async () => {
+    try {
+      const res = await getAuthors();
+      if (res.data?.data) setAuthors(res.data.data);
+    } catch (err) {
+      console.warn("Could not load authors", err);
     }
   };
 
@@ -209,6 +222,7 @@ const AdminBlogs = () => {
           ? JSON.parse(faqsSource || "[]")
           : faqsSource || [],
       related_blogs: safeJsonParse(blog.related_blogs),
+      author_id: blog.author_id || "",
     });
     setView("editor");
   };
@@ -461,6 +475,8 @@ const AdminBlogs = () => {
           uploading={uploading}
           imageVersion={imageVersion}
           blogs={blogs}
+          authors={authors}
+          isAdmin={isAdmin}
           onSave={() => handleSave("approved")}
           onSaveDraft={() => handleSave("draft")}
         >

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #334155; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .header { border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
+        .feedback { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; font-style: italic; }
+        .footer { margin-top: 30px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="color: #0f172a; margin: 0;">Blog Submission Update</h2>
+        </div>
+        <p>Hello,</p>
+        <p>Your blog submission <strong>"{{title}}"</strong> has been moved back to your drafts for further improvements.</p>
+        
+        <p><strong>Feedback from Admin:</strong></p>
+        <div class="feedback">
+            {{reason}}
+        </div>
+        
+        <p>You can now go to your dashboard, edit the blog, and resubmit it for review when ready.</p>
+        
+        <div class="footer">
+            <p>Best Regards,<br>SAP Security Expert Team</p>
+            <p><a href="{{site_url}}">{{site_domain}}</a></p>
+        </div>
+    </div>
+</body>
+</html>

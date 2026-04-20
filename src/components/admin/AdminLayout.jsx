@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
-import AdminSidebar from "./AdminSidebar";
+import AdminSidebar from "./AdminSidebar.jsx";
 import ContributorDashboard from "./ContributorDashboard";
 import "../../css/AdminDashboard.css";
 import "../../css/admin-profile.css";
@@ -19,6 +19,7 @@ import {
 } from "../../services/api";
 
 const AdminLayout = () => {
+  const { addToast } = useToast();
   const { isAuthenticated, role, permissions, setAuth, clearAuth } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +42,18 @@ const AdminLayout = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { addToast } = useToast();
+
+  const [isCollapsed, setIsCollapsed] = useState(
+    localStorage.getItem("admin-sidebar-collapsed") === "true",
+  );
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const newState = !prev;
+      localStorage.setItem("admin-sidebar-collapsed", newState);
+      return newState;
+    });
+  };
 
   // Click outside dropdown closes it
   useEffect(() => {
@@ -207,14 +219,15 @@ const AdminLayout = () => {
 
   // ── Authenticated layout ────────────────────────────────────────────────────
 
-
   return (
-    <div className="admin-container">
+    <div className={`admin-container ${isCollapsed ? "collapsed" : ""}`}>
       <AdminSidebar
         onLogout={handleLogout}
         role={role}
         permissions={permissions}
         badges={badges}
+        isCollapsed={isCollapsed}
+        onToggle={toggleSidebar}
       />
       <main className="admin-main">
         <header className="admin-header">

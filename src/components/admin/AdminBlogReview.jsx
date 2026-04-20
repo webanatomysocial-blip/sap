@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getPendingBlogs, reviewBlog } from "../../services/api";
 import BlogPreviewModal from "./BlogPreviewModal";
 import ActionMenu from "./ActionMenu";
+import TableScrollContainer from "./TableScrollContainer";
 import "../../css/AdminDashboard.css";
 
 /**
@@ -123,6 +124,29 @@ const AdminBlogReview = () => {
     }
   };
 
+  const handleSaveAsDraft = (blog) => {
+    openConfirm({
+      title: "Move to Draft?",
+      message: `Move "${blog.title}" back to draft? You can provide optional feedback for the author.`,
+      confirmText: "Move to Draft",
+      showInput: true,
+      inputPlaceholder: "Feedback for author (optional)...",
+      onConfirm: async (feedback) => {
+        setReviewingId(blog.id);
+        try {
+          await reviewBlog(blog.id, "save_as_draft", feedback);
+          addToast("Blog moved back to draft.", "success");
+          setPreviewBlog(null);
+          setBlogs((prev) => prev.filter((b) => b.id !== blog.id));
+        } catch (err) {
+          addToast(err.response?.data?.message || "Action failed.", "error");
+        } finally {
+          setReviewingId(null);
+        }
+      },
+    });
+  };
+
 
   const fmt = (d) => {
     if (!d) return "—";
@@ -235,27 +259,19 @@ const AdminBlogReview = () => {
             </p>
           </div>
         ) : (
-          <div className="admin-table-wrapper">
+          <TableScrollContainer>
             <table
               className="admin-table"
-              style={{ tableLayout: "fixed", width: "100%" }}
             >
-              <colgroup>
-                <col style={{ width: "28%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "20%" }} />
-              </colgroup>
               <thead>
                 <tr>
-                  <th className="text-left">Title / Author</th>
-                  <th className="text-left">Category</th>
-                  <th className="text-left">Date</th>
-                  <th className="text-center">SEO</th>
-                  <th className="text-center">Plag</th>
-                  <th className="text-center">Actions</th>
+                  <th className="col-xxl text-left">Blog Title</th>
+                  <th className="col-sm text-center">Cat</th>
+                  <th className="col-md text-left">Author</th>
+                  <th className="col-sm text-center">Status</th>
+                  <th className="col-xs text-center">SEO</th>
+                  <th className="col-xs text-center">Plag</th>
+                  <th className="col-actions text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -270,58 +286,26 @@ const AdminBlogReview = () => {
                   })
                   .map((blog) => (
                   <tr key={blog.id}>
-                    <td className="text-left">
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: "#1e293b",
-                          fontSize: "0.875rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={blog.title}
-                      >
-                        {blog.title}
-                      </div>
-                      <div
-                        style={{
-                          color: "#94a3b8",
-                          fontSize: "0.75rem",
-                          marginTop: 2,
-                        }}
-                      >
-                        by {blog.author_name || "Author"} •{" "}
-                        <span
-                          style={{
-                            color:
-                              blog.submission_status === "edited"
-                                ? "#d97706"
-                                : "#64748b",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {blog.submission_status === "edited"
-                            ? "Edited"
-                            : "New"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-left">
-                      <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                        {cap(blog.category)}
-                      </span>
-                    </td>
-                    <td className="text-left">
-                      <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                    <td className="col-xxl text-left wrap-text">
+                      <strong className="truncate-2" style={{ fontSize: "0.85rem" }}>{blog.title}</strong>
+                      <div style={{ fontSize: "0.75rem", color: "#64748b" }}>
                         {fmt(blog.date)}
+                      </div>
+                    </td>
+                    <td className="col-sm text-center" style={{ fontSize: "0.8rem" }}>{cap(blog.category)}</td>
+                    <td className="col-md text-left wrap-text">
+                      <div style={{ fontWeight: "500", fontSize: "0.8rem" }}>{blog.author_name || "Author"}</div>
+                    </td>
+                    <td className="col-sm text-center">
+                      <span className={`status-badge status-${blog.submission_status}`} style={{ fontSize: "0.7rem", padding: "2px 6px" }}>
+                        {blog.submission_status === "edited" ? "Rev" : "New"}
                       </span>
                     </td>
-                    <td className="text-center">
+                    <td className="col-xs text-center">
                       <span
                         style={{
-                          padding: "4px 8px",
-                          borderRadius: "6px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
                           fontSize: "0.75rem",
                           fontWeight: "600",
                           background: getScoreColor(blog.seo_score || 0).bg,
@@ -332,7 +316,7 @@ const AdminBlogReview = () => {
                         {blog.seo_score || 0}
                       </span>
                     </td>
-                    <td className="text-center">
+                    <td className="col-xs text-center">
                       <span
                         style={{
                           padding: "4px 8px",
@@ -359,13 +343,27 @@ const AdminBlogReview = () => {
                               : "N/A"}
                       </span>
                     </td>
-                    <td className="text-center">
+                    <td className="col-actions text-center">
                       <ActionMenu>
                         <button
                           className="action-menu-item"
                           onClick={() => setPreviewBlog(blog)}
                         >
                           <i className="bi bi-eye"></i> View & Review
+                        </button>
+                        <button
+                          className="action-menu-item"
+                          style={{ color: "var(--success-green)" }}
+                          onClick={() => handleApprove(blog)}
+                        >
+                          <i className="bi bi-check-circle"></i> Approve
+                        </button>
+                        <button
+                          className="action-menu-item"
+                          style={{ color: "var(--slate-800)" }}
+                          onClick={() => handleSaveAsDraft(blog)}
+                        >
+                          <i className="bi bi-file-earmark-diff"></i> Save as Draft
                         </button>
                         <button
                           className="action-menu-item"
@@ -383,7 +381,7 @@ const AdminBlogReview = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScrollContainer>
         )}
 
         {!loading && blogs.length > 0 && (
@@ -406,6 +404,21 @@ const AdminBlogReview = () => {
           blog={previewBlog}
           onClose={() => setPreviewBlog(null)}
           onApprove={() => handleApprove(previewBlog)}
+          onSaveAsDraft={(feedback) => {
+            setReviewingId(previewBlog.id);
+            reviewBlog(previewBlog.id, "save_as_draft", feedback)
+              .then(() => {
+                addToast("Blog moved to draft.", "success");
+                setBlogs((prev) => prev.filter((b) => b.id !== previewBlog.id));
+                setPreviewBlog(null);
+              })
+              .catch((err) => {
+                addToast(err.response?.data?.message || "Action failed.", "error");
+              })
+              .finally(() => {
+                setReviewingId(null);
+              });
+          }}
           onReject={(reason) => {
             setReviewingId(previewBlog.id);
             reviewBlog(previewBlog.id, "reject", reason)
@@ -436,6 +449,7 @@ const BlogReviewModalWrapper = ({
   blog,
   onClose,
   onApprove,
+  onSaveAsDraft,
   onReject,
   isReviewing,
 }) => {
@@ -451,6 +465,7 @@ const BlogReviewModalWrapper = ({
       blog={blog}
       onClose={onClose}
       onApprove={onApprove}
+      onSaveAsDraft={onSaveAsDraft}
       onReject={onReject}
       isReviewing={isReviewing}
     />

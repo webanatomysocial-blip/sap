@@ -30,9 +30,9 @@ $input = json_decode(file_get_contents('php://input'), true) ?? [];
 if (!$id) $id = $input['id'] ?? null;
 $action = strtolower(trim($input['action'] ?? ''));
 
-if (!$id || !in_array($action, ['approve', 'reject'], true)) {
+if (!$id || !in_array($action, ['approve', 'reject', 'save_as_draft'], true)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => '"id" and "action" (approve|reject) are required']);
+    echo json_encode(['status' => 'error', 'message' => '"id" and "action" (approve|reject|save_as_draft) are required']);
     exit;
 }
 
@@ -105,6 +105,33 @@ try {
         }
 
         echo json_encode(['status' => 'success', 'message' => 'Blog approved and published']);
+    } elseif ($action === 'save_as_draft') {
+        $feedback = trim($input['rejection_reason'] ?? ''); // Use same field for feedback
+        
+        $stmt = $pdo->prepare(
+            "UPDATE blogs SET submission_status = 'draft', status = 'draft', rejection_feedback = ? WHERE id = ?"
+        );
+        $stmt->execute([$feedback, $id]);
+        
+        $audit->log($_SESSION['admin_id'], 'blog_draft', 'blog', $id, "Admin moved back to draft. Feedback: " . $feedback);
+
+        // Notify Author
+        $stmtAuthor = $pdo->prepare("
+            SELECT c.email 
+            FROM contributors c 
+            JOIN users u ON c.id = u.contributor_id
+            JOIN blogs b ON u.id = b.author_id 
+            WHERE b.id = ?
+        ");
+        $stmtAuthor->execute([$id]);
+        $author = $stmtAuthor->fetch();
+        if ($author) {
+            require_once 'services/NotificationService.php';
+            $ns = new NotificationService();
+            $ns->notifyBlogMovedToDraft($author['email'], $blog['title'], $feedback);
+        }
+
+        echo json_encode(['status' => 'success', 'message' => 'Blog moved to draft and author notified.']);
     } else {
         // Handle Reject
         $rejection_reason = trim($input['rejection_reason'] ?? '');

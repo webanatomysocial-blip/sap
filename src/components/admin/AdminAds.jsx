@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ActionMenu from "./ActionMenu";
+import TableScrollContainer from "./TableScrollContainer";
 import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
 import { getAds, saveAd } from "../../services/api";
@@ -147,16 +148,16 @@ const AdminAds = () => {
       </div>
 
       <div className="admin-card">
-        <div className="admin-table-wrapper">
+        <TableScrollContainer>
           <table className="admin-table">
             <thead>
               <tr>
-                <th className="text-left">Zone / Placement</th>
-                 <th className="text-left">Preview</th>
-                 <th className="text-left">Link Destination</th>
-                 <th className="text-center">Click Count</th>
-                 <th className="col-status">Status</th>
-                 <th className="text-center">Actions</th>
+                <th className="col-xl text-left">Zone</th>
+                 <th className="col-md text-center">Preview</th>
+                 <th className="col-xxl text-left">Link Destination</th>
+                 <th className="col-sm text-center">Clicks</th>
+                 <th className="col-sm text-center">Status</th>
+                 <th className="col-actions text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -164,65 +165,65 @@ const AdminAds = () => {
                 const ad = ads[zone.id];
                 return (
                   <tr key={zone.id}>
-                    <td>
-                      <strong>{zone.label}</strong>
-                      <div className="zone-details">{zone.dimensions}</div>
+                    <td className="col-xl text-left wrap-text">
+                      <strong style={{ fontSize: "0.85rem" }}>{zone.label}</strong>
+                      <div className="zone-details" style={{ fontSize: "0.75rem", color: "#64748b" }}>{zone.dimensions}</div>
                     </td>
-                    <td>
+                    <td className="col-md text-center">
                       {ad.image ? (
                         <img
                           src={ad.image}
                           alt={zone.label}
                           className="ad-thumbnail"
+                          style={{ maxHeight: "40px" }}
                         />
                       ) : (
-                        <div className="ad-thumbnail-placeholder">
-                          <i className="bi bi-image"></i>
+                        <div className="ad-thumbnail-placeholder" style={{ width: "40px", height: "40px", margin: "0 auto" }}>
+                          <i className="bi bi-image" style={{ fontSize: "1rem" }}></i>
                         </div>
                       )}
                     </td>
-                    <td>
+                    <td className="col-xxl text-left no-wrap">
                       {ad.link ? (
                         <a
                           href={ad.link}
                           target="_blank"
                           rel="noreferrer"
-                          style={{
-                            color: "#1e293b",
-                            textDecoration: "underline",
-                          }}
+                          className="post-link"
+                          style={{ wordBreak: "break-all", fontSize: "0.8rem", textDecoration: "underline" }}
                         >
                           {ad.link}
                         </a>
                       ) : (
-                        <span style={{ color: "#94a3b8" }}>No link set</span>
+                        <span style={{ color: "var(--slate-400)", fontSize: "0.8rem" }}>No link</span>
                       )}
                      </td>
-                     <td className="text-center">
+                     <td className="col-sm text-center">
                        <span
                          style={{
                            display: "inline-block",
-                           padding: "6px 12px",
-                           background: "#f1f5f9",
-                           color: "#475569",
-                           borderRadius: "6px",
+                           padding: "4px 8px",
+                           background: "var(--slate-100)",
+                           color: "var(--slate-700)",
+                           borderRadius: "4px",
                            fontWeight: "600",
-                           fontSize: "0.9rem",
+                           fontSize: "0.8rem",
                          }}
                        >
                          {ad.clicks || 0}
                        </span>
                      </td>
-                     <td className="col-status">
+                     <td className="col-sm text-center">
                       <span
                         className={`status-badge ${
                           ad.active ? "status-active" : "status-rejected"
                         }`}
+                        style={{ fontSize: "0.75rem", padding: "2px 6px" }}
                       >
-                        {ad.active ? "Active" : "Inactive"}
+                        {ad.active ? "Active" : "Off"}
                       </span>
                     </td>
-                    <td className="text-center">
+                    <td className="col-actions text-center">
                       <ActionMenu>
                         <button
                           className="action-menu-item"
@@ -237,7 +238,7 @@ const AdminAds = () => {
               })}
             </tbody>
           </table>
-        </div>
+        </TableScrollContainer>
       </div>
 
       {editingZone && (

@@ -3,10 +3,12 @@ import "../../css/AdminDashboard.css";
 import useScrollLock from "../../hooks/useScrollLock";
 // import { API_BASE_URL } from "../../config";
 import ActionMenu from "./ActionMenu";
+import TableScrollContainer from "./TableScrollContainer";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
 import { getComments, updateComment } from "../../services/api";
 import api from "../../services/api";
+import { downloadCSV } from "../../services/exportUtils";
 
 const AdminComments = () => {
   const [comments, setComments] = useState([]);
@@ -141,6 +143,18 @@ const AdminComments = () => {
     handleStatusChange(rejectingComment.id, "rejected", rejectReason);
   };
 
+  const handleExport = () => {
+    const headers = [
+      { label: "Author", key: "author" },
+      { label: "Email", key: "email" },
+      { label: "Comment", key: "text" },
+      { label: "Post Slug", key: "slug" },
+      { label: "Date", key: "date" },
+      { label: "Status", key: "status" },
+    ];
+    downloadCSV(filteredComments, headers, "comments_list");
+  };
+
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
@@ -181,6 +195,9 @@ const AdminComments = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <button onClick={handleExport} className="btn-filter" title="Export to CSV">
+            <i className="bi bi-download"></i> Export
+          </button>
           <button className="btn-primary" onClick={fetchCommentsData}>
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -188,17 +205,17 @@ const AdminComments = () => {
       </div>
 
       <div className="admin-card">
-        <div className="admin-table-wrapper">
+        <TableScrollContainer>
           <table className="admin-table">
             <thead>
-              <tr>
-                <th className="text-left col-author">Author / Email</th>
-                <th className="text-left col-content">Comment</th>
-                <th className="text-left col-post">Post</th>
-                <th className="text-left col-date">Date</th>
-                <th className="col-status">Status</th>
-                <th className="col-actions text-center">Actions</th>
-              </tr>
+                <tr>
+                  <th className="col-md text-left">Author</th>
+                  <th className="col-auto text-left">Comment</th>
+                  <th className="col-md text-left">Post</th>
+                  <th className="col-md text-left">Date</th>
+                  <th className="col-sm text-center">Status</th>
+                  <th className="col-actions text-center">Actions</th>
+                </tr>
             </thead>
             <tbody>
               {filteredComments.length === 0 ? (
@@ -209,104 +226,101 @@ const AdminComments = () => {
                 </tr>
               ) : (
                 filteredComments.map((comment) => (
-                  <tr key={comment.id}>
-                    <td className="text-left col-author">
-                      <div className="author-info">
-                        <span className="author-name">{comment.author}</span>
-                        {comment.email && (
-                          <span className="author-email" title={comment.email}>
-                            {comment.email}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="text-left col-content">
-                      {comment.parent_id && (
-                        <div
-                          className="reply-context"
-                          style={{
-                            marginBottom: "8px",
-                            padding: "6px 10px",
-                            background: "var(--slate-50)",
-                            borderLeft: "3px solid var(--slate-300)",
-                            borderRadius: "4px",
-                            fontSize: "0.8rem",
-                            color: "var(--slate-500)",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color: "var(--slate-700)",
-                            }}
-                          >
-                            Reply to{" "}
-                            {comment.parent_author ||
-                              `Comment #${comment.parent_id}`}
-                            :{" "}
-                          </span>
-                          <span
-                            title={comment.parent_text}
-                            style={{ fontStyle: "italic" }}
-                          >
-                            {comment.parent_text
-                              ? comment.parent_text.length > 50
-                                ? comment.parent_text.substring(0, 50) + "..."
-                                : comment.parent_text
-                              : "Original comment not found"}
-                          </span>
-                        </div>
-                      )}
-                      <div
-                        className="comment-text-truncate"
-                        title={comment.text}
-                      >
-                        {comment.text}
-                      </div>
-                      {comment.edited_at && (
-                        <small className="edited-indicator">
-                          (Edited:{" "}
-                          {new Date(comment.edited_at).toLocaleDateString(
-                            "en-US",
-                            { month: "long", day: "numeric", year: "numeric" },
-                          )}
-                          )
-                        </small>
-                      )}
-                    </td>
-                    <td className="text-left col-post">
-                      {comment.slug ? (
-                        <a
-                          href={`/blogs/${comment.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="post-link"
-                          title={comment.slug}
-                        >
-                          View Post
-                        </a>
-                      ) : (
-                        <span className="post-id-fallback">
-                          ID: {comment.post_id}
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-left col-date">
-                      <span className="comment-date">
-                        {new Date(comment.date).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </td>
-                    <td className="col-status">
-                      <span
-                        className={`status-badge status-${comment.status || "pending"}`}
-                      >
-                        {comment.status || "pending"}
-                      </span>
-                    </td>
+                   <tr key={comment.id}>
+                     <td className="col-md text-left wrap-text">
+                       <div className="author-info" style={{ lineBreak: "anywhere" }}>
+                         <span className="author-name" style={{ fontSize: "0.85rem", fontWeight: 600 }}>{comment.author}</span>
+                         {comment.email && (
+                           <span className="author-email" style={{ fontSize: "0.75rem", color: "#64748b" }} title={comment.email}>
+                             {comment.email}
+                           </span>
+                         )}
+                       </div>
+                     </td>
+                     <td className="col-auto text-left wrap-text">
+                       {comment.parent_id && (
+                         <div
+                           className="reply-context"
+                           style={{
+                             marginBottom: "6px",
+                             padding: "4px 8px",
+                             background: "var(--slate-50)",
+                             borderLeft: "2px solid var(--slate-300)",
+                             borderRadius: "4px",
+                             fontSize: "0.75rem",
+                             color: "var(--slate-500)",
+                           }}
+                         >
+                           <span
+                             style={{
+                               fontWeight: 600,
+                               color: "var(--slate-700)",
+                             }}
+                           >
+                             Re:{" "}
+                             {comment.parent_author ||
+                               `#${comment.parent_id}`}
+                             :{" "}
+                           </span>
+                           <span
+                             title={comment.parent_text}
+                             style={{ fontStyle: "italic" }}
+                           >
+                             {comment.parent_text
+                               ? comment.parent_text.length > 30
+                                 ? comment.parent_text.substring(0, 30) + "..."
+                                 : comment.parent_text
+                               : "Original..."}
+                           </span>
+                         </div>
+                       )}
+                       <div
+                         className="wrap-text"
+                         style={{ fontSize: "0.85rem", color: "var(--slate-700)" }}
+                       >
+                         {comment.text}
+                       </div>
+                       {comment.edited_at && (
+                         <small className="edited-indicator" style={{ fontSize: "0.7rem" }}>
+                           (Ed)
+                         </small>
+                       )}
+                     </td>
+                     <td className="col-md text-left no-wrap">
+                       {comment.slug ? (
+                         <a
+                           href={`/blogs/${comment.slug}`}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="post-link"
+                           title={comment.slug}
+                           style={{ fontSize: "0.75rem", textDecoration: "underline" }}
+                         >
+                           {comment.slug}
+                         </a>
+                       ) : (
+                         <span className="post-id-fallback" style={{ fontSize: "0.75rem" }}>
+                           ID: {comment.post_id}
+                         </span>
+                       )}
+                     </td>
+                     <td className="col-md text-left">
+                       <span className="comment-date" style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                         {new Date(comment.date).toLocaleDateString("en-US", {
+                           month: "short",
+                           day: "numeric",
+                           year: "numeric",
+                         })}
+                       </span>
+                     </td>
+                     <td className="col-sm text-center">
+                       <span
+                         className={`status-badge status-${comment.status || "pending"}`}
+                         style={{ fontSize: "0.7rem", padding: "2px 6px" }}
+                       >
+                         {comment.status === "approved" ? "Active" : (comment.status === "pending" ? "Pnd" : "Rej")}
+                       </span>
+                     </td>
                     <td className="col-actions text-center">
                       <ActionMenu>
                         {comment.status !== "approved" && (
@@ -360,7 +374,7 @@ const AdminComments = () => {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScrollContainer>
       </div>
 
       {/* Edit Modal */}

@@ -37,14 +37,13 @@ class NotificationService {
 
         $this->mailService->send($userEmail, "Your Account Has Been Approved", "member/signup_approved", [
             'name' => $userName,
-            'login_url' => $loginUrl ?: ($siteUrl . '/member/login'),
+            'login_url' => $loginUrl ?: $this->getLoginUrl(),
             'username' => $credentials['username'] ?? $userEmail,
             'password' => $credentials['password'] ?? 'Your existing password',
             'site_url' => $siteUrl,
             'site_domain' => $domain
         ]);
     }
-
     public function notifyMemberRejected($userEmail, $userName, $reason) {
         $this->mailService->send($userEmail, "Registration Request Rejected", "member/signup_rejected", [
             'name' => $userName,
@@ -109,6 +108,13 @@ class NotificationService {
 
     public function notifyBlogRejected($authorEmail, $blogTitle, $reason) {
         $this->mailService->send($authorEmail, "Blog Submission Rejected", "contributor/blog_rejected", [
+            'title' => $blogTitle,
+            'reason' => $reason
+        ]);
+    }
+
+    public function notifyBlogMovedToDraft($authorEmail, $blogTitle, $reason) {
+        $this->mailService->send($authorEmail, "Action Required: Blog Moved to Draft", "contributor/blog_drafted", [
             'title' => $blogTitle,
             'reason' => $reason
         ]);

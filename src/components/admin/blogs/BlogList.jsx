@@ -5,6 +5,8 @@ import {
   toggleExclusiveContent,
 } from "../../../services/api";
 import { useToast } from "../../../context/ToastContext";
+import TableScrollContainer from "../TableScrollContainer";
+import { downloadCSV } from "../../../services/exportUtils";
 
 const BlogList = ({
   blogs,
@@ -13,6 +15,7 @@ const BlogList = ({
   onDelete,
   formatDate,
   getScoreColor,
+  isAdmin = false,
 }) => {
   const [recalculating, setRecalculating] = useState({});
   const [togglingMap, setTogglingMap] = useState({});
@@ -80,20 +83,40 @@ const BlogList = ({
     }
   };
 
+  const handleExport = () => {
+    const headers = [
+      { label: "Title", key: "title" },
+      { label: "Slug", key: "slug" },
+      { label: "Status", key: "status" },
+      { label: "Submission Status", key: "submission_status" },
+      { label: "Date", key: "date" },
+      { label: "Author", key: "author_name" },
+      { label: "Category", key: "category" },
+      { label: "SEO Score", key: "seo_score" },
+      { label: "Plagiarism Score", key: "plagiarism_score" },
+    ];
+    downloadCSV(blogs, headers, "blogs_list");
+  };
+
   return (
     <div className="admin-card">
-      <div className="admin-table-wrapper">
+      <div className="card-header-actions" style={{ padding: "16px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+        <button onClick={handleExport} className="btn-filter" title="Export to CSV">
+          <i className="bi bi-download"></i> Export
+        </button>
+      </div>
+      <TableScrollContainer>
         <table className="admin-table">
           <thead>
             <tr>
-              <th className="text-left col-title">Title</th>
-              <th className="text-left">Slug</th>
-              <th className="text-left">Status</th>
-              <th className="text-left">Last Updated</th>
-              <th className="text-center">Exclusive</th>
-              <th className="text-center">SEO Score</th>
-              <th className="text-center">Plagiarism Score</th>
-              <th className="text-center">Actions</th>
+              <th className="col-xxl text-left">Title</th>
+              <th className="col-sm text-left">Slug</th>
+              <th className="col-sm text-center">Status</th>
+              <th className="col-md text-left">Updated</th>
+              <th className="col-xs text-center">Exc</th>
+              <th className="col-xs text-center">SEO</th>
+              <th className="col-xs text-center">Plag</th>
+              <th className="col-actions text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -104,23 +127,14 @@ const BlogList = ({
             ) : (
               blogs.map((blog) => (
                 <tr key={blog.id}>
-                  <td className="text-left col-title">
-                    <span
-                      title={blog.title}
-                      style={{
-                        wordBreak: "break-word",
-                        display: "block",
-                        minWidth: "200px",
-                      }}
-                    >
-                      {blog.title}
-                    </span>
+                  <td className="col-xxl text-left wrap-text">
+                    <strong className="truncate-2" style={{ fontSize: "0.85rem" }}>{blog.title}</strong>
                     {/* Status Badges */}
                     {blog.submission_status === "edited" && (
                       <span
                         className="pending-badge"
                         style={{
-                          marginLeft: "10px",
+                          // marginLeft: "10px",
                           fontSize: "0.7rem",
                           padding: "2px 6px",
                           background: "#fef3c7",
@@ -134,7 +148,7 @@ const BlogList = ({
                       <span
                         className="pending-badge"
                         style={{
-                          marginLeft: "10px",
+                          // marginLeft: "10px",
                           fontSize: "0.7rem",
                           padding: "2px 6px",
                         }}
@@ -161,34 +175,26 @@ const BlogList = ({
                       </div>
                     )}
                   </td>
-                  <td className="text-left">
-                    <code style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                  <td className="col-sm text-left no-wrap">
+                    <code className="truncate-1" style={{ fontSize: "0.75rem", color: "#64748b", maxWidth: "80px" }}>
                       {blog.slug || "—"}
                     </code>
                   </td>
-                  <td className="text-left">
+                  <td className="col-sm text-center">
                     {blog.status === "approved" ||
                     blog.status === "published" ? (
-                      new Date(blog.date) > new Date() ? (
-                        <span className="status-badge status-scheduled">
-                          Scheduled
-                        </span>
-                      ) : (
-                        <span className="status-badge status-live">Live</span>
-                      )
+                      <span className="status-badge status-live" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Live</span>
                     ) : blog.submission_status === "submitted" ||
                       blog.submission_status === "edited" ? (
-                      <span className="status-badge status-pending">
-                        Pending
-                      </span>
+                      <span className="status-badge status-pending" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Pnd</span>
                     ) : (
-                      <span className="status-badge status-draft">Draft</span>
+                      <span className="status-badge status-draft" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Drt</span>
                     )}
                   </td>
-                  <td className="text-left">
+                  <td className="col-md text-left">
                     <span
                       style={{
-                        fontSize: "0.85rem",
+                        fontSize: "0.8rem",
                         color: "var(--slate-500)",
                         fontWeight: "500",
                       }}
@@ -196,7 +202,7 @@ const BlogList = ({
                       {formatDate(blog.date)}
                     </span>
                   </td>
-                  <td className="text-center">
+                  <td className="col-xs text-center">
                     <label
                       className={`toggle-switch ${togglingMap[blog.id] ? "toggle-loading" : ""}`}
                     >
@@ -206,15 +212,15 @@ const BlogList = ({
                         onChange={() => handleToggleExclusive(blog)}
                         disabled={togglingMap[blog.id]}
                       />
-                      <span className="toggle-slider"></span>
+                      <span className="toggle-slider" style={{ transform: "scale(0.8)" }}></span>
                     </label>
                   </td>
-                  <td className="text-center">
+                  <td className="col-xs text-center">
                     <span
                       style={{
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        fontSize: "0.8rem",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
                         fontWeight: "600",
                         background: getScoreColor(blog.seo_score || 0).bg,
                         color: getScoreColor(blog.seo_score || 0).text,
@@ -223,12 +229,12 @@ const BlogList = ({
                       {blog.seo_score || 0}
                     </span>
                   </td>
-                  <td className="text-center">
+                  <td className="col-xs text-center">
                     <span
                       style={{
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        fontSize: "0.8rem",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
                         fontWeight: "600",
                         background:
                           blog.plagiarism_score === -1
@@ -253,15 +259,15 @@ const BlogList = ({
                       }}
                     >
                       {recalculating[blog.id]
-                        ? "Updating..."
+                        ? "..."
                         : blog.plagiarism_score === -1
-                          ? "Check Failed"
+                          ? "Fail"
                           : blog.plagiarism_score > 0
                             ? `${blog.plagiarism_score}%`
-                            : "Not Checked"}
+                            : "N/A"}
                     </span>
                   </td>
-                  <td className="text-center">
+                  <td className="col-actions text-center">
                     <ActionMenu>
                       <button
                         className="action-menu-item"
@@ -295,7 +301,7 @@ const BlogList = ({
             )}
           </tbody>
         </table>
-      </div>
+      </TableScrollContainer>
     </div>
   );
 };

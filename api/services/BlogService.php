@@ -168,6 +168,24 @@ class BlogService {
         $author_id = (int)$currentUserId;
         $authorName = $isAdmin ? "Raghu Boddu" : ($_SESSION['admin_username'] ?? 'Contributor');
 
+        // Admin can override author by specifying an author_id in the payload
+        if ($isAdmin && !empty($data['author_id']) && (int)$data['author_id'] !== (int)$currentUserId) {
+            $overrideId = (int)$data['author_id'];
+            // Resolve display name from users + contributors
+            $stmt = $this->pdo->prepare(
+                "SELECT COALESCE(c.full_name, u.full_name, u.username) as display_name
+                 FROM users u
+                 LEFT JOIN contributors c ON u.contributor_id = c.id
+                 WHERE u.id = ? AND u.is_active = 1"
+            );
+            $stmt->execute([$overrideId]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $author_id = $overrideId;
+                $authorName = $row['display_name'];
+            }
+        }
+
         // Fields
         $title = $data['title'] ?? '';
         $slug = $data['slug'] ?? '';
@@ -219,8 +237,26 @@ class BlogService {
                 $this->pdo->prepare("UPDATE comments SET post_id = ? WHERE post_id = ?")->execute([$slug, $oldSlug]);
                 $this->pdo->prepare("UPDATE post_views SET post_id = ? WHERE post_id = ?")->execute([$slug, $oldSlug]);
             }
+            // Default: keep existing author
             $author_id = (int)$existing['author_id'];
             $authorName = $existing['author'];
+
+            // Admin can re-assign an author when updating
+            if ($isAdmin && !empty($data['author_id'])) {
+                $overrideId = (int)$data['author_id'];
+                $stmtA = $this->pdo->prepare(
+                    "SELECT COALESCE(c.full_name, u.full_name, u.username) as display_name
+                     FROM users u
+                     LEFT JOIN contributors c ON u.contributor_id = c.id
+                     WHERE u.id = ? AND u.is_active = 1"
+                );
+                $stmtA->execute([$overrideId]);
+                $rowA = $stmtA->fetch();
+                if ($rowA) {
+                    $author_id = $overrideId;
+                    $authorName = $rowA['display_name'];
+                }
+            }
 
             if (!$isAdmin && $existing['author_id'] != $currentUserId) {
                 return ['status' => 'error', 'message' => 'Unauthorized'];

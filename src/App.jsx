@@ -36,7 +36,7 @@ import ContributorApplication from "./pages/ContributorApplication";
 import ContributorProfile from "./pages/ContributorProfile";
 import MemberLogin from "./pages/MemberLogin";
 import MemberSignup from "./pages/MemberSignup";
-import AdminLayout from "./components/admin/AdminLayout";
+import AdminLayout from "./components/admin/AdminLayout.jsx";
 import AdminHome from "./components/admin/AdminHome";
 import AdminContributors from "./components/admin/AdminContributors";
 import AdminAnnouncements from "./components/admin/AdminAnnouncements";

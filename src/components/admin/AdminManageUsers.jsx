@@ -6,7 +6,9 @@ import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
 import ActionMenu from "./ActionMenu";
 import ManageMemberModal from "./ManageMemberModal";
+import TableScrollContainer from "./TableScrollContainer";
 import useScrollLock from "../../hooks/useScrollLock";
+import { downloadCSV } from "../../services/exportUtils";
 import "../../css/AdminDashboard.css"; // Ensure standard admin CSS is used
 
 const AdminManageUsers = () => {
@@ -137,6 +139,20 @@ const AdminManageUsers = () => {
         m.email.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
+  const handleExport = () => {
+    const headers = [
+      { label: "Name", key: "name" },
+      { label: "Email", key: "email" },
+      { label: "Phone", key: "phone" },
+      { label: "Company", key: "company_name" },
+      { label: "Position", key: "job_role" },
+      { label: "Location", key: "location" },
+      { label: "Status", key: "status" },
+      { label: "Reg. Date", key: "created_at" },
+    ];
+    downloadCSV(filteredMembers, headers, "members_list");
+  };
+
   if (role !== "admin") {
     return (
       <div className="admin-page-wrapper">
@@ -190,6 +206,13 @@ const AdminManageUsers = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <button
+            onClick={handleExport}
+            className="btn-filter"
+            title="Export to CSV"
+          >
+            <i className="bi bi-download"></i> Export
+          </button>
           <button onClick={fetchMembers} className="btn-primary">
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -200,57 +223,77 @@ const AdminManageUsers = () => {
         <p>Loading...</p>
       ) : (
         <div className="admin-card">
-          <div className="admin-table-wrapper">
+          <TableScrollContainer>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="col-name text-left">Name</th>
-                  <th className="text-left">Company & Position</th>
-                  <th className="text-left">Contact</th>
-                  <th className="col-status">Status</th>
-                  <th className="col-date text-left">Reg. Date</th>
+                  <th className="col-lg text-left">Name</th>
+                  <th className="col-lg text-left">Email</th>
+                  <th className="col-md text-left">Phone</th>
+                  <th className="col-md text-left">Company</th>
+                  <th className="col-md text-left">Position</th>
+                  <th className="col-md text-left">Location</th>
+                  <th className="col-sm text-center">Status</th>
+                  <th className="col-sm text-left">Reg. Date</th>
                   <th className="col-actions text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMembers.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center">
+                  <tr key="empty">
+                    <td colSpan="9" className="text-center">
                       No members matching the filter.
                     </td>
                   </tr>
                 ) : (
                   filteredMembers.map((m) => (
                     <tr key={m.id}>
-                      <td className="col-name text-left">
-                        <strong>{m.name}</strong>
-                        <br />
-                        <small>{m.location || "N/A"}</small>
+                      <td className="col-lg text-left wrap-text">
+                        <strong className="truncate-2" style={{ fontSize: "0.85rem" }}>{m.name}</strong>
                       </td>
-                      <td className="text-left">
-                        <div style={{ fontWeight: 600, color: "var(--slate-900)" }}>
-                          {m.company_name || "N/A"}
-                        </div>
-                        <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                          {m.job_role || "N/A"}
-                        </div>
+                      <td className="col-lg text-left no-wrap">
+                        <div style={{ fontSize: "0.8rem" }}>{m.email}</div>
                       </td>
-                      <td className="text-left">
-                        <div>
-                          <i className="bi bi-envelope"></i> {m.email}
-                        </div>
-                        {m.phone && (
-                          <div style={{ fontSize: "0.85em", color: "#6c757d" }}>
-                            <i className="bi bi-telephone"></i> {m.phone}
+                      <td className="col-md text-left no-wrap">
+                        {m.phone ? (
+                          <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                            {m.phone}
                           </div>
+                        ) : (
+                          <span style={{ color: "#cbd5e1" }}>—</span>
                         )}
                       </td>
-                      <td className="col-status">
+                      <td className="col-md text-left wrap-text">
+                        <div
+                          className="truncate-2"
+                          style={{
+                            fontWeight: 600,
+                            color: "var(--slate-900)",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          {m.company_name || "—"}
+                        </div>
+                      </td>
+                      <td className="col-md text-left wrap-text">
+                        <div
+                          className="truncate-2"
+                          style={{ fontSize: "0.8rem", color: "#64748b" }}
+                        >
+                          {m.job_role || "—"}
+                        </div>
+                      </td>
+                      <td className="col-md text-left wrap-text">
+                        <div className="truncate-2" style={{ fontSize: "0.80rem" }}>
+                          {m.location || "—"}
+                        </div>
+                      </td>
+                      <td className="col-sm text-center">
                         <span className={`status-badge status-${m.status}`}>
-                          {m.status}
+                          {m.status === "approved" ? "Active" : m.status}
                         </span>
                       </td>
-                      <td className="col-date text-left">
+                      <td className="col-sm text-left" style={{ fontSize: "0.85rem" }}>
                         {new Date(m.created_at).toLocaleDateString()}
                       </td>
                       <td className="col-actions text-center">
@@ -321,7 +364,7 @@ const AdminManageUsers = () => {
                 )}
               </tbody>
             </table>
-          </div>
+          </TableScrollContainer>
         </div>
       )}
 

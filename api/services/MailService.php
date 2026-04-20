@@ -90,7 +90,9 @@ class MailService
 
             $body = file_get_contents($fullTemplatePath);
             foreach ($data as $key => $value) {
-                $body = str_replace('{{' . $key . '}}', $value, $body);
+                // Using regex to handle both {{key}} and {{ key }} formats
+                $pattern = '/\{\{\s*' . preg_quote($key, '/') . '\s*\}\}/';
+                $body = preg_replace($pattern, (string)$value, $body);
             }
 
             $this->mailer->clearAddresses();

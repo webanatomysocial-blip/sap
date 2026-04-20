@@ -51,14 +51,16 @@ class AnnouncementService {
             if ($existing['status'] === 'approved' && !$isAdmin) {
                 // EDIT PRESERVATION (For Contributors)
                 $stmt = $this->pdo->prepare("UPDATE announcements SET draft_title=?, draft_date=?, draft_link=?, submission_status='edited', seo_score=?, plagiarism_score=? WHERE id=?");
-                $plagScore = checkPlagiarismScore($title . ' ' . $link, $existingPlagScore);
+                $plagResult = checkPlagiarismScore($title . ' ' . $link, $existingPlagScore);
+                $plagScore = $plagResult['score'] ?? 0;
                 $stmt->execute([$title, $date, $link, $seoScore, $plagScore, $id]);
                 $this->invalidateHomepage();
                 return ['status' => 'success', 'message' => 'Changes saved for review. Live version remains unchanged.'];
             } else {
                 $status = $isAdmin ? 'approved' : 'draft';
                 $stmt = $this->pdo->prepare("UPDATE announcements SET title=?, date=?, link=?, status=?, submission_status='approved', seo_score=?, plagiarism_score=? WHERE id=?");
-                $plagScore = checkPlagiarismScore($title . ' ' . $link);
+                $plagResult = checkPlagiarismScore($title . ' ' . $link);
+                $plagScore = $plagResult['score'] ?? 0;
                 $stmt->execute([$title, $date, $link, $status, $seoScore, $plagScore, $id]);
                 $this->invalidateHomepage();
                 return ['status' => 'success', 'message' => 'Announcement updated'];
@@ -67,7 +69,8 @@ class AnnouncementService {
             // Insert
             $status = $isAdmin ? 'approved' : 'draft';
             $stmt = $this->pdo->prepare("INSERT INTO announcements (title, date, link, status, views, comments, submission_status, seo_score, plagiarism_score) VALUES (?, ?, ?, ?, 0, 0, 'approved', ?, ?)");
-            $plagScore = checkPlagiarismScore($title . ' ' . $link);
+            $plagResult = checkPlagiarismScore($title . ' ' . $link);
+            $plagScore = $plagResult['score'] ?? 0;
             $stmt->execute([$title, $date, $link, $status, $seoScore, $plagScore]);
             $this->invalidateHomepage();
             return ['status' => 'success', 'message' => 'Announcement created'];

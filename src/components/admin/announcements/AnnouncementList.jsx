@@ -1,5 +1,6 @@
 import React from "react";
 import ActionMenu from "../ActionMenu";
+import TableScrollContainer from "../TableScrollContainer";
 
 const AnnouncementList = ({
   announcements,
@@ -10,15 +11,15 @@ const AnnouncementList = ({
 }) => {
   return (
     <div className="admin-card">
-      <div className="admin-table-wrapper">
+      <TableScrollContainer>
         <table className="admin-table">
           <thead>
-            <tr>
-              <th className="text-left">Title</th>
-              <th className="text-left">Status</th>
-              <th className="text-left">Last Updated</th>
-              <th className="text-center">Actions</th>
-            </tr>
+              <tr>
+                <th className="col-xxl text-left">Title</th>
+                <th className="col-sm text-center">Status</th>
+                <th className="col-md text-left">Updated</th>
+                <th className="col-actions text-center">Actions</th>
+              </tr>
           </thead>
           <tbody>
             {announcements.length === 0 ? (
@@ -30,72 +31,38 @@ const AnnouncementList = ({
             ) : (
               announcements.map((item) => (
                 <tr key={item.id}>
-                  <td className="text-left">
-                    {item.title}
+                  <td className="col-xxl text-left wrap-text">
+                    <strong className="truncate-2" style={{ fontSize: "0.85rem" }}>{item.title}</strong>
                     {item.submission_status === "edited" && (
                       <span
                         className="pending-badge"
                         style={{
                           marginLeft: "10px",
-                          fontSize: "0.7rem",
-                          padding: "2px 6px",
+                          fontSize: "0.65rem",
+                          padding: "1px 5px",
                           background: "#fef3c7",
                           color: "#d97706",
                         }}
                       >
-                        Edited — Pending Approval
+                        REV
                       </span>
                     )}
                   </td>
-                  <td className="text-left">
-                    {/* ... (Status badges) ... */}
+                  <td className="col-sm text-center">
                     {item.status === "approved" ||
                     item.status === "published" ||
                     item.status === "active" ? (
-                      <span
-                        style={{
-                          background: "#dcfce7",
-                          color: "#166534",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Live
-                      </span>
+                      <span className="status-badge status-live" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Live</span>
                     ) : item.submission_status === "edited" ? (
-                      <span
-                        style={{
-                          background: "#fef9c3",
-                          color: "#854d0e",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Pending
-                      </span>
+                      <span className="status-badge status-pending" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Pnd</span>
                     ) : (
-                      <span
-                        style={{
-                          background: "#f1f5f9",
-                          color: "#64748b",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Draft
-                      </span>
+                      <span className="status-badge status-draft" style={{ fontSize: "0.7rem", padding: "2px 6px" }}>Drt</span>
                     )}
                   </td>
-                  <td className="text-left">
+                  <td className="col-md text-left">
                     <span
                       style={{
-                        fontSize: "0.85rem",
+                        fontSize: "0.80rem",
                         color: "var(--slate-500)",
                         fontWeight: "500",
                       }}
@@ -103,7 +70,7 @@ const AnnouncementList = ({
                       {formatDate(item.date)}
                     </span>
                   </td>
-                  <td className="text-center">
+                  <td className="col-actions text-center">
                     <ActionMenu>
                       {item.submission_status === "edited" && (
                         <>
@@ -143,7 +110,7 @@ const AnnouncementList = ({
             )}
           </tbody>
         </table>
-      </div>
+      </TableScrollContainer>
     </div>
   );
 };

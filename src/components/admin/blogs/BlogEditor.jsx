@@ -9,9 +9,10 @@ const BlogEditor = ({
   handleImageUpload,
   uploading,
   imageVersion,
-  authors = [], // Received from AdminBlogs
-  blogs = [], // List for related blogs selection
-  children, // For sub-sections (SEO, CTA, FAQ)
+  authors = [],    // List of eligible authors (admin+contributors)
+  isAdmin = false, // Whether current user is admin
+  blogs = [],      // List for related blogs selection
+  children,        // For sub-sections (SEO, CTA, FAQ)
   onSave,
   onSaveDraft,
 }) => {
@@ -184,6 +185,33 @@ const BlogEditor = ({
             ></i>{" "}
             Save as Draft
           </button>
+
+          {/* Author Selector — Admin only */}
+          {isAdmin && (
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <i className="bi bi-person-badge" style={{ color: "#6366f1" }}></i>
+                Author
+              </label>
+              <select
+                name="author_id"
+                value={formData.author_id || ""}
+                onChange={handleInputChange}
+                className="form-control"
+                style={{ padding: "10px", background: "#f8fafc" }}
+              >
+                <option value="">— Default (Admin) —</option>
+                {authors.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.display_name}{a.role === "admin" ? " (Admin)" : " (Contributor)"}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: "4px", display: "block" }}>
+                Set who appears as the author on the published blog.
+              </span>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Category</label>
@@ -358,7 +386,7 @@ const BlogEditor = ({
                 }}
               >
                 <img
-                  src={`${formData.image}?v=${imageVersion}`}
+                  src={`${formData.image.startsWith("http") ? "" : "http://localhost:8000"}${formData.image}?v=${imageVersion}`}
                   alt="Featured Preview"
                   style={{ width: "100%", height: "auto", display: "block" }}
                 />

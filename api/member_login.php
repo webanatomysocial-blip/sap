@@ -56,9 +56,30 @@ try {
         $contributor = $stmt->fetch();
     }
 
+    // ── EXTRA REFINEMENT: Resolve actual email for member lookup ─────────────
+    // If we only found a user/contributor (maybe because they logged in with username),
+    // check if a member ALREADY exists for their absolute email address.
+    if (!$member && ($user || $contributor)) {
+        $resolvedEmail = ($user ? $user['email'] : null) ?: ($contributor ? $contributor['email'] : null);
+        if ($resolvedEmail && strtolower($resolvedEmail) !== strtolower($email)) {
+            $stmt = $pdo->prepare("SELECT * FROM members WHERE LOWER(email) = LOWER(?) LIMIT 1");
+            $stmt->execute([$resolvedEmail]);
+            $member = $stmt->fetch();
+        }
+    }
+
     if (!$member && !$user && !$contributor) {
         http_response_code(401);
         echo json_encode(['status' => 'error', 'message' => 'Invalid email/username or password.']);
+        exit;
+    }
+
+    // ── BLOCK ADMIN ACCOUNTS ──────────────────────────────────────────────
+    // Admins must use the admin login page, not the member portal.
+    // This also prevents ghost member records from being created for admins.
+    if ($user && $user['role'] === 'admin') {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Admin accounts must log in via the Admin Login page.']);
         exit;
     }
 
@@ -79,7 +100,8 @@ try {
     }
 
     // ── 3. Lazy Migration ──────────────────────────────────────────────────
-    if (!$member) {
+    // Only migrate non-admin contributors/users into the members table.
+    if (!$member && (!$user || $user['role'] !== 'admin')) {
         $newEmail = ($user ? $user['email'] : null) ?: ($contributor ? $contributor['email'] : $email);
         $newName = ($contributor ? $contributor['full_name'] : null) ?: ($user ? $user['username'] : 'Member');
         
@@ -92,28 +114,6 @@ try {
         $member = $stmt->fetch();
     }
 
-    // Ensure Dashboard User exists for approved contributors
-    if (!$user && $contributor && $contributor['status'] === 'approved') {
-        $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', explode('@', $contributor['email'])[0]));
-        $username = $baseUsername;
-        $tries = 0;
-        while ($tries < 5) {
-            $check = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-            $check->execute([$username]);
-            if (!$check->fetch()) break;
-            $username = $baseUsername . rand(1000, 9999);
-            $tries++;
-        }
-        $pdo->prepare("INSERT INTO users (username, password, role, contributor_id, email, full_name, is_active) VALUES (?, ?, 'contributor', ?, ?, ?, 1)")
-            ->execute([$username, $passwordHash, $contributor['id'], $contributor['email'], $contributor['full_name']]);
-        
-        $newUserId = $pdo->lastInsertId();
-        $pdo->prepare("INSERT INTO user_permissions (user_id, can_manage_blogs) VALUES (?, 1)")->execute([$newUserId]);
-        
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$newUserId]);
-        $user = $stmt->fetch();
-    }
 
     // ── 4. Account Status Check ─────────────────────────────────────────────
     if ($member['status'] === 'pending') {

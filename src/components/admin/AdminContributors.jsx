@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import "../../css/AdminDashboard.css";
 import ActionMenu from "./ActionMenu";
 import ManageContributorModal from "./ManageContributorModal";
+import TableScrollContainer from "./TableScrollContainer";
 import useScrollLock from "../../hooks/useScrollLock";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
@@ -11,6 +12,7 @@ import {
   updateContributorStatus,
   deleteContributor,
 } from "../../services/api";
+import { downloadCSV } from "../../services/exportUtils";
 
 const AdminContributors = () => {
   // Mock Data for Demo
@@ -155,6 +157,19 @@ const AdminContributors = () => {
         app.email.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
+  const handleExport = () => {
+    const headers = [
+      { label: "Name", key: "name" },
+      { label: "Email", key: "email" },
+      { label: "Role", key: "role" },
+      { label: "Phone", key: "phone" },
+      { label: "LinkedIn", key: "linkedin_profile" },
+      { label: "Status", key: "status" },
+      { label: "Date", key: "created_at" },
+    ];
+    downloadCSV(filteredApps, headers, "contributors_list");
+  };
+
   return (
     <div className="admin-page-wrapper">
       <Helmet>
@@ -198,6 +213,13 @@ const AdminContributors = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <button
+            onClick={handleExport}
+            className="btn-filter"
+            title="Export to CSV"
+          >
+            <i className="bi bi-download"></i> Export
+          </button>
           <button onClick={fetchApplications} className="btn-primary">
             <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
@@ -208,48 +230,63 @@ const AdminContributors = () => {
         <p>Loading...</p>
       ) : (
         <div className="admin-card">
-          <div className="admin-table-wrapper">
+          <TableScrollContainer>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="col-name text-left">Name</th>
-                  <th className="col-role text-left">Role</th>
-                  <th className="col-status">Status</th>
-                  <th className="col-date text-left">Date</th>
+                  <th className="col-lg text-left">Name</th>
+                  <th className="col-lg text-left">Email</th>
+                  <th className="col-xl text-left">Role</th>
+                  <th className="col-sm text-center">Status</th>
+                  <th className="col-md text-left">Date</th>
                   <th className="col-actions text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredApps.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center">
+                    <td colSpan="6" className="text-center">
                       No matching applications found.
                     </td>
                   </tr>
                 ) : (
                   filteredApps.map((app) => (
-                    <tr key={app.id}>
-                        <td className="col-name text-left">
-                          <strong>{app.name}</strong>
-                          <br />
-                          <small>{app.email}</small>
-                        </td>
-                        <td className="col-role text-left">{app.role}</td>
-                        <td className="col-status">
-                          <span className={`status-badge status-${app.status}`}>
-                            {app.status}
-                          </span>
-                        </td>
-                        <td className="col-date text-left">
+                     <tr key={app.id}>
+                      <td className="col-lg text-left wrap-text">
+                        <strong className="truncate-2" style={{ fontSize: "0.85rem" }}>{app.name}</strong>
+                      </td>
+                      <td className="col-lg text-left no-wrap" style={{ fontSize: "0.8rem" }}>{app.email}</td>
+                      <td className="col-xl text-left wrap-text">
+                        <div className="truncate-2" style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                          {app.role}
+                        </div>
+                      </td>
+                      <td className="col-sm text-center">
+                        <span
+                          className={`status-badge status-${app.status}`}
+                          style={{ fontSize: "0.7rem", padding: "2px 6px" }}
+                        >
+                          {app.status === "approved"
+                            ? "Live"
+                            : app.status === "pending"
+                              ? "Pend"
+                              : app.status === "rejected"
+                                ? "Rej"
+                                : app.status}
+                        </span>
+                      </td>
+                      <td className="col-md text-left">
+                        <div style={{ fontSize: "0.8rem" }}>
                           {new Date(app.created_at).toLocaleDateString(
                             "en-US",
                             {
-                              month: "long",
+                              month: "short",
                               day: "numeric",
                               year: "numeric",
                             },
                           )}
-                        </td>
+                        </div>
+                      </td>
                         <td className="col-actions text-center">
                           <ActionMenu>
                             <button
@@ -310,7 +347,7 @@ const AdminContributors = () => {
                 )}
               </tbody>
             </table>
-          </div>
+          </TableScrollContainer>
         </div>
       )}
 

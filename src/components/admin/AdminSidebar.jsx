@@ -9,9 +9,12 @@ import { Link, useLocation } from "react-router-dom";
  *   permissions: { can_manage_blogs, can_manage_ads, can_manage_comments, can_manage_announcements }
  */
 const AdminSidebar = ({
+  onLogout,
   role = "admin",
   permissions = {},
   badges = {},
+  isCollapsed = false,
+  onToggle = () => {},
 }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
@@ -110,9 +113,12 @@ const AdminSidebar = ({
       <div className="sidebar-header">
         <Link to="/" className="sidebar-brand">
           <img
-            src="/assets/sapsecurityexpert-white.png"
+            src={
+              isCollapsed ? "/fav.png" : "/assets/sapsecurityexpert-white.png"
+            }
             alt="SAP Security Expert"
-            className="sidebar-logo"
+            className={`sidebar-logo ${isCollapsed ? "collapsed-logo" : ""}`}
+            style={isCollapsed ? { filter: "none" } : {}}
           />
         </Link>
       </div>
@@ -141,42 +147,70 @@ const AdminSidebar = ({
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              paddingRight: "16px",
+              // justifyContent: "space-between",
+              // paddingRight: "16px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
               <i
                 className={`bi ${item.icon}`}
-                style={{ marginRight: "10px" }}
+                style={{ marginRight: isCollapsed ? "0" : "10px" }}
               ></i>
-              <span>{item.label}</span>
+              {!isCollapsed && <span>{item.label}</span>}
             </div>
             {item.badge > 0 && (
               <span
-                  style={{
-                    background: "#ef4444",
-                    color: "#fff",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    minWidth: "12px",
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.badge}
-                </span>
+                className="badge-count"
+                style={
+                  isCollapsed
+                    ? {
+                        background: "#ef4444",
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        position: "absolute",
+                        top: "14px",
+                        right: "10px",
+                        border: "1.5px solid var(--slate-900)",
+                        display: "block",
+                      }
+                    : {
+                        background: "#ef4444",
+                        color: "#fff",
+                        borderRadius: "12px",
+                        padding: "2px 8px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        minWidth: "12px",
+                        textAlign: "center",
+                        whiteSpace: "nowrap",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }
+                }
+              >
+                {!isCollapsed && item.badge}
+              </span>
             )}
           </Link>
         ))}
       </nav>
 
+      <div className="sidebar-footer">
+        <button
+          className="sidebar-toggle-btn"
+          style={{ width: "100%" }}
+          onClick={onToggle}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <i className={`bi bi-chevron-${isCollapsed ? "right" : "left"}`}></i>
+          {!isCollapsed && (
+            <span style={{ marginLeft: "10px" }}>Collapse Sidebar</span>
+          )}
+        </button>
+      </div>
     </aside>
   );
 };

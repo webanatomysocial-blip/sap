@@ -29,9 +29,22 @@ const AnnouncementModal = ({
                 value={formData.title}
                 onChange={handleChange}
                 required
-                maxLength={100}
+                maxLength={120}
                 className="form-control"
               />
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color:
+                    (formData.title?.length || 0) >= 120
+                      ? "var(--danger-red)"
+                      : "var(--slate-500)",
+                  textAlign: "right",
+                  marginTop: "4px",
+                }}
+              >
+                {formData.title?.length || 0} / 120
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Link (Optional)</label>

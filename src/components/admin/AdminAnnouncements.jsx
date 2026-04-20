@@ -5,6 +5,7 @@ import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmationContext";
 import { getAnnouncements, saveAnnouncement } from "../../services/api";
 import api from "../../services/api";
+import { downloadCSV } from "../../services/exportUtils";
 
 import AnnouncementList from "./announcements/AnnouncementList";
 import AnnouncementModal from "./announcements/AnnouncementModal";
@@ -144,13 +145,27 @@ const AdminAnnouncements = () => {
         });
   };
 
+  const handleExport = () => {
+    const headers = [
+      { label: "Title", key: "title" },
+      { label: "Status", key: "status" },
+      { label: "Date", key: "date" },
+    ];
+    downloadCSV(announcements, headers, "announcements_list");
+  };
+
   return (
     <div className="admin-page-wrapper">
       <div className="page-header">
         <h3>Announcements</h3>
-        <button className="btn-primary" onClick={() => handleOpenModal()}>
-          <i className="bi bi-plus-lg"></i> New Announcement
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={handleExport} className="btn-filter" title="Export to CSV">
+            <i className="bi bi-download"></i> Export
+          </button>
+          <button className="btn-primary" onClick={() => handleOpenModal()}>
+            <i className="bi bi-plus-lg"></i> New Announcement
+          </button>
+        </div>
       </div>
 
       <AnnouncementList
