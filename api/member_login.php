@@ -183,7 +183,8 @@ try {
             'id' => $member['id'],
             'name' => $member['name'],
             'email' => $member['email'],
-            'profile_image' => $member['profile_image'] ?? null
+            'profile_image' => $member['profile_image'] ?? null,
+            'receive_blog_emails' => $member['receive_blog_emails'] ?? 0
         ]
     ]);
 

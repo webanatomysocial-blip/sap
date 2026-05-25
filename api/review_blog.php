@@ -98,14 +98,20 @@ try {
         if ($author) {
             require_once 'services/NotificationService.php';
             $ns = new NotificationService();
-            $siteUrl = rtrim(getenv('SITE_URL') ?: 'https://sapsecurityexpert.com', '/');
+            $siteUrl = rtrim(getenv('SITE_URL') ?: 'https://sap.kaphi.in', '/');
             $categorySlug = strtolower(str_replace(' ', '-', $blog['category'] ?? 'others'));
             $postUrl = "$siteUrl/$categorySlug/{$blog['slug']}";
 
             $ns->notifyBlogApproved($author['email'], $blog['title'], $postUrl);
         }
 
-
+        // Trigger immediate queuing for member notifications
+        try {
+            require_once 'services/MailService.php';
+            MailService::getInstance()->queuePendingBlogNotifications();
+        } catch (Exception $e) {
+            error_log("Error in instant queuing: " . $e->getMessage());
+        }
 
         echo json_encode(['status' => 'success', 'message' => 'Blog approved and published']);
     } elseif ($action === 'save_as_draft') {

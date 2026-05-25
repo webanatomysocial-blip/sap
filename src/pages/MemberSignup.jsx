@@ -16,7 +16,8 @@ const MemberSignup = () => {
     job_role: "",
     password: "",
     confirmPassword: "",
-    otp: ""
+    otp: "",
+    receive_blog_emails: true
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -333,6 +334,19 @@ const MemberSignup = () => {
                       placeholder="City, Country"
                     />
                   </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "20px" }}>
+                  <label className="form-label" style={{ display: "flex", alignItems: "center", cursor: "pointer", fontWeight: "normal" }}>
+                    <input
+                      type="checkbox"
+                      name="receive_blog_emails"
+                      checked={formData.receive_blog_emails}
+                      onChange={(e) => setFormData({ ...formData, receive_blog_emails: e.target.checked })}
+                      style={{ marginRight: "10px", width: "18px", height: "18px" }}
+                    />
+                    Subscribe to receive the latest blog articles and updates via email
+                  </label>
                 </div>
 
                 <div className="form-group">

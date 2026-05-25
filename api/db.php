@@ -18,7 +18,7 @@ if (!headers_sent()) {
     header('Referrer-Policy: strict-origin-when-cross-origin'); // Limit referrer info leakage
 
     // ── CORS Whitelist ────────────────────────────────────────────────────────
-    $domain = getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
+    $domain = getenv('SITE_URL') ?: 'https://sap.kaphi.in';
     $allowedOrigins = [
         $domain,
         str_replace('https://', 'https://www.', $domain),
@@ -146,7 +146,6 @@ try {
                     ->execute([$now]);
                 $pdo->prepare("UPDATE announcements SET status = 'active' WHERE status = 'scheduled' AND publish_date <= ?")
                     ->execute([$now]);
-
             }
             flock($lockHandle, LOCK_UN);
         }

@@ -214,6 +214,6 @@ function getSiteUrl()
         $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
         return "$protocol://" . $_SERVER['HTTP_HOST'];
     }
-    return getenv('SITE_URL') ?: 'https://sapsecurityexpert.com';
+    return getenv('SITE_URL') ?: 'https://sap.kaphi.in';
 }
 ?>

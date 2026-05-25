@@ -135,7 +135,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body>
     <header>
-        <p><a href="https://sapsecurityexpert.com">← SAP Security Expert</a></p>
+        <p><a href="https://sap.kaphi.in">← SAP Security Expert</a></p>
     </header>
 
     <article>
@@ -173,7 +173,7 @@ header('Content-Type: text/html; charset=utf-8');
     <hr>
     <p class="footer-note">
         This is a static content view for accessibility and AI reading tools.
-        <a href="https://sapsecurityexpert.com/<?= htmlspecialchars($category) ?>/<?= htmlspecialchars($slug) ?>">View the full interactive article</a> on SAP Security Expert.
+        <a href="https://sap.kaphi.in/<?= htmlspecialchars($category) ?>/<?= htmlspecialchars($slug) ?>">View the full interactive article</a> on SAP Security Expert.
     </p>
 </body>
 </html>

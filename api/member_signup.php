@@ -25,6 +25,7 @@ $company  = trim($input['company_name'] ?? '');
 $role     = trim($input['job_role'] ?? '');
 $username = trim($input['username'] ?? '');
 $password = $input['password'] ?? '';
+$receive_blog_emails = isset($input['receive_blog_emails']) ? (int)$input['receive_blog_emails'] : 1;
 
 // Basic validation
 if (!$name || !$email || !$password) {
@@ -110,10 +111,10 @@ try {
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     $stmt = $pdo->prepare("
-        INSERT INTO members (name, phone, email, username, location, company_name, job_role, password_hash, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+        INSERT INTO members (name, phone, email, username, location, company_name, job_role, password_hash, status, created_at, receive_blog_emails)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP, ?)
     ");
-    $stmt->execute([$name, $phone, $email, $username, $location, $company, $role, $hash]);
+    $stmt->execute([$name, $phone, $email, $username, $location, $company, $role, $hash, $receive_blog_emails]);
 
     // 2. Send Notifications
     $notificationService = new NotificationService();

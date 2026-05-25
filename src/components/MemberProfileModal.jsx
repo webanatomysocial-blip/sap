@@ -26,6 +26,7 @@ const MemberProfileModal = ({ isOpen, onClose, initialTab = "profile" }) => {
     location: "",
     company_name: "",
     job_role: "",
+    receive_blog_emails: true,
   });
   const [preview, setPreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -44,6 +45,7 @@ const MemberProfileModal = ({ isOpen, onClose, initialTab = "profile" }) => {
           location: member.location || "",
           company_name: member.company_name || "",
           job_role: member.job_role || "",
+          receive_blog_emails: member.receive_blog_emails !== undefined ? (member.receive_blog_emails == 1) : false,
         });
         setPreview(member.profile_image || null);
         setError("");
@@ -77,6 +79,7 @@ const MemberProfileModal = ({ isOpen, onClose, initialTab = "profile" }) => {
     data.append("location", formData.location);
     data.append("company_name", formData.company_name);
     data.append("job_role", formData.job_role);
+    data.append("receive_blog_emails", formData.receive_blog_emails);
     if (imageFile) {
       data.append("profile_image", imageFile);
     }
@@ -230,6 +233,18 @@ const MemberProfileModal = ({ isOpen, onClose, initialTab = "profile" }) => {
                     <i className="bi bi-briefcase" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                     <input type="text" className="form-control" value={formData.job_role} onChange={(e) => setFormData({ ...formData, job_role: e.target.value })} placeholder="Job Role" style={{ paddingLeft: "40px" }} />
                   </div>
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 2', marginTop: "8px" }}>
+                  <label className="form-label" style={{ display: "flex", alignItems: "center", cursor: "pointer", fontWeight: "normal", color: "#1e293b" }}>
+                    <input
+                      type="checkbox"
+                      name="receive_blog_emails"
+                      checked={formData.receive_blog_emails}
+                      onChange={(e) => setFormData({ ...formData, receive_blog_emails: e.target.checked })}
+                      style={{ marginRight: "10px", width: "18px", height: "18px", accentColor: "#ee5e42" }}
+                    />
+                    Subscribe to receive the latest blog articles and updates via email
+                  </label>
                 </div>
               </div>
             </form>

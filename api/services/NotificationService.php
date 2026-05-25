@@ -6,7 +6,7 @@ require_once __DIR__ . '/MailService.php';
 class NotificationService
 {
     private $mailService;
-    private $adminEmail = 'raghu@sapsecurityexpert.com'; // Default admin email
+    private $adminEmail = 'raghu@sap.kaphi.in'; // Default admin email
 
     public function __construct()
     {
@@ -38,7 +38,7 @@ class NotificationService
     public function notifyMemberApproved($userEmail, $userName, $credentials = [], $loginUrl = null)
     {
         $siteUrl = getSiteUrl();
-        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
+        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sap.kaphi.in';
 
         $this->mailService->send($userEmail, "Your Account Has Been Approved", "member/signup_approved", [
             'name' => $userName,
@@ -77,7 +77,7 @@ class NotificationService
     public function notifyContributorApproved($userEmail, $userName, $credentials = [])
     {
         $siteUrl = getSiteUrl();
-        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sapsecurityexpert.com';
+        $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'sap.kaphi.in';
 
         $this->mailService->send($userEmail, "Contributor Access Approved", "contributor/contributor_approved", [
             'name' => $userName,

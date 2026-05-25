@@ -32,6 +32,7 @@ $phone    = trim($_POST['phone'] ?? '');
 $location = trim($_POST['location'] ?? '');
 $company  = trim($_POST['company_name'] ?? '');
 $jobRole  = trim($_POST['job_role'] ?? '');
+$receive_blog_emails = isset($_POST['receive_blog_emails']) ? ($_POST['receive_blog_emails'] === 'true' || $_POST['receive_blog_emails'] == 1 ? 1 : 0) : 1;
 
 if (empty($name)) {
     http_response_code(400);
@@ -113,8 +114,8 @@ try {
     }
 
     // Update Database
-    $updates = ["name = ?", "username = ?", "phone = ?", "location = ?", "company_name = ?", "job_role = ?"];
-    $params  = [$name, $username, $phone, $location, $company, $jobRole];
+    $updates = ["name = ?", "username = ?", "phone = ?", "location = ?", "company_name = ?", "job_role = ?", "receive_blog_emails = ?"];
+    $params  = [$name, $username, $phone, $location, $company, $jobRole, $receive_blog_emails];
 
     if ($profileImage) {
         $updates[] = "profile_image = ?";
@@ -195,6 +196,7 @@ try {
             'company_name'  => $company,
             'job_role'      => $jobRole,
             'profile_image' => $profileImage ?? ($_POST['current_image'] ?? null),
+            'receive_blog_emails' => $receive_blog_emails,
         ]
     ]);
 

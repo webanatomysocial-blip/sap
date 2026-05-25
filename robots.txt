@@ -8,4 +8,4 @@ Disallow: /private/
 User-agent: ClaudeBot
 Allow: /
 
-Sitemap: https://sapsecurityexpert.com/sitemap.xml
+Sitemap: https://sap.kaphi.in/sitemap.xml

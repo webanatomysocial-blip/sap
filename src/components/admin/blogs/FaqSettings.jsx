@@ -1,5 +1,5 @@
 import React from "react";
-import SimpleRTE from "../SimpleRTE";
+import SimpleRTE from "../SimpleRTE.jsx";
 
 const FaqSettings = ({
   faqs,

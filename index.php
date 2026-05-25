@@ -20,7 +20,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'sapsecurityexpert.com';
+$host = $_SERVER['HTTP_HOST'] ?? 'sap.kaphi.in';
 $baseUrl = $protocol . $host;
 
 // ============================================================

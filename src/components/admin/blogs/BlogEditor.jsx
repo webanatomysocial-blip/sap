@@ -1,5 +1,5 @@
 import React from "react";
-import SimpleRTE from "../SimpleRTE";
+import SimpleRTE from "../SimpleRTE.jsx";
 
 const BlogEditor = ({
   formData,
@@ -185,6 +185,22 @@ const BlogEditor = ({
             ></i>{" "}
             Save as Draft
           </button>
+
+          <div className="form-group" style={{ marginBottom: "20px" }}>
+            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontWeight: "normal" }}>
+              <input
+                type="checkbox"
+                name="send_notification_email"
+                checked={formData.send_notification_email == 1}
+                onChange={(e) => handleInputChange({ target: { name: "send_notification_email", value: e.target.checked ? 1 : 0 } })}
+                style={{ width: "16px", height: "16px", accentColor: "#ee5e42" }}
+              />
+              Send Email Notification to Members
+            </label>
+            <span style={{ fontSize: "0.78rem", color: "#94a3b8", display: "block", marginTop: "4px" }}>
+              Check this to send an email to all subscribed members when the blog is published.
+            </span>
+          </div>
 
           {/* Author Selector — Admin only */}
           {isAdmin && (

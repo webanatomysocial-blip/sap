@@ -204,6 +204,7 @@ class BlogService {
         $cta_button_text = $data['cta_button_text'] ?? null;
         $cta_button_link = $data['cta_button_link'] ?? null;
         $is_members_only = isset($data['is_members_only']) ? (int)$data['is_members_only'] : 0;
+        $send_notification_email = isset($data['send_notification_email']) ? (int)$data['send_notification_email'] : 0;
         $requestedStatus = $data['status'] ?? null;
 
         // Auto-generate slug if title is present but slug is missing
@@ -320,7 +321,7 @@ class BlogService {
                         meta_title=?, meta_description=?, meta_keywords=?,
                         status=?, submission_status=?, rejection_feedback = NULL,
                         author_id = ?, author = ?, seo_score = ?, plagiarism_score = ?, plagiarism_status = 'completed',
-                        is_members_only = ?, related_blogs = ?, updated_at = CURRENT_TIMESTAMP, 
+                        is_members_only = ?, related_blogs = ?, send_notification_email = ?, updated_at = CURRENT_TIMESTAMP, 
                         $publishDateUpdate
                         draft_title=NULL, draft_content=NULL, draft_excerpt=NULL, draft_image=NULL, 
                         draft_category=NULL, draft_faqs=NULL, draft_meta_title=NULL, draft_meta_description=NULL,
@@ -339,13 +340,20 @@ class BlogService {
                     $cta_title, $cta_description, $cta_button_text, $cta_button_link,
                     $meta_title, $meta_description, $meta_keywords,
                     $targetStatus, $subStatus,
-                    $author_id, $authorName, $seoScore, $finalPlag, $is_members_only, $relatedBlogs
+                    $author_id, $authorName, $seoScore, $finalPlag, $is_members_only, $relatedBlogs, $send_notification_email
                 ], $publishDateParam, [$id]);
 
                 $this->pdo->prepare($sql)->execute($params);
                 $this->invalidateHomepage();
 
-
+                if (in_array($targetStatus, ['approved', 'published']) && $send_notification_email) {
+                    try {
+                        require_once __DIR__ . '/MailService.php';
+                        MailService::getInstance()->queuePendingBlogNotifications();
+                    } catch (Exception $e) {
+                        error_log("Error in instant queuing: " . $e->getMessage());
+                    }
+                }
 
                 $msg = 'Blog updated';
                 if ($plagScore === -1) $msg .= ' (Warning: Plagiarism check failed)';
@@ -365,8 +373,8 @@ class BlogService {
             $sql = "INSERT INTO blogs 
                     (id, title, slug, excerpt, content, author, author_id, date, image, category, tags, faqs,
                      cta_title, cta_description, cta_button_text, cta_button_link,
-                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status, is_members_only, related_blogs, publish_date, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_DATE), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+                     meta_title, meta_description, meta_keywords, status, submission_status, seo_score, plagiarism_score, plagiarism_status, is_members_only, related_blogs, send_notification_email, publish_date, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_DATE), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             $plagRes = checkPlagiarismScore($content, $id, $this->pdo);
             $plagScore = $plagRes['score'];
             $finalPlag = ($plagScore === -1) ? 0 : $plagScore; // New blog fallback is 0 (Not Checked)
@@ -376,7 +384,7 @@ class BlogService {
             $params = [
                 $id, $title, $slug, $excerpt, $content, $authorName, $author_id, $date, $image, $category, $tags, json_encode($faqs),
                 $cta_title, $cta_description, $cta_button_text, $cta_button_link,
-                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag, $is_members_only, $relatedBlogsInsert,
+                $meta_title, $meta_description, $meta_keywords, $targetStatus, $subStatus, $seoScore, $finalPlag, $is_members_only, $relatedBlogsInsert, $send_notification_email,
                 $publishDateVal
             ];
             $this->pdo->prepare($sql)->execute($params);
@@ -393,7 +401,14 @@ class BlogService {
                 }
             }
 
-
+            if (in_array($targetStatus, ['approved', 'published']) && $send_notification_email) {
+                try {
+                    require_once __DIR__ . '/MailService.php';
+                    MailService::getInstance()->queuePendingBlogNotifications();
+                } catch (Exception $e) {
+                    error_log("Error in instant queuing: " . $e->getMessage());
+                }
+            }
 
             $msg = 'Blog created';
             if ($plagScore === -1) $msg .= ' (Warning: Plagiarism check failed)';
