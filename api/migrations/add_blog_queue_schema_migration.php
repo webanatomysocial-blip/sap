@@ -11,7 +11,7 @@ try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS email_queue (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             recipient TEXT NOT NULL,
-            blog_id INTEGER,
+            blog_id VARCHAR(64),
             subject TEXT NOT NULL,
             body TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'pending',
@@ -26,7 +26,7 @@ try {
         $stmt = $pdo->query("PRAGMA table_info(email_queue)");
         $cols = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'name');
         if (!in_array('blog_id', $cols)) {
-            $pdo->exec("ALTER TABLE email_queue ADD COLUMN blog_id INTEGER DEFAULT NULL");
+            $pdo->exec("ALTER TABLE email_queue ADD COLUMN blog_id VARCHAR(64) DEFAULT NULL");
             echo "- Column 'blog_id' added to 'email_queue'.\n";
         }
 
@@ -40,6 +40,8 @@ try {
         if (!in_array('is_queued_for_members', $cols)) {
             $pdo->exec("ALTER TABLE blogs ADD COLUMN is_queued_for_members INTEGER DEFAULT 0");
             echo "- Column 'is_queued_for_members' added to 'blogs'.\n";
+            $pdo->exec("UPDATE blogs SET is_queued_for_members = 1 WHERE status IN ('approved', 'published')");
+            echo "- Backfilled existing blogs in SQLite.\n";
         }
 
     } else {
@@ -48,7 +50,7 @@ try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS email_queue (
             id INT AUTO_INCREMENT PRIMARY KEY,
             recipient VARCHAR(255) NOT NULL,
-            blog_id INT,
+            blog_id VARCHAR(64),
             subject VARCHAR(255) NOT NULL,
             body TEXT NOT NULL,
             status VARCHAR(50) NOT NULL DEFAULT 'pending',
@@ -63,7 +65,7 @@ try {
         $stmt = $pdo->prepare("SHOW COLUMNS FROM email_queue LIKE 'blog_id'");
         $stmt->execute();
         if (!$stmt->fetch()) {
-            $pdo->exec("ALTER TABLE email_queue ADD COLUMN blog_id INT DEFAULT NULL");
+            $pdo->exec("ALTER TABLE email_queue ADD COLUMN blog_id VARCHAR(64) DEFAULT NULL");
             echo "- Column 'blog_id' added to 'email_queue'.\n";
         }
 
@@ -81,6 +83,8 @@ try {
         if (!$stmt->fetch()) {
             $pdo->exec("ALTER TABLE blogs ADD COLUMN is_queued_for_members TINYINT DEFAULT 0");
             echo "- Column 'is_queued_for_members' added to 'blogs'.\n";
+            $pdo->exec("UPDATE blogs SET is_queued_for_members = 1 WHERE status IN ('approved', 'published')");
+            echo "- Backfilled existing blogs in MySQL.\n";
         }
     }
 
